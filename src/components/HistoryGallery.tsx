@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { fetchDownloadUrl } from '../lib/api.ts'
 import type { HistoryItem, TaskState } from '../lib/models/types.ts'
@@ -28,8 +28,12 @@ function stateLabel(state: TaskState): string {
       return 'キュー'
     case 'waiting':
       return '待機'
-    default:
-      return state
+    case 'unknown':
+      return '状態不明'
+    default: {
+      const _exhaustive: never = state
+      return _exhaustive
+    }
   }
 }
 
@@ -63,11 +67,13 @@ export function HistoryGallery({
   onRemove: (taskId: string) => void
   onClear: () => void
 }) {
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
   const active = items.find((h) => h.taskId === activeTaskId) ?? null
   const showViewer = Boolean(
     active &&
       (isBusyState(active.state) ||
         active.state === 'fail' ||
+        active.state === 'unknown' ||
         (active.resultUrls?.length ?? 0) > 0),
   )
 
@@ -84,6 +90,7 @@ export function HistoryGallery({
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
+    closeBtnRef.current?.focus()
     return () => window.removeEventListener('keydown', onKey)
   }, [showViewer, onClose])
 
@@ -97,7 +104,7 @@ export function HistoryGallery({
               ? 'まだ生成がありません'
               : pendingCount > 0
                 ? `${items.length} 件 · ${pendingCount} 件生成中`
-                : `${items.length} 件`}
+                : `${items.length} 件（最大 30）`}
           </p>
         </div>
         {items.length > 0 && (
@@ -131,7 +138,7 @@ export function HistoryGallery({
               return (
                 <div
                   key={h.taskId}
-                  className={`group relative overflow-hidden rounded-2xl border bg-[var(--bg)] transition ${
+                  className={`relative overflow-hidden rounded-2xl border bg-[var(--bg)] transition ${
                     selected
                       ? 'border-[var(--accent)] shadow-md ring-2 ring-[var(--accent)]/20'
                       : 'border-[var(--border)] hover:border-[var(--accent)]/50 hover:shadow-sm'
@@ -140,6 +147,7 @@ export function HistoryGallery({
                   <button
                     type="button"
                     className="block w-full text-left"
+                    aria-current={selected ? 'true' : undefined}
                     onClick={() => onSelect(h)}
                   >
                     <div className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]">
@@ -153,15 +161,14 @@ export function HistoryGallery({
                         ) : (
                           <img
                             src={thumb}
-                            alt=""
-                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            alt={h.prompt || shortModel(h.model)}
+                            className="h-full w-full object-cover"
                           />
                         )
                       ) : busy ? (
                         <div className="flex h-full flex-col items-center justify-center gap-3 bg-[linear-gradient(145deg,#eef3f9,#f8fafc)] p-3">
                           <div className="relative">
                             <div className="size-10 animate-spin rounded-full border-[3px] border-[var(--border)] border-t-[var(--accent)]" />
-                            <div className="absolute inset-0 animate-pulse rounded-full bg-[var(--accent-soft)]" />
                           </div>
                           <div className="text-center">
                             <div className="text-xs font-semibold text-[var(--accent)]">
@@ -173,8 +180,19 @@ export function HistoryGallery({
                           </div>
                         </div>
                       ) : h.state === 'fail' ? (
-                        <div className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--danger)]">
-                          失敗
+                        <div className="flex h-full flex-col items-center justify-center gap-1 p-3 text-center">
+                          <span className="text-xs font-semibold text-[var(--danger)]">
+                            失敗
+                          </span>
+                          {h.failMsg && (
+                            <span className="line-clamp-3 text-[10px] text-[var(--text-muted)]">
+                              {h.failMsg}
+                            </span>
+                          )}
+                        </div>
+                      ) : h.state === 'unknown' ? (
+                        <div className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--warning)]">
+                          状態不明
                         </div>
                       ) : (
                         <div className="flex h-full items-center justify-center text-[11px] uppercase text-[var(--text-muted)]">
@@ -205,7 +223,7 @@ export function HistoryGallery({
                     title="削除"
                     aria-label="削除"
                     onClick={() => onRemove(h.taskId)}
-                    className="absolute right-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] opacity-0 shadow-sm transition hover:text-[var(--danger)] group-hover:opacity-100"
+                    className="absolute right-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] shadow-sm transition hover:text-[var(--danger)]"
                   >
                     ×
                   </button>
@@ -227,15 +245,19 @@ export function HistoryGallery({
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="viewer-title"
           >
             <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
               <div className="min-w-0">
-                <div className="truncate font-semibold">{shortModel(active.model)}</div>
+                <div id="viewer-title" className="truncate font-semibold">
+                  {shortModel(active.model)}
+                </div>
                 <div className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
                   {active.prompt || active.taskId}
                 </div>
               </div>
               <button
+                ref={closeBtnRef}
                 type="button"
                 className="rounded-lg border border-[var(--border)] px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
                 onClick={onClose}
@@ -254,7 +276,21 @@ export function HistoryGallery({
                 </div>
               )}
               {active.state === 'fail' && (
-                <p className="py-10 text-center text-sm text-[var(--danger)]">生成に失敗しました</p>
+                <div className="space-y-2 py-10 text-center">
+                  <p className="text-sm font-medium text-[var(--danger)]">
+                    生成に失敗しました
+                  </p>
+                  {active.failMsg && (
+                    <p className="mx-auto max-w-md text-xs text-[var(--text-muted)]">
+                      {active.failMsg}
+                    </p>
+                  )}
+                </div>
+              )}
+              {active.state === 'unknown' && (
+                <p className="py-10 text-center text-sm text-[var(--warning)]">
+                  状態を取得できませんでした
+                </p>
               )}
               {active.state === 'success' &&
                 (active.resultUrls ?? []).map((url) => (
@@ -268,7 +304,7 @@ export function HistoryGallery({
                     ) : (
                       <img
                         src={url}
-                        alt="result"
+                        alt={active.prompt || '生成結果'}
                         className="mx-auto max-h-[55vh] w-full rounded-xl object-contain"
                       />
                     )}
@@ -279,21 +315,33 @@ export function HistoryGallery({
                         rel="noreferrer"
                         className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
                       >
-                        Open
+                        開く
                       </a>
                       <button
                         type="button"
+                        disabled={download.isPending}
                         onClick={() => download.mutate(url)}
-                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
+                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)] disabled:opacity-50"
                       >
-                        Download via API
+                        {download.isPending
+                          ? '取得中…'
+                          : 'Download via API'}
                       </button>
                       {typeof active.creditsConsumed === 'number' && (
                         <span className="ml-auto self-center text-xs text-[var(--text-muted)]">
-                          使用 <span className="font-semibold text-[var(--danger)]">−{active.creditsConsumed}</span>
+                          使用{' '}
+                          <span className="font-semibold text-[var(--danger)]">
+                            −{active.creditsConsumed}
+                          </span>
                         </span>
                       )}
                     </div>
+                    {download.isError && (
+                      <p className="text-xs text-[var(--danger)]">
+                        {(download.error as Error).message ||
+                          'ダウンロード URL の取得に失敗しました'}
+                      </p>
+                    )}
                   </div>
                 ))}
             </div>

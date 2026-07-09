@@ -43,10 +43,12 @@ app.route('/api', modelsRoutes)
 
 app.onError((err, c) => {
   if (err instanceof KieApiError) {
-    return c.json(
-      { error: err.message, code: err.code, body: err.body },
-      err.status >= 400 && err.status < 600 ? (err.status as 400) : 500,
-    )
+    console.error('[kie]', err.message, { status: err.status, code: err.code })
+    const status =
+      err.status >= 400 && err.status < 600
+        ? (err.status as 400 | 401 | 403 | 404 | 429 | 500 | 502 | 503)
+        : 500
+    return c.json({ error: err.message, code: err.code }, status)
   }
   console.error(err)
   return c.json({ error: err.message || 'Internal Server Error' }, 500)
@@ -54,7 +56,7 @@ app.onError((err, c) => {
 
 const port = Number(process.env.PORT || 8787)
 
-serve({ fetch: app.fetch, port }, (info) => {
+serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, (info) => {
   console.log(`KIE STUDIO API listening on http://127.0.0.1:${info.port}`)
 
   // Startup catalog sync (non-blocking). Skips if catalog is < 12h old.

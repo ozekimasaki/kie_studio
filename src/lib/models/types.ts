@@ -73,7 +73,6 @@ export interface NormalizedTask {
   costTime?: number
   createTime?: number
   creditsConsumed?: number
-  raw?: unknown
 }
 
 export interface HistoryItem {
@@ -85,4 +84,5 @@ export interface HistoryItem {
   resultUrls?: string[]
   prompt?: string
   creditsConsumed?: number
+  failMsg?: string
 }

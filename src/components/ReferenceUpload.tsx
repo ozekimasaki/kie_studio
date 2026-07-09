@@ -11,6 +11,7 @@ export function ReferenceUpload({
   disabled,
   mentionStyle = 'at-image',
   onInsertMention,
+  inputId,
 }: {
   value: string[]
   onChange: (urls: string[]) => void
@@ -19,6 +20,7 @@ export function ReferenceUpload({
   disabled?: boolean
   mentionStyle?: MentionStyle
   onInsertMention?: (token: string) => void
+  inputId?: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -37,7 +39,7 @@ export function ReferenceUpload({
       }
       onChange([...value, ...urls])
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed')
+      setError(e instanceof Error ? e.message : 'アップロードに失敗しました')
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
@@ -54,19 +56,24 @@ export function ReferenceUpload({
           return (
             <div
               key={`${url}-${i}`}
-              className="group relative w-[88px] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg)]"
+              className="relative w-[88px] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg)]"
             >
               <div className="relative h-20 w-full">
                 {/\.(mp4|webm|mov)(\?|$)/i.test(url) ? (
                   <video src={url} className="h-full w-full object-cover" muted />
                 ) : (
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={url}
+                    alt={`参照 ${i + 1}`}
+                    className="h-full w-full object-cover"
+                  />
                 )}
                 <button
                   type="button"
                   disabled={disabled}
+                  aria-label={`参照 ${i + 1} を削除`}
                   onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-                  className="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs text-[var(--text)] shadow opacity-0 transition group-hover:opacity-100"
+                  className="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs text-[var(--text)] shadow transition hover:bg-white disabled:opacity-50"
                 >
                   ×
                 </button>
@@ -88,11 +95,12 @@ export function ReferenceUpload({
         {value.length < maxItems && (
           <button
             type="button"
+            id={inputId}
             disabled={disabled || uploading}
             onClick={() => inputRef.current?.click()}
             className="flex h-20 w-20 flex-col items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
           >
-            {uploading ? '…' : '+ Add'}
+            {uploading ? '…' : '+ 追加'}
           </button>
         )}
       </div>

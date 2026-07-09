@@ -38,8 +38,15 @@ export function CreditBadge({
 
   if (credits.isError) {
     return (
-      <div className="rounded-xl border border-[var(--danger)]/40 bg-[var(--danger)]/5 px-3 py-2 text-xs text-[var(--danger)]">
-        クレジット取得エラー
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--danger)]/40 bg-[var(--danger)]/5 px-3 py-2 text-xs text-[var(--danger)]">
+        <span>クレジット取得エラー</span>
+        <button
+          type="button"
+          onClick={() => void credits.refetch()}
+          className="rounded-md border border-[var(--danger)]/40 px-2 py-0.5 font-medium hover:bg-[var(--danger)]/10"
+        >
+          再試行
+        </button>
       </div>
     )
   }

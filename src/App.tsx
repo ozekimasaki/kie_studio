@@ -7,36 +7,50 @@ import {
 } from '@tanstack/react-query'
 import { CategoryTabs } from './components/CategoryTabs.tsx'
 import { ModelSelect } from './components/ModelSelect.tsx'
-import { DynamicForm, buildDefaultValues } from './components/DynamicForm.tsx'
+import {
+  DynamicForm,
+  buildDefaultValues,
+  validateFields,
+} from './components/DynamicForm.tsx'
 import { CreditBadge } from './components/CreditBadge.tsx'
 import { HistoryGallery } from './components/HistoryGallery.tsx'
-import { fetchModels, fetchTask, generateTask } from './lib/api.ts'
 import {
-  clearHistory,
+  fetchHealth,
+  fetchModels,
+  fetchTask,
+  generateTask,
+} from './lib/api.ts'
+import {
   loadHistory,
-  removeHistory,
+  removeFromList,
   saveHistory,
-  upsertHistory,
+  upsertInList,
 } from './lib/history.ts'
 import type {
   HistoryItem,
   ModelCategory,
   ModelDefinition,
-  TaskState,
 } from './lib/models/types.ts'
+
+const UNKNOWN_STALE_MS = 10 * 60 * 1000
 
 function promptFromInput(input: Record<string, unknown>): string | undefined {
   const p = input.prompt
   return typeof p === 'string' ? p.slice(0, 120) : undefined
 }
 
-function isPendingState(state: TaskState): boolean {
-  return (
-    state === 'waiting' ||
-    state === 'queuing' ||
-    state === 'generating' ||
-    state === 'unknown'
-  )
+function isPendingState(item: HistoryItem): boolean {
+  if (
+    item.state === 'waiting' ||
+    item.state === 'queuing' ||
+    item.state === 'generating'
+  ) {
+    return true
+  }
+  if (item.state === 'unknown') {
+    return Date.now() - item.createdAt < UNKNOWN_STALE_MS
+  }
+  return false
 }
 
 export default function App() {
@@ -46,8 +60,15 @@ export default function App() {
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [viewerTaskId, setViewerTaskId] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
+
+  const healthQuery = useQuery({
+    queryKey: ['health'],
+    queryFn: fetchHealth,
+    staleTime: 60_000,
+  })
 
   const modelsQuery = useQuery({
     queryKey: ['models', category],
@@ -56,6 +77,7 @@ export default function App() {
 
   const models = modelsQuery.data?.data.models ?? []
   const syncedAt = modelsQuery.data?.data.syncedAt
+  const hasApiKey = healthQuery.data?.hasKey === true
 
   const selected: ModelDefinition | undefined = useMemo(
     () => models.find((m) => m.id === modelId) ?? models[0],
@@ -67,10 +89,11 @@ export default function App() {
     setModelId(selected.id)
     setValues(buildDefaultValues(selected.fields))
     setFormError(null)
+    setFieldErrors({})
   }, [selected?.id])
 
   const pendingTaskIds = useMemo(
-    () => history.filter((h) => isPendingState(h.state)).map((h) => h.taskId),
+    () => history.filter((h) => isPendingState(h)).map((h) => h.taskId),
     [history],
   )
 
@@ -108,6 +131,7 @@ export default function App() {
 
     let creditsChanged = false
     let latestUsed: number | null = null
+    let autoOpenTaskId: string | null = null
 
     setHistory((prev) => {
       let next = prev
@@ -120,7 +144,8 @@ export default function App() {
           existing.state === data.state &&
           (existing.resultUrls?.join(',') ?? '') ===
             (data.resultUrls?.join(',') ?? '') &&
-          existing.creditsConsumed === data.creditsConsumed
+          existing.creditsConsumed === data.creditsConsumed &&
+          (existing.failMsg ?? '') === (data.failMsg ?? '')
         ) {
           continue
         }
@@ -130,10 +155,19 @@ export default function App() {
           state: data.state,
           resultUrls: data.resultUrls,
           creditsConsumed: data.creditsConsumed,
+          failMsg: data.failMsg,
           createdAt: data.createTime ?? existing.createdAt,
         }
-        next = [item, ...next.filter((h) => h.taskId !== item.taskId)]
+        next = upsertInList(next, item)
         changed = true
+
+        if (
+          data.state === 'success' &&
+          existing.state !== 'success' &&
+          (data.resultUrls?.length ?? 0) > 0
+        ) {
+          autoOpenTaskId = data.taskId
+        }
 
         if (data.state === 'success' && typeof data.creditsConsumed === 'number') {
           latestUsed = data.creditsConsumed
@@ -146,6 +180,7 @@ export default function App() {
       return next
     })
 
+    if (autoOpenTaskId) setViewerTaskId(autoOpenTaskId)
     if (latestUsed !== null) setLastUsedCredits(latestUsed)
     if (creditsChanged) {
       void queryClient.invalidateQueries({ queryKey: ['credits'] })
@@ -156,19 +191,18 @@ export default function App() {
 
   const generate = useMutation({
     mutationFn: async () => {
-      if (!selected) throw new Error('No model selected')
+      if (!selected) throw new Error('モデルが選択されていません')
+      if (!hasApiKey) {
+        throw new Error('API キーが未設定です。.env に KIE_API_KEY を設定してください')
+      }
       setFormError(null)
 
-      for (const field of selected.fields) {
-        if (!field.required) continue
-        const v = values[field.name]
-        if (v === undefined || v === null || v === '') {
-          throw new Error(`${field.label} is required`)
-        }
-        if (field.type === 'reference' && Array.isArray(v) && v.length === 0) {
-          throw new Error(`${field.label} is required`)
-        }
+      const errors = validateFields(selected.fields, values)
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        throw new Error('入力内容を確認してください')
       }
+      setFieldErrors({})
 
       const input: Record<string, unknown> = {}
       for (const field of selected.fields) {
@@ -184,8 +218,11 @@ export default function App() {
               typeof el === 'object' &&
               typeof (el as { name?: string }).name === 'string' &&
               (el as { name: string }).name.trim() &&
-              Array.isArray((el as { element_input_urls?: string[] }).element_input_urls) &&
-              ((el as { element_input_urls: string[] }).element_input_urls?.length ?? 0) >= 1,
+              Array.isArray(
+                (el as { element_input_urls?: string[] }).element_input_urls,
+              ) &&
+              ((el as { element_input_urls: string[] }).element_input_urls
+                ?.length ?? 0) >= 1,
           )
           if (cleaned.length === 0) continue
           input[field.name] = cleaned
@@ -203,23 +240,28 @@ export default function App() {
       }
     },
     onSuccess: ({ taskId, input, model }) => {
-      setHistory(
-        upsertHistory({
-          taskId,
-          model: model.model,
-          category: model.category,
-          state: 'waiting',
-          createdAt: Date.now(),
-          prompt: promptFromInput(input),
-        }),
-      )
+      const item: HistoryItem = {
+        taskId,
+        model: model.model,
+        category: model.category,
+        state: 'waiting',
+        createdAt: Date.now(),
+        prompt: promptFromInput(input),
+      }
+      setHistory((prev) => {
+        const next = upsertInList(prev, item)
+        saveHistory(next)
+        return next
+      })
+      setViewerTaskId(taskId)
     },
     onError: (e) => {
-      setFormError(e instanceof Error ? e.message : 'Generate failed')
+      setFormError(e instanceof Error ? e.message : '生成に失敗しました')
     },
   })
 
   const submitting = generate.isPending
+  const generateDisabled = submitting || !hasApiKey || healthQuery.isLoading
 
   function selectHistory(h: HistoryItem) {
     setViewerTaskId(h.taskId)
@@ -227,6 +269,16 @@ export default function App() {
 
   function closeViewer() {
     setViewerTaskId(null)
+  }
+
+  function handleFieldChange(name: string, value: unknown) {
+    setValues((prev) => ({ ...prev, [name]: value }))
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
   }
 
   return (
@@ -264,7 +316,7 @@ export default function App() {
           />
 
           {modelsQuery.isLoading ? (
-            <p className="text-sm text-[var(--text-muted)]">Loading models…</p>
+            <p className="text-sm text-[var(--text-muted)]">モデル読込中…</p>
           ) : modelsQuery.isError ? (
             <p className="text-sm text-[var(--danger)]">
               {(modelsQuery.error as Error).message}
@@ -274,6 +326,7 @@ export default function App() {
               models={models}
               value={selected?.id ?? null}
               onChange={(id) => setModelId(id)}
+              disabled={submitting}
             />
           )}
 
@@ -293,17 +346,19 @@ export default function App() {
               <DynamicForm
                 fields={selected.fields}
                 values={values}
-                onChange={(name, value) =>
-                  setValues((prev) => ({ ...prev, [name]: value }))
-                }
+                onChange={handleFieldChange}
+                disabled={submitting}
+                fieldErrors={fieldErrors}
               />
 
               {formError && (
                 <p className="text-sm text-[var(--danger)]">{formError}</p>
               )}
-              {generate.isError && !formError && (
-                <p className="text-sm text-[var(--danger)]">
-                  {(generate.error as Error).message}
+
+              {!hasApiKey && !healthQuery.isLoading && (
+                <p className="text-sm text-[var(--warning)]">
+                  API キー未設定のため生成できません。.env に KIE_API_KEY
+                  を設定してください。
                 </p>
               )}
 
@@ -315,7 +370,7 @@ export default function App() {
 
               <button
                 type="button"
-                disabled={submitting}
+                disabled={generateDisabled}
                 onClick={() => generate.mutate()}
                 className="sticky bottom-0 rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -337,12 +392,21 @@ export default function App() {
             onSelect={selectHistory}
             onClose={closeViewer}
             onRemove={(taskId) => {
-              const next = removeHistory(taskId)
-              setHistory(next)
+              setHistory((prev) => {
+                const next = removeFromList(prev, taskId)
+                saveHistory(next)
+                return next
+              })
               if (viewerTaskId === taskId) setViewerTaskId(null)
             }}
             onClear={() => {
-              setHistory(clearHistory())
+              if (
+                !window.confirm('履歴をすべて削除しますか？この操作は取り消せません。')
+              ) {
+                return
+              }
+              setHistory([])
+              saveHistory([])
               setViewerTaskId(null)
             }}
           />

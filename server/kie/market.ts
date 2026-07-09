@@ -1,4 +1,4 @@
-import { kieFetch } from './client.ts'
+import { assertKieOk, KieApiError, kieFetch } from './client.ts'
 import type { NormalizedTask, TaskState } from './types.ts'
 
 interface CreateTaskResponse {
@@ -42,8 +42,9 @@ export async function createTask(params: {
     body: JSON.stringify(body),
   })
 
-  if (res.code !== 200 || !res.data?.taskId) {
-    throw new Error(res.msg || 'Failed to create task')
+  assertKieOk(res.code, res.msg, 'Failed to create task')
+  if (!res.data?.taskId) {
+    throw new KieApiError('Failed to create task', 502, res.code)
   }
   return res.data.taskId
 }
@@ -83,8 +84,9 @@ export async function getTaskDetail(taskId: string): Promise<NormalizedTask> {
     `/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`,
   )
 
-  if (res.code !== 200 || !res.data) {
-    throw new Error(res.msg || 'Failed to get task detail')
+  assertKieOk(res.code, res.msg, 'Failed to get task detail')
+  if (!res.data) {
+    throw new KieApiError('Failed to get task detail', 502, res.code)
   }
 
   const data = res.data
@@ -106,6 +108,5 @@ export async function getTaskDetail(taskId: string): Promise<NormalizedTask> {
     costTime: data.costTime,
     createTime: data.createTime,
     creditsConsumed,
-    raw: data,
   }
 }

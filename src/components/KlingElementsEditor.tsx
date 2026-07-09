@@ -140,7 +140,7 @@ export function KlingElementsEditor({
                           ),
                         })
                       }
-                      className="absolute right-0.5 top-0.5 rounded bg-white/90 px-1 text-[10px] opacity-0 group-hover:opacity-100"
+                      className="absolute right-0.5 top-0.5 rounded bg-white/90 px-1 text-[10px] shadow-sm transition hover:text-[var(--danger)] disabled:opacity-50"
                     >
                       ×
                     </button>

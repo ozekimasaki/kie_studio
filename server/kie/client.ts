@@ -20,10 +20,21 @@ export function getApiKey(): string {
   if (!key || key === 'your_api_key_here') {
     throw new KieApiError(
       'KIE_API_KEY is not set. Copy .env.example to .env and add your key.',
-      500,
+      503,
     )
   }
   return key
+}
+
+/** Throw when upstream business code is not success. */
+export function assertKieOk(
+  code: number | undefined,
+  msg: string | undefined,
+  fallback: string,
+): void {
+  if (code !== 200) {
+    throw new KieApiError(msg || fallback, 502, code)
+  }
 }
 
 export async function kieFetch<T = unknown>(

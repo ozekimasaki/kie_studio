@@ -1,7 +1,7 @@
 import type { FieldSchema, FieldType, ModelCategory } from './types.ts'
 
 const REFERENCE_NAME_RE =
-  /(image_?urls?|input_?urls?|reference_?urls?|video_?urls?|end_?image|start_?image|first_?frame|last_?frame)/i
+  /(image_?urls?|image_?input|input_?urls?|reference_?urls?|video_?urls?|end_?image|start_?image|first_?frame|last_?frame)/i
 
 const TEXTAREA_NAME_RE = /(prompt|negative|description|caption|text)/i
 

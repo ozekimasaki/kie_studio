@@ -13,10 +13,14 @@ export function ModelSelect({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+      <label
+        htmlFor="model-select"
+        className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]"
+      >
         Model
       </label>
       <select
+        id="model-select"
         className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] disabled:opacity-50"
         value={value ?? ''}
         disabled={disabled || models.length === 0}

@@ -10,9 +10,14 @@ export type {
 } from './models/types.ts'
 
 async function parseJson<T>(res: Response): Promise<T> {
-  const data = await res.json()
+  let data: unknown
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error(`Request failed (${res.status})`)
+  }
   if (!res.ok) {
-    const err = data as { error?: string }
+    const err = data as { error?: string; code?: number }
     throw new Error(err.error || `Request failed (${res.status})`)
   }
   return data as T
