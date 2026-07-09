@@ -349,6 +349,7 @@ export default function App() {
                 onChange={handleFieldChange}
                 disabled={submitting}
                 fieldErrors={fieldErrors}
+                modelId={selected.id}
               />
 
               {formError && (

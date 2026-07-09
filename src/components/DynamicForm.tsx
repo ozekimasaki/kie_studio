@@ -3,6 +3,7 @@ import type { FieldSchema, KlingElement, MentionStyle } from '../lib/models/type
 import { insertMentionToken } from '../lib/models/mentions.ts'
 import { ReferenceUpload } from './ReferenceUpload.tsx'
 import { KlingElementsEditor } from './KlingElementsEditor.tsx'
+import { PromptOptimizePanel } from './PromptOptimizePanel.tsx'
 
 function fieldId(name: string): string {
   return `field-${name}`
@@ -104,12 +105,14 @@ export function DynamicForm({
   onChange,
   disabled,
   fieldErrors,
+  modelId,
 }: {
   fields: FieldSchema[]
   values: Record<string, unknown>
   onChange: (name: string, value: unknown) => void
   disabled?: boolean
   fieldErrors?: Record<string, string>
+  modelId?: string | null
 }) {
   const promptRef = useRef<HTMLTextAreaElement | null>(null)
   const orderedFields = useMemo(() => sortFieldsForDisplay(fields), [fields])
@@ -177,6 +180,16 @@ export function DynamicForm({
                   }
                 />
                 <FieldError message={error} />
+                {field.name === 'prompt' && (
+                  <PromptOptimizePanel
+                    prompt={typeof value === 'string' ? value : ''}
+                    modelId={modelId}
+                    disabled={disabled}
+                    onApply={(optimized) =>
+                      clearErrorOnChange(field.name, optimized)
+                    }
+                  />
+                )}
               </div>
             )
           case 'string':

@@ -10,6 +10,7 @@ import { taskRoutes } from './routes/task.ts'
 import { creditsRoutes } from './routes/credits.ts'
 import { downloadUrlRoutes } from './routes/download-url.ts'
 import { modelsRoutes } from './routes/models.ts'
+import { optimizePromptRoutes } from './routes/optimize-prompt.ts'
 import { KieApiError } from './kie/client.ts'
 import { syncCatalog } from './catalog/sync.ts'
 
@@ -40,6 +41,7 @@ app.route('/api', taskRoutes)
 app.route('/api', creditsRoutes)
 app.route('/api', downloadUrlRoutes)
 app.route('/api', modelsRoutes)
+app.route('/api', optimizePromptRoutes)
 
 app.onError((err, c) => {
   if (err instanceof KieApiError) {

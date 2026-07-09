@@ -80,3 +80,23 @@ export async function fetchDownloadUrl(url: string) {
   })
   return parseJson<{ data: { downloadUrl: string } }>(res)
 }
+
+export async function fetchGrokStatus() {
+  const res = await fetch('/api/grok/status')
+  return parseJson<{
+    data: { available: boolean; version?: string }
+  }>(res)
+}
+
+export async function optimizePrompt(params: {
+  prompt: string
+  customInstructions?: string
+  modelId?: string
+}) {
+  const res = await fetch('/api/optimize-prompt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
+  return parseJson<{ data: { optimizedPrompt: string } }>(res)
+}
