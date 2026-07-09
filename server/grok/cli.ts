@@ -1,15 +1,13 @@
 import { spawn } from 'node:child_process'
 import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = resolve(__dirname, '../..')
-const GUIDE_PATH = resolve(
-  REPO_ROOT,
-  'Seedance_2.0_Complete_Prompting_Guide_JA.md',
-)
+import { basename, join } from 'node:path'
+import {
+  formatProfileRulesMarkdown,
+  getOptimizeProfile,
+  guideAbsolutePath,
+  type OptimizeProfile,
+} from './optimize-profiles.ts'
 
 const STATUS_CACHE_MS = 60_000
 const OPTIMIZE_TIMEOUT_MS = 120_000
@@ -57,8 +55,6 @@ function runGrok(
   const timeoutMs = options?.timeoutMs ?? 15_000
 
   return new Promise((resolvePromise, reject) => {
-    // Avoid shell:true — long prompts / special chars break Windows cmd
-    // and can hang waiting for interactive input.
     const child = spawn('grok', args, {
       shell: false,
       windowsHide: true,
@@ -145,20 +141,33 @@ function buildOptimizeRequest(params: {
   prompt: string
   customInstructions?: string
   modelId?: string
+  profile: OptimizeProfile
+  guideFileName?: string
 }): string {
   const custom = params.customInstructions?.trim()
   const modelLine = params.modelId
     ? `対象モデル ID: ${params.modelId}`
     : '対象モデル: （未指定）'
 
+  const guideInstruction = params.guideFileName
+    ? `同じ作業ディレクトリの ${params.guideFileName} を読み、そのガイドを最優先で従う。下記プロファイルは補足とする。`
+    : '下記の最適化プロファイルに従って下書きプロンプトを改善する。'
+
+  const role =
+    params.profile.modality === 'video'
+      ? 'あなたは動画生成向けプロンプト最適化アシスタントです。'
+      : 'あなたは画像生成向けプロンプト最適化アシスタントです。'
+
   return [
-    'あなたは動画生成向けプロンプト最適化アシスタントです。',
-    '同じ作業ディレクトリにある Seedance_2.0_Complete_Prompting_Guide_JA.md を読み、そのガイドに従って下書きプロンプトを改善してください。',
+    role,
+    guideInstruction,
     '',
     modelLine,
     '',
+    formatProfileRulesMarkdown(params.profile),
+    '',
     custom
-      ? ['## ユーザーのカスタム指示', custom, ''].join('\n')
+      ? ['## ユーザーのカスタム指示（最優先で反映）', custom, ''].join('\n')
       : '',
     '## 最適化対象のプロンプト',
     params.prompt,
@@ -166,6 +175,7 @@ function buildOptimizeRequest(params: {
     '## 出力ルール',
     '- 最適化後のプロンプト本文のみを出力する。',
     '- 説明・前置き・箇条書きの解説は禁止。',
+    '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。',
     `- 必ず次のマーカーで囲む: ${OPT_START} と ${OPT_END}`,
     '- マーカーの外側には何も書かない。',
   ]
@@ -188,7 +198,7 @@ export async function optimizePromptWithGrok(params: {
   prompt: string
   customInstructions?: string
   modelId?: string
-}): Promise<string> {
+}): Promise<{ optimizedPrompt: string; profile: OptimizeProfile }> {
   const status = await getGrokStatus()
   if (!status.available) {
     throw new GrokCliError(
@@ -197,25 +207,42 @@ export async function optimizePromptWithGrok(params: {
     )
   }
 
+  const profile = getOptimizeProfile(params.modelId)
   const workDir = await mkdtemp(join(tmpdir(), 'kie-optimize-'))
   const requestPath = join(workDir, 'optimize-request.md')
-  const guideDest = join(
-    workDir,
-    'Seedance_2.0_Complete_Prompting_Guide_JA.md',
-  )
+  const guideSrc = guideAbsolutePath(profile)
+  let guideFileName: string | undefined
 
   try {
-    // Short -p argv + guide via @file (avoid Windows command-line length limits)
-    await writeFile(requestPath, buildOptimizeRequest(params), 'utf8')
-    try {
-      await copyFile(GUIDE_PATH, guideDest)
-    } catch {
-      const guide = await readFile(GUIDE_PATH, 'utf8')
-      await writeFile(guideDest, guide, 'utf8')
+    if (guideSrc) {
+      guideFileName = basename(guideSrc)
+      const guideDest = join(workDir, guideFileName)
+      try {
+        await copyFile(guideSrc, guideDest)
+      } catch {
+        const guide = await readFile(guideSrc, 'utf8')
+        await writeFile(guideDest, guide, 'utf8')
+      }
     }
 
+    await writeFile(
+      requestPath,
+      buildOptimizeRequest({
+        prompt: params.prompt,
+        customInstructions: params.customInstructions,
+        modelId: params.modelId,
+        profile,
+        guideFileName,
+      }),
+      'utf8',
+    )
+
+    const fileMentions = guideFileName
+      ? `@optimize-request.md and @${guideFileName}`
+      : '@optimize-request.md'
+
     const headlessPrompt = [
-      'Read @optimize-request.md and @Seedance_2.0_Complete_Prompting_Guide_JA.md.',
+      `Read ${fileMentions}.`,
       'Follow the request file exactly.',
       `Reply with only the optimized prompt wrapped in ${OPT_START} and ${OPT_END}.`,
       'Do not use tools other than reading those files. Do not explain.',
@@ -246,7 +273,7 @@ export async function optimizePromptWithGrok(params: {
     if (!optimized) {
       throw new GrokCliError('最適化結果が空でした', 'empty')
     }
-    return optimized
+    return { optimizedPrompt: optimized, profile }
   } catch (e) {
     if (e instanceof GrokCliError) throw e
     throw new GrokCliError(

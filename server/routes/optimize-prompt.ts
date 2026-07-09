@@ -4,6 +4,7 @@ import {
   GrokCliError,
   optimizePromptWithGrok,
 } from '../grok/cli.ts'
+import { getOptimizeProfile } from '../grok/optimize-profiles.ts'
 
 export const optimizePromptRoutes = new Hono()
 
@@ -13,6 +14,21 @@ optimizePromptRoutes.get('/grok/status', async (c) => {
     data: {
       available: status.available,
       version: status.version,
+    },
+  })
+})
+
+optimizePromptRoutes.get('/optimize-profile', (c) => {
+  const modelId = c.req.query('modelId') || undefined
+  const profile = getOptimizeProfile(modelId)
+  return c.json({
+    data: {
+      family: profile.family,
+      label: profile.label,
+      modality: profile.modality,
+      formula: profile.formula,
+      mention: profile.mention,
+      hasGuide: Boolean(profile.guideFile),
     },
   })
 })
@@ -41,12 +57,20 @@ optimizePromptRoutes.post('/optimize-prompt', async (c) => {
     typeof body.modelId === 'string' ? body.modelId : undefined
 
   try {
-    const optimizedPrompt = await optimizePromptWithGrok({
+    const result = await optimizePromptWithGrok({
       prompt: body.prompt.trim(),
       customInstructions,
       modelId,
     })
-    return c.json({ data: { optimizedPrompt } })
+    return c.json({
+      data: {
+        optimizedPrompt: result.optimizedPrompt,
+        profile: {
+          family: result.profile.family,
+          label: result.profile.label,
+        },
+      },
+    })
   } catch (e) {
     if (e instanceof GrokCliError) {
       if (e.code === 'unavailable') {

@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { fetchGrokStatus, optimizePrompt } from '../lib/api.ts'
+import {
+  fetchGrokStatus,
+  fetchOptimizeProfile,
+  optimizePrompt,
+} from '../lib/api.ts'
 
 const inputClass =
   'w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--accent)] disabled:opacity-50'
@@ -18,12 +22,22 @@ export function PromptOptimizePanel({
 }) {
   const [customInstructions, setCustomInstructions] = useState('')
   const [preview, setPreview] = useState<string | null>(null)
+  const [appliedProfileLabel, setAppliedProfileLabel] = useState<string | null>(
+    null,
+  )
 
   const statusQuery = useQuery({
     queryKey: ['grok-status'],
     queryFn: fetchGrokStatus,
     staleTime: 60_000,
     retry: false,
+  })
+
+  const profileQuery = useQuery({
+    queryKey: ['optimize-profile', modelId ?? null],
+    queryFn: () => fetchOptimizeProfile(modelId),
+    enabled: statusQuery.data?.data.available === true,
+    staleTime: 60_000,
   })
 
   const optimize = useMutation({
@@ -35,6 +49,7 @@ export function PromptOptimizePanel({
       }),
     onSuccess: (res) => {
       setPreview(res.data.optimizedPrompt)
+      setAppliedProfileLabel(res.data.profile?.label ?? null)
     },
   })
 
@@ -44,13 +59,23 @@ export function PromptOptimizePanel({
   }
 
   const promptEmpty = !prompt.trim()
-  // Only block while this mutation runs — don't inherit form `disabled`
-  // (Generate pending) so the optimize button stays usable.
   const optimizing = optimize.isPending
   const canOptimize = !optimizing && !disabled && !promptEmpty
+  const profile = profileQuery.data?.data
 
   return (
     <div className="mt-3 space-y-2">
+      {profile && (
+        <p className="text-[11px] text-[var(--text-muted)]">
+          最適化ルール:{' '}
+          <span className="font-medium text-[var(--text)]">{profile.label}</span>
+          {profile.hasGuide ? ' · 専用ガイドあり' : ''}
+          <span className="mt-0.5 block truncate" title={profile.formula}>
+            {profile.formula}
+          </span>
+        </p>
+      )}
+
       <div>
         <label
           htmlFor="prompt-optimize-custom"
@@ -75,6 +100,7 @@ export function PromptOptimizePanel({
           disabled={!canOptimize}
           onClick={() => {
             setPreview(null)
+            setAppliedProfileLabel(null)
             optimize.reset()
             optimize.mutate()
           }}
@@ -100,6 +126,7 @@ export function PromptOptimizePanel({
         <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
           <p className="text-xs font-medium text-[var(--text-muted)]">
             最適化プレビュー
+            {appliedProfileLabel ? ` · ${appliedProfileLabel}` : ''}
           </p>
           <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
             {preview}
@@ -112,6 +139,7 @@ export function PromptOptimizePanel({
               onClick={() => {
                 onApply(preview)
                 setPreview(null)
+                setAppliedProfileLabel(null)
                 optimize.reset()
               }}
             >
@@ -123,6 +151,7 @@ export function PromptOptimizePanel({
               disabled={optimizing}
               onClick={() => {
                 setPreview(null)
+                setAppliedProfileLabel(null)
                 optimize.reset()
               }}
             >

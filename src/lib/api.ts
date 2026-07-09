@@ -88,6 +88,21 @@ export async function fetchGrokStatus() {
   }>(res)
 }
 
+export async function fetchOptimizeProfile(modelId?: string | null) {
+  const q = modelId ? `?modelId=${encodeURIComponent(modelId)}` : ''
+  const res = await fetch(`/api/optimize-profile${q}`)
+  return parseJson<{
+    data: {
+      family: string
+      label: string
+      modality: 'image' | 'video'
+      formula: string
+      mention: string
+      hasGuide: boolean
+    }
+  }>(res)
+}
+
 export async function optimizePrompt(params: {
   prompt: string
   customInstructions?: string
@@ -98,5 +113,10 @@ export async function optimizePrompt(params: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   })
-  return parseJson<{ data: { optimizedPrompt: string } }>(res)
+  return parseJson<{
+    data: {
+      optimizedPrompt: string
+      profile?: { family: string; label: string }
+    }
+  }>(res)
 }
