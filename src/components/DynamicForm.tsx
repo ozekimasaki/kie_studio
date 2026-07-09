@@ -1,5 +1,8 @@
-import type { FieldSchema } from '../lib/models/types.ts'
+import { useRef } from 'react'
+import type { FieldSchema, KlingElement, MentionStyle } from '../lib/models/types.ts'
+import { insertMentionToken } from '../lib/models/mentions.ts'
 import { ReferenceUpload } from './ReferenceUpload.tsx'
+import { KlingElementsEditor } from './KlingElementsEditor.tsx'
 
 function FieldLabel({ field }: { field: FieldSchema }) {
   return (
@@ -9,7 +12,10 @@ function FieldLabel({ field }: { field: FieldSchema }) {
         {field.required && <span className="ml-1 text-[var(--danger)]">*</span>}
       </label>
       {field.description && (
-        <span className="max-w-[60%] truncate text-[11px] text-[var(--text-muted)]" title={field.description}>
+        <span
+          className="max-w-[60%] truncate text-[11px] text-[var(--text-muted)]"
+          title={field.description}
+        >
           {field.description}
         </span>
       )}
@@ -19,6 +25,17 @@ function FieldLabel({ field }: { field: FieldSchema }) {
 
 const inputClass =
   'w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--accent)]'
+
+function resolveMentionStyle(field: FieldSchema): MentionStyle {
+  if (field.mentionStyle) return field.mentionStyle
+  const hay = `${field.name} ${field.description ?? ''}`.toLowerCase()
+  if (hay.includes('[image')) return 'bracket-image'
+  if (hay.includes('@image')) return 'at-image'
+  if (/(image_?urls?|input_?urls?|reference_?urls?)/i.test(field.name)) {
+    return 'at-image'
+  }
+  return 'none'
+}
 
 export function DynamicForm({
   fields,
@@ -31,6 +48,33 @@ export function DynamicForm({
   onChange: (name: string, value: unknown) => void
   disabled?: boolean
 }) {
+  const promptRef = useRef<HTMLTextAreaElement | null>(null)
+  const promptFieldName =
+    fields.find((f) => f.name === 'prompt' && f.type === 'textarea')?.name ??
+    fields.find((f) => f.type === 'textarea')?.name ??
+    null
+
+  function insertIntoPrompt(token: string) {
+    if (!promptFieldName) return
+    const current =
+      typeof values[promptFieldName] === 'string'
+        ? (values[promptFieldName] as string)
+        : ''
+    const cursor = promptRef.current?.selectionStart ?? current.length
+    const { next, cursor: nextCursor } = insertMentionToken(
+      current,
+      token,
+      cursor,
+    )
+    onChange(promptFieldName, next)
+    requestAnimationFrame(() => {
+      const el = promptRef.current
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
   return (
     <div className="space-y-4">
       {fields.map((field) => {
@@ -42,12 +86,21 @@ export function DynamicForm({
               <div key={field.name}>
                 <FieldLabel field={field} />
                 <textarea
+                  ref={
+                    field.name === promptFieldName
+                      ? promptRef
+                      : undefined
+                  }
                   className={`${inputClass} min-h-28 resize-y`}
                   value={typeof value === 'string' ? value : ''}
                   maxLength={field.maxLength}
                   disabled={disabled}
                   onChange={(e) => onChange(field.name, e.target.value)}
-                  placeholder={field.label}
+                  placeholder={
+                    field.name === 'prompt'
+                      ? '例: @image1 を参照して… / @element_dog が走る'
+                      : field.label
+                  }
                 />
               </div>
             )
@@ -77,8 +130,14 @@ export function DynamicForm({
                     max={field.max ?? 100}
                     step={field.step ?? 1}
                     disabled={disabled}
-                    value={typeof value === 'number' ? value : Number(field.default ?? field.min ?? 0)}
-                    onChange={(e) => onChange(field.name, Number(e.target.value))}
+                    value={
+                      typeof value === 'number'
+                        ? value
+                        : Number(field.default ?? field.min ?? 0)
+                    }
+                    onChange={(e) =>
+                      onChange(field.name, Number(e.target.value))
+                    }
                   />
                   <input
                     type="number"
@@ -87,8 +146,14 @@ export function DynamicForm({
                     max={field.max}
                     step={field.step ?? 1}
                     disabled={disabled}
-                    value={typeof value === 'number' ? value : Number(field.default ?? 0)}
-                    onChange={(e) => onChange(field.name, Number(e.target.value))}
+                    value={
+                      typeof value === 'number'
+                        ? value
+                        : Number(field.default ?? 0)
+                    }
+                    onChange={(e) =>
+                      onChange(field.name, Number(e.target.value))
+                    }
                   />
                 </div>
               </div>
@@ -165,7 +230,11 @@ export function DynamicForm({
                 <FieldLabel field={field} />
                 <select
                   className={inputClass}
-                  value={typeof value === 'string' ? value : String(field.default ?? field.enum?.[0] ?? '')}
+                  value={
+                    typeof value === 'string'
+                      ? value
+                      : String(field.default ?? field.enum?.[0] ?? '')
+                  }
                   disabled={disabled}
                   onChange={(e) => onChange(field.name, e.target.value)}
                 >
@@ -187,6 +256,25 @@ export function DynamicForm({
                   maxItems={field.maxItems ?? 8}
                   accept={field.accept}
                   disabled={disabled}
+                  mentionStyle={resolveMentionStyle(field)}
+                  onInsertMention={
+                    promptFieldName ? insertIntoPrompt : undefined
+                  }
+                />
+              </div>
+            )
+          case 'kling_elements':
+            return (
+              <div key={field.name}>
+                <FieldLabel field={field} />
+                <KlingElementsEditor
+                  value={Array.isArray(value) ? (value as KlingElement[]) : []}
+                  onChange={(next) => onChange(field.name, next)}
+                  maxItems={field.maxItems ?? 3}
+                  disabled={disabled}
+                  onInsertMention={
+                    promptFieldName ? insertIntoPrompt : undefined
+                  }
                 />
               </div>
             )
@@ -226,7 +314,9 @@ export function DynamicForm({
   )
 }
 
-export function buildDefaultValues(fields: FieldSchema[]): Record<string, unknown> {
+export function buildDefaultValues(
+  fields: FieldSchema[],
+): Record<string, unknown> {
   const values: Record<string, unknown> = {}
   for (const field of fields) {
     if (field.default !== undefined) {
@@ -238,6 +328,7 @@ export function buildDefaultValues(fields: FieldSchema[]): Record<string, unknow
         values[field.name] = false
         break
       case 'reference':
+      case 'kling_elements':
         values[field.name] = []
         break
       case 'number':

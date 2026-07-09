@@ -21,10 +21,21 @@ function isUriArray(prop: Record<string, unknown>): boolean {
   return items.type === 'string'
 }
 
+function detectMentionStyle(
+  name: string,
+  description?: string,
+): FieldSchema['mentionStyle'] {
+  const hay = `${name} ${description ?? ''}`.toLowerCase()
+  if (hay.includes('[image')) return 'bracket-image'
+  if (hay.includes('@image') || REFERENCE_NAME_RE.test(name)) return 'at-image'
+  return 'none'
+}
+
 function detectFieldType(
   name: string,
   prop: Record<string, unknown>,
 ): FieldType {
+  if (name === 'kling_elements') return 'kling_elements'
   if (Array.isArray(prop.enum) && prop.enum.every((v) => typeof v === 'string')) {
     return 'enum'
   }
@@ -80,6 +91,10 @@ export function propertyToField(
     field.accept = acceptForField(name)
     if (typeof prop.maxItems === 'number') field.maxItems = prop.maxItems
     else field.maxItems = 8
+    field.mentionStyle = detectMentionStyle(name, description)
+  }
+  if (type === 'kling_elements') {
+    field.maxItems = typeof prop.maxItems === 'number' ? prop.maxItems : 3
   }
 
   return field

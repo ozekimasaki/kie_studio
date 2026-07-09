@@ -560,7 +560,8 @@
           "required": false,
           "default": [],
           "maxItems": 10,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "prompt",
@@ -620,7 +621,8 @@
           "description": "List of URLs of input images for editing,up to 10 images. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 10,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "output_format",
@@ -985,7 +987,8 @@
           "description": "An array containing up to 1 URL string pointing to reference images. (Use file URLs after upload, not raw file content. Accepted types: image/jpeg, image/png, image/webp. Max size: 10.0MB per image.) In your prompt, reference the uploaded image by typing @image(n) followed by a space (for example: @image1 a sunset over the ocean).",
           "required": true,
           "maxItems": 5,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "nsfw_checker",
@@ -1064,7 +1067,8 @@
           "description": "A set of images to use as character references. Currently only 1 image is supported, rest will be ignored. (maximum total size 10MB across all character references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "rendering_speed",
@@ -1184,7 +1188,8 @@
           "description": "A set of images to use as character references. Currently only 1 image is supported, rest will be ignored. (maximum total size 10MB across all character references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "rendering_speed",
@@ -1273,7 +1278,8 @@
           "description": "A set of images to use as character references. Currently only 1 image is supported, rest will be ignored. (maximum total size 10MB across all character references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "rendering_speed",
@@ -1372,7 +1378,8 @@
           "description": "A set of images to use as style references (maximum total size 10MB across all style references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "reference_mask_urls",
@@ -2178,7 +2185,8 @@
           "description": "List of URLs of input images for editing. Presently, up to 10 image inputs are allowed. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 10,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "image_size",
@@ -2339,7 +2347,8 @@
           "description": "Upload an image file to use as input for the API (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 14,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -2458,7 +2467,8 @@
           "description": "Upload an image file to use as input for the API (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 14,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -2577,7 +2587,8 @@
           "description": "Upload an image file to use as input for the API (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 10,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -3134,7 +3145,8 @@
           "description": "Enter a list of image URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
           "required": false,
           "maxItems": 9,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "reference_video_urls ",
@@ -3399,7 +3411,8 @@
           "description": "Enter a list of image URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
           "required": false,
           "maxItems": 9,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "reference_video_urls ",
@@ -3514,7 +3527,8 @@
           "description": "Array of image URLs. You can provide one or more reference images for characters, scenes, styles, or storyboard guidance.",
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "audio_ids",
@@ -3664,7 +3678,8 @@
           "description": "Provide an external image URL as a reference for video generation. Up to 7 images are supported. Do not use it simultaneously with task_id. In your prompt, reference an uploaded image by typing @image(n) followed by a space (for example: @image1 a sunset over the ocean).",
           "required": false,
           "maxItems": 7,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "task_id",
@@ -3843,7 +3858,8 @@
           "description": "Upload image files to be used as API input. Supported file types: image/jpeg, image/png, image/webp, image/jpg. Maximum file size: 20MB. Supports multi-file upload, up to 1 file.",
           "required": false,
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -4224,7 +4240,8 @@
             ""
           ],
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "resolution",
@@ -4406,7 +4423,8 @@
           "description": "First-frame image URL list. Exactly one image is required.",
           "required": true,
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "resolution",
@@ -4804,7 +4822,8 @@
           "description": "URL of the image to be used for the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "duration",
@@ -4902,7 +4921,8 @@
           "description": "Image URLs for video generation. (Uploaded file URLs, not file content; supported types: image/jpeg, image/png; maximum file size: 10.0MB)",
           "required": true,
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "sound",
@@ -5032,6 +5052,98 @@
             "5",
             "10"
           ]
+        }
+      ]
+    },
+    {
+      "id": "kling-3.0/video",
+      "model": "kling-3.0/video",
+      "title": "Kling 3.0 Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kling/kling-3-0",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Video generation prompt. Use @element_name to reference kling_elements.",
+          "required": true
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "First/last frame images. Required when using @element references.",
+          "required": false,
+          "maxItems": 2,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "sound",
+          "type": "boolean",
+          "label": "Sound",
+          "default": false
+        },
+        {
+          "name": "duration",
+          "type": "enum",
+          "label": "Duration",
+          "default": "5",
+          "enum": [
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15"
+          ],
+          "required": true
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1"
+          ],
+          "required": true
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "label": "Mode",
+          "default": "pro",
+          "enum": [
+            "std",
+            "pro",
+            "4K"
+          ],
+          "required": true
+        },
+        {
+          "name": "multi_shots",
+          "type": "boolean",
+          "label": "Multi Shots",
+          "default": false
+        },
+        {
+          "name": "kling_elements",
+          "type": "kling_elements",
+          "label": "Kling Elements",
+          "description": "Named elements referenced via @name in the prompt. Max 3. Each needs 2-4 images.",
+          "maxItems": 3
         }
       ]
     },
@@ -5764,7 +5876,8 @@
           "description": "A list of image URLs. All images must be at least 256x256px. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "duration",
@@ -6237,7 +6350,8 @@
           "description": "Upload an image file to use as input for the API (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB),All images must be at least 256x256px.",
           "required": true,
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "duration",

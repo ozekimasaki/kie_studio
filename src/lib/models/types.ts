@@ -7,7 +7,20 @@ export type FieldType =
   | 'boolean'
   | 'enum'
   | 'reference'
+  | 'kling_elements'
   | 'json'
+
+/** How to mention uploaded references inside the prompt */
+export type MentionStyle = 'at-image' | 'bracket-image' | 'none'
+
+export interface KlingElement {
+  name: string
+  description: string
+  element_input_urls: string[]
+  element_input_audio_urls?: string[]
+  start_time?: number
+  end_time?: number
+}
 
 export interface FieldSchema {
   name: string
@@ -23,6 +36,8 @@ export interface FieldSchema {
   maxItems?: number
   maxLength?: number
   accept?: string
+  /** For reference fields: how to insert into prompt */
+  mentionStyle?: MentionStyle
 }
 
 export interface ModelDefinition {

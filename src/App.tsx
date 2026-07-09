@@ -177,6 +177,20 @@ export default function App() {
         if (field.type === 'reference' && Array.isArray(v) && v.length === 0) {
           continue
         }
+        if (field.type === 'kling_elements' && Array.isArray(v)) {
+          const cleaned = v.filter(
+            (el) =>
+              el &&
+              typeof el === 'object' &&
+              typeof (el as { name?: string }).name === 'string' &&
+              (el as { name: string }).name.trim() &&
+              Array.isArray((el as { element_input_urls?: string[] }).element_input_urls) &&
+              ((el as { element_input_urls: string[] }).element_input_urls?.length ?? 0) >= 1,
+          )
+          if (cleaned.length === 0) continue
+          input[field.name] = cleaned
+          continue
+        }
         input[field.name] = v
       }
 
