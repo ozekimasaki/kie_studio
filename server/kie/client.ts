@@ -1,0 +1,69 @@
+const API_BASE = 'https://api.kie.ai'
+const UPLOAD_BASE = 'https://kieai.redpandaai.co'
+
+export class KieApiError extends Error {
+  status: number
+  code?: number
+  body?: unknown
+
+  constructor(message: string, status: number, code?: number, body?: unknown) {
+    super(message)
+    this.name = 'KieApiError'
+    this.status = status
+    this.code = code
+    this.body = body
+  }
+}
+
+export function getApiKey(): string {
+  const key = process.env.KIE_API_KEY?.trim()
+  if (!key || key === 'your_api_key_here') {
+    throw new KieApiError(
+      'KIE_API_KEY is not set. Copy .env.example to .env and add your key.',
+      500,
+    )
+  }
+  return key
+}
+
+export async function kieFetch<T = unknown>(
+  path: string,
+  init: RequestInit = {},
+  base: 'api' | 'upload' = 'api',
+): Promise<T> {
+  const apiKey = getApiKey()
+  const baseUrl = base === 'upload' ? UPLOAD_BASE : API_BASE
+  const headers = new Headers(init.headers)
+  headers.set('Authorization', `Bearer ${apiKey}`)
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const res = await fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers,
+  })
+
+  const text = await res.text()
+  let json: unknown = null
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    json = { raw: text }
+  }
+
+  if (!res.ok) {
+    const msg =
+      typeof json === 'object' &&
+      json &&
+      'msg' in json &&
+      typeof (json as { msg: unknown }).msg === 'string'
+        ? (json as { msg: string }).msg
+        : `Kie API error (${res.status})`
+    throw new KieApiError(msg, res.status, undefined, json)
+  }
+
+  return json as T
+}
+
+export { API_BASE, UPLOAD_BASE }

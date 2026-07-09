@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f3f5f8;
+  --bg-elevated: #ffffff;
+  --bg-panel: #ffffff;
+  --border: #d8dee8;
+  --text: #1a2332;
+  --text-muted: #667788;
+  --accent: #1f6feb;
+  --accent-soft: rgba(31, 111, 235, 0.1);
+  --success: #1a7f4b;
+  --danger: #c62828;
+  --warning: #b86e00;
+  --on: #1a7f4b;
+  --on-soft: rgba(26, 127, 75, 0.12);
+  --off: #667788;
+  --off-soft: rgba(102, 119, 136, 0.12);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(1000px 480px at 0% -5%, rgba(31, 111, 235, 0.08), transparent 55%),
+    radial-gradient(800px 420px at 100% 0%, rgba(26, 127, 75, 0.06), transparent 50%),
+    var(--bg);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c5ceda;
+  border-radius: 999px;
+}
