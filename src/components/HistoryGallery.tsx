@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { fetchDownloadUrl } from '../lib/api.ts'
+import { isVideoUrl } from '../lib/media.ts'
 import type { HistoryItem, TaskState } from '../lib/models/types.ts'
 
 function relativeTime(ts: number): string {
@@ -37,10 +38,6 @@ function stateLabel(state: TaskState): string {
   }
 }
 
-function isVideoUrl(url: string): boolean {
-  return /\.(mp4|webm|mov)(\?|$)/i.test(url) || url.includes('video')
-}
-
 function shortModel(model: string): string {
   const parts = model.split('/')
   return parts[parts.length - 1] || model
@@ -50,24 +47,66 @@ function isBusyState(state: TaskState): boolean {
   return state === 'waiting' || state === 'queuing' || state === 'generating'
 }
 
+/** 保存済み input があれば全文、なければ切り詰め済み prompt */
+function fullPrompt(item: HistoryItem): string | undefined {
+  const p = item.input?.prompt
+  if (typeof p === 'string' && p) return p
+  return item.prompt
+}
+
+function canReuse(item: HistoryItem): boolean {
+  return Boolean(item.input && item.modelId)
+}
+
+type StateFilter = 'all' | 'success' | 'fail' | 'busy'
+type CategoryFilter = 'all' | 'image' | 'video'
+
+const MAX_COMPARE = 4
+
+const smallBtnClass =
+  'rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]'
+
 export function HistoryGallery({
   items,
   activeTaskId,
   pendingCount = 0,
+  retryDisabled,
   onSelect,
   onClose,
   onRemove,
   onClear,
+  onReuse,
+  onRetry,
+  onSendToInput,
+  onTogglePin,
+  onExport,
+  onImport,
 }: {
   items: HistoryItem[]
   activeTaskId?: string | null
   pendingCount?: number
+  retryDisabled?: boolean
   onSelect: (item: HistoryItem) => void
   onClose: () => void
   onRemove: (taskId: string) => void
   onClear: () => void
+  onReuse: (item: HistoryItem) => void
+  onRetry: (item: HistoryItem) => void
+  onSendToInput: (url: string) => void
+  onTogglePin: (taskId: string) => void
+  onExport: () => void
+  onImport: (raw: string) => void
 }) {
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const [stateFilter, setStateFilter] = useState<StateFilter>('all')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [modelFilter, setModelFilter] = useState<string>('all')
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareIds, setCompareIds] = useState<string[]>([])
+  const [showCompare, setShowCompare] = useState(false)
+  const [copied, setCopied] = useState(false)
+
   const active = items.find((h) => h.taskId === activeTaskId) ?? null
   const showViewer = Boolean(
     active &&
@@ -75,6 +114,40 @@ export function HistoryGallery({
         active.state === 'fail' ||
         active.state === 'unknown' ||
         (active.resultUrls?.length ?? 0) > 0),
+  )
+
+  const modelOptions = useMemo(
+    () => [...new Set(items.map((h) => h.model))],
+    [items],
+  )
+
+  const filtered = useMemo(
+    () =>
+      items.filter((h) => {
+        if (categoryFilter !== 'all' && h.category !== categoryFilter) {
+          return false
+        }
+        if (modelFilter !== 'all' && h.model !== modelFilter) return false
+        switch (stateFilter) {
+          case 'success':
+            return h.state === 'success'
+          case 'fail':
+            return h.state === 'fail'
+          case 'busy':
+            return isBusyState(h.state)
+          default:
+            return true
+        }
+      }),
+    [items, categoryFilter, modelFilter, stateFilter],
+  )
+
+  const compareItems = useMemo(
+    () =>
+      compareIds
+        .map((id) => items.find((h) => h.taskId === id))
+        .filter((h): h is HistoryItem => Boolean(h)),
+    [compareIds, items],
   )
 
   const download = useMutation({
@@ -94,9 +167,59 @@ export function HistoryGallery({
     return () => window.removeEventListener('keydown', onKey)
   }, [showViewer, onClose])
 
+  useEffect(() => {
+    if (!showCompare) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowCompare(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showCompare])
+
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 1500)
+    return () => clearTimeout(t)
+  }, [copied])
+
+  // 削除・押し出しで消えたアイテムを比較選択から除去する
+  useEffect(() => {
+    setCompareIds((prev) => {
+      const next = prev.filter((id) => items.some((h) => h.taskId === id))
+      return next.length === prev.length ? prev : next
+    })
+  }, [items])
+
+  function toggleCompare(taskId: string) {
+    setCompareIds((prev) => {
+      if (prev.includes(taskId)) return prev.filter((id) => id !== taskId)
+      if (prev.length >= MAX_COMPARE) return prev
+      return [...prev, taskId]
+    })
+  }
+
+  function exitCompareMode() {
+    setCompareMode(false)
+    setCompareIds([])
+    setShowCompare(false)
+  }
+
+  async function handleImportFile(file: File) {
+    onImport(await file.text())
+  }
+
+  async function copyPrompt(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+    } catch {
+      window.prompt('コピーできませんでした。手動でコピーしてください:', text)
+    }
+  }
+
   return (
     <section className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[var(--text)]">ギャラリー</h2>
           <p className="text-xs text-[var(--text-muted)]">
@@ -104,19 +227,124 @@ export function HistoryGallery({
               ? 'まだ生成がありません'
               : pendingCount > 0
                 ? `${items.length} 件 · ${pendingCount} 件生成中`
-                : `${items.length} 件（最大 30）`}
+                : `${items.length} 件（ピン留めは押し出されません）`}
           </p>
         </div>
-        {items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(items.length > 1 || compareMode) && (
+            <button
+              type="button"
+              onClick={() =>
+                compareMode ? exitCompareMode() : setCompareMode(true)
+              }
+              aria-pressed={compareMode}
+              className={`${smallBtnClass} ${
+                compareMode
+                  ? 'border-[var(--accent)] text-[var(--accent)]'
+                  : ''
+              }`}
+            >
+              {compareMode ? '比較を終了' : '比較'}
+            </button>
+          )}
+          {items.length > 0 && (
+            <button type="button" onClick={onExport} className={smallBtnClass}>
+              書き出し
+            </button>
+          )}
           <button
             type="button"
-            onClick={onClear}
-            className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-muted)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
+            onClick={() => importInputRef.current?.click()}
+            className={smallBtnClass}
           >
-            すべて削除
+            読み込み
           </button>
-        )}
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            aria-label="履歴 JSON を読み込み"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) void handleImportFile(file)
+              e.target.value = ''
+            }}
+          />
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={onClear}
+              className={`${smallBtnClass} hover:border-[var(--danger)] hover:text-[var(--danger)]`}
+            >
+              すべて削除
+            </button>
+          )}
+        </div>
       </div>
+
+      {items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <select
+            value={categoryFilter}
+            onChange={(e) =>
+              setCategoryFilter(e.target.value as CategoryFilter)
+            }
+            aria-label="カテゴリで絞り込み"
+            className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 outline-none focus:border-[var(--accent)]"
+          >
+            <option value="all">全カテゴリ</option>
+            <option value="image">IMAGE</option>
+            <option value="video">VIDEO</option>
+          </select>
+          <select
+            value={stateFilter}
+            onChange={(e) => setStateFilter(e.target.value as StateFilter)}
+            aria-label="状態で絞り込み"
+            className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 outline-none focus:border-[var(--accent)]"
+          >
+            <option value="all">全状態</option>
+            <option value="success">成功</option>
+            <option value="fail">失敗</option>
+            <option value="busy">生成中</option>
+          </select>
+          <select
+            value={modelFilter}
+            onChange={(e) => setModelFilter(e.target.value)}
+            aria-label="モデルで絞り込み"
+            className="max-w-44 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 outline-none focus:border-[var(--accent)]"
+          >
+            <option value="all">全モデル</option>
+            {modelOptions.map((m) => (
+              <option key={m} value={m}>
+                {shortModel(m)}
+              </option>
+            ))}
+          </select>
+          {filtered.length !== items.length && (
+            <span className="text-[var(--text-muted)]">
+              {filtered.length} / {items.length} 件を表示
+            </span>
+          )}
+        </div>
+      )}
+
+      {compareMode && (
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-3 py-2">
+          <span className="text-xs text-[var(--text)]">
+            比較するカードを選択（最大 {MAX_COMPARE} 件）:{' '}
+            <span className="font-semibold">{compareItems.length} 件選択中</span>
+          </span>
+          <button
+            type="button"
+            disabled={compareItems.length < 2}
+            onClick={() => setShowCompare(true)}
+            className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+          >
+            並べて比較
+          </button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg)] px-6 py-16 text-center">
@@ -127,11 +355,18 @@ export function HistoryGallery({
             </p>
           </div>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg)] px-6 py-16 text-center">
+          <p className="text-xs text-[var(--text-muted)]">
+            絞り込み条件に一致する履歴がありません
+          </p>
+        </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-            {items.map((h) => {
+            {filtered.map((h) => {
               const selected = h.taskId === activeTaskId
+              const comparing = compareIds.includes(h.taskId)
               const thumb = h.resultUrls?.[0]
               const busy = isBusyState(h.state)
 
@@ -139,16 +374,21 @@ export function HistoryGallery({
                 <div
                   key={h.taskId}
                   className={`relative overflow-hidden rounded-2xl border bg-[var(--bg)] transition ${
-                    selected
-                      ? 'border-[var(--accent)] shadow-md ring-2 ring-[var(--accent)]/20'
-                      : 'border-[var(--border)] hover:border-[var(--accent)]/50 hover:shadow-sm'
+                    compareMode && comparing
+                      ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/40'
+                      : selected && !compareMode
+                        ? 'border-[var(--accent)] shadow-md ring-2 ring-[var(--accent)]/20'
+                        : 'border-[var(--border)] hover:border-[var(--accent)]/50 hover:shadow-sm'
                   }`}
                 >
                   <button
                     type="button"
                     className="block w-full text-left"
                     aria-current={selected ? 'true' : undefined}
-                    onClick={() => onSelect(h)}
+                    aria-pressed={compareMode ? comparing : undefined}
+                    onClick={() =>
+                      compareMode ? toggleCompare(h.taskId) : onSelect(h)
+                    }
                   >
                     <div className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]">
                       {thumb ? (
@@ -215,18 +455,70 @@ export function HistoryGallery({
                       <span className="absolute left-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--text)] shadow-sm">
                         {h.category}
                       </span>
+
+                      {compareMode && (
+                        <span
+                          className={`absolute right-2 top-2 flex size-6 items-center justify-center rounded-full text-xs font-bold shadow-sm ${
+                            comparing
+                              ? 'bg-[var(--accent)] text-white'
+                              : 'bg-white/90 text-[var(--text-muted)]'
+                          }`}
+                        >
+                          {comparing ? compareIds.indexOf(h.taskId) + 1 : '+'}
+                        </span>
+                      )}
                     </div>
                   </button>
 
-                  <button
-                    type="button"
-                    title="削除"
-                    aria-label="削除"
-                    onClick={() => onRemove(h.taskId)}
-                    className="absolute right-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] shadow-sm transition hover:text-[var(--danger)]"
-                  >
-                    ×
-                  </button>
+                  {!compareMode && (
+                    <div className="absolute right-2 top-2 flex items-center gap-1">
+                      <button
+                        type="button"
+                        title={h.pinned ? 'ピンを外す' : 'ピン留め'}
+                        aria-label={h.pinned ? 'ピンを外す' : 'ピン留め'}
+                        aria-pressed={Boolean(h.pinned)}
+                        onClick={() => onTogglePin(h.taskId)}
+                        className={`rounded-md px-1.5 py-0.5 text-xs shadow-sm transition ${
+                          h.pinned
+                            ? 'bg-[var(--accent)] text-white'
+                            : 'bg-white/90 text-[var(--text-muted)] hover:text-[var(--accent)]'
+                        }`}
+                      >
+                        📌
+                      </button>
+                      {canReuse(h) && (
+                        <button
+                          type="button"
+                          title="この入力をフォームに復元"
+                          aria-label="この入力をフォームに復元"
+                          onClick={() => onReuse(h)}
+                          className="rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] shadow-sm transition hover:text-[var(--accent)]"
+                        >
+                          ↺
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        title="削除"
+                        aria-label="削除"
+                        onClick={() => onRemove(h.taskId)}
+                        className="rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] shadow-sm transition hover:text-[var(--danger)]"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+
+                  {!compareMode && h.state === 'fail' && canReuse(h) && (
+                    <button
+                      type="button"
+                      disabled={retryDisabled}
+                      onClick={() => onRetry(h)}
+                      className="absolute bottom-2 right-2 rounded-md bg-white/90 px-2 py-1 text-[10px] font-semibold text-[var(--danger)] shadow-sm transition hover:brightness-95 disabled:opacity-50"
+                    >
+                      再実行
+                    </button>
+                  )}
                 </div>
               )
             })}
@@ -251,19 +543,36 @@ export function HistoryGallery({
               <div className="min-w-0">
                 <div id="viewer-title" className="truncate font-semibold">
                   {shortModel(active.model)}
+                  {active.pinned && (
+                    <span className="ml-2 text-xs" title="ピン留め済み">
+                      📌
+                    </span>
+                  )}
                 </div>
                 <div className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
-                  {active.prompt || active.taskId}
+                  {fullPrompt(active) || active.taskId}
                 </div>
               </div>
-              <button
-                ref={closeBtnRef}
-                type="button"
-                className="rounded-lg border border-[var(--border)] px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
-                onClick={onClose}
-              >
-                閉じる
-              </button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {canReuse(active) && (
+                  <button
+                    type="button"
+                    onClick={() => onReuse(active)}
+                    className={smallBtnClass}
+                    title="この入力をフォームに復元"
+                  >
+                    ↺ 再利用
+                  </button>
+                )}
+                <button
+                  ref={closeBtnRef}
+                  type="button"
+                  className="rounded-lg border border-[var(--border)] px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
+                  onClick={onClose}
+                >
+                  閉じる
+                </button>
+              </div>
             </div>
 
             <div className="max-h-[70vh] overflow-y-auto bg-[var(--bg)] p-4">
@@ -276,7 +585,7 @@ export function HistoryGallery({
                 </div>
               )}
               {active.state === 'fail' && (
-                <div className="space-y-2 py-10 text-center">
+                <div className="space-y-3 py-10 text-center">
                   <p className="text-sm font-medium text-[var(--danger)]">
                     生成に失敗しました
                   </p>
@@ -284,6 +593,16 @@ export function HistoryGallery({
                     <p className="mx-auto max-w-md text-xs text-[var(--text-muted)]">
                       {active.failMsg}
                     </p>
+                  )}
+                  {canReuse(active) && (
+                    <button
+                      type="button"
+                      disabled={retryDisabled}
+                      onClick={() => onRetry(active)}
+                      className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+                    >
+                      同じ入力で再実行
+                    </button>
                   )}
                 </div>
               )}
@@ -327,6 +646,14 @@ export function HistoryGallery({
                           ? '取得中…'
                           : 'Download via API'}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => onSendToInput(url)}
+                        title="この結果を左フォームの参照入力に追加"
+                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
+                      >
+                        → 入力に使う
+                      </button>
                       {typeof active.creditsConsumed === 'number' && (
                         <span className="ml-auto self-center text-xs text-[var(--text-muted)]">
                           使用{' '}
@@ -344,6 +671,124 @@ export function HistoryGallery({
                     )}
                   </div>
                 ))}
+
+              {fullPrompt(active) && (
+                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                      Prompt
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void copyPrompt(fullPrompt(active)!)}
+                      className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                    >
+                      {copied ? 'コピーしました ✓' : 'コピー'}
+                    </button>
+                  </div>
+                  <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--text)]">
+                    {fullPrompt(active)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCompare && compareItems.length >= 2 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+          onClick={() => setShowCompare(false)}
+          role="presentation"
+        >
+          <div
+            className="relative max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-panel)] shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="生成結果の比較"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+              <div className="font-semibold">
+                比較（{compareItems.length} 件）
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-[var(--border)] px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
+                onClick={() => setShowCompare(false)}
+              >
+                閉じる
+              </button>
+            </div>
+            <div className="max-h-[82vh] overflow-y-auto p-4">
+              <div
+                className="grid gap-3"
+                style={{
+                  gridTemplateColumns: `repeat(${compareItems.length}, minmax(0, 1fr))`,
+                }}
+              >
+                {compareItems.map((h) => {
+                  const url = h.resultUrls?.[0]
+                  return (
+                    <div
+                      key={h.taskId}
+                      className="flex min-w-0 flex-col gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-2.5"
+                    >
+                      <div className="overflow-hidden rounded-lg bg-[var(--bg-elevated)]">
+                        {url ? (
+                          isVideoUrl(url) ? (
+                            <video
+                              src={url}
+                              controls
+                              muted
+                              className="aspect-square w-full bg-black object-contain"
+                            />
+                          ) : (
+                            <img
+                              src={url}
+                              alt={h.prompt || shortModel(h.model)}
+                              className="aspect-square w-full object-contain"
+                            />
+                          )
+                        ) : (
+                          <div className="flex aspect-square items-center justify-center text-xs text-[var(--text-muted)]">
+                            {stateLabel(h.state)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="truncate text-xs font-semibold">
+                          {shortModel(h.model)}
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                          <span>{relativeTime(h.createdAt)}</span>
+                          {typeof h.creditsConsumed === 'number' && (
+                            <span>−{h.creditsConsumed}</span>
+                          )}
+                        </div>
+                        {fullPrompt(h) && (
+                          <p className="line-clamp-6 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[var(--text-muted)]">
+                            {fullPrompt(h)}
+                          </p>
+                        )}
+                        {canReuse(h) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              exitCompareMode()
+                              onReuse(h)
+                            }}
+                            className="w-full rounded-lg border border-[var(--border)] px-2 py-1.5 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                          >
+                            ↺ この入力を再利用
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
