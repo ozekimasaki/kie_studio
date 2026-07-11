@@ -85,4 +85,10 @@ export interface HistoryItem {
   prompt?: string
   creditsConsumed?: number
   failMsg?: string
+  /** Catalog model id — used to restore the form (再利用/リトライ) */
+  modelId?: string
+  /** Full generation input — enables 再利用・リトライ・全文プロンプト表示 */
+  input?: Record<string, unknown>
+  /** ピン留め: 最大件数の押し出しと「すべて削除」の対象外 */
+  pinned?: boolean
 }

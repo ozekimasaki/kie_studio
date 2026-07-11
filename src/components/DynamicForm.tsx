@@ -4,6 +4,7 @@ import { insertMentionToken } from '../lib/models/mentions.ts'
 import { ReferenceUpload } from './ReferenceUpload.tsx'
 import { KlingElementsEditor } from './KlingElementsEditor.tsx'
 import { PromptOptimizePanel } from './PromptOptimizePanel.tsx'
+import { PromptSnippets } from './PromptSnippets.tsx'
 
 function fieldId(name: string): string {
   return `field-${name}`
@@ -181,14 +182,21 @@ export function DynamicForm({
                 />
                 <FieldError message={error} />
                 {field.name === 'prompt' && (
-                  <PromptOptimizePanel
-                    prompt={typeof value === 'string' ? value : ''}
-                    modelId={modelId}
-                    disabled={disabled}
-                    onApply={(optimized) =>
-                      clearErrorOnChange(field.name, optimized)
-                    }
-                  />
+                  <>
+                    <PromptOptimizePanel
+                      prompt={typeof value === 'string' ? value : ''}
+                      modelId={modelId}
+                      disabled={disabled}
+                      onApply={(optimized) =>
+                        clearErrorOnChange(field.name, optimized)
+                      }
+                    />
+                    <PromptSnippets
+                      prompt={typeof value === 'string' ? value : ''}
+                      disabled={disabled}
+                      onInsert={insertIntoPrompt}
+                    />
+                  </>
                 )}
               </div>
             )
