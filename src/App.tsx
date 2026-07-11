@@ -28,6 +28,7 @@ import {
   removeFromList,
   saveHistory,
   togglePinInList,
+  UNKNOWN_STALE_MS,
   upsertInList,
 } from './lib/history.ts'
 import { isVideoUrl } from './lib/media.ts'
@@ -37,8 +38,6 @@ import type {
   ModelCategory,
   ModelDefinition,
 } from './lib/models/types.ts'
-
-const UNKNOWN_STALE_MS = 10 * 60 * 1000
 
 function promptFromInput(input: Record<string, unknown>): string | undefined {
   const p = input.prompt
@@ -363,7 +362,9 @@ export default function App() {
     const samples = history
       .filter(
         (h) =>
-          h.model === selected.model && typeof h.creditsConsumed === 'number',
+          h.state === 'success' &&
+          h.model === selected.model &&
+          typeof h.creditsConsumed === 'number',
       )
       .slice(0, 5)
       .map((h) => h.creditsConsumed as number)
@@ -414,14 +415,21 @@ export default function App() {
       return
     }
     const isVideo = isVideoUrl(url)
-    const target =
-      refFields.find((f) =>
-        f.accept
-          ? isVideo
-            ? /video/i.test(f.accept)
-            : /image/i.test(f.accept)
-          : true,
-      ) ?? refFields[0]
+    const target = refFields.find((f) =>
+      f.accept
+        ? isVideo
+          ? /video/i.test(f.accept)
+          : /image/i.test(f.accept)
+        : true,
+    )
+    if (!target) {
+      setFormError(
+        isVideo
+          ? '現在のモデルは動画入力に対応していません。対応モデルに切り替えてから使ってください'
+          : '現在のモデルは画像入力に対応していません。対応モデルに切り替えてから使ってください',
+      )
+      return
+    }
     const current = Array.isArray(values[target.name])
       ? (values[target.name] as string[])
       : []
@@ -436,11 +444,13 @@ export default function App() {
   }
 
   function togglePin(taskId: string) {
-    setHistory((prev) => {
-      const next = togglePinInList(prev, taskId)
-      saveHistory(next)
-      return next
-    })
+    const { next, rejected } = togglePinInList(history, taskId)
+    if (rejected === 'pin-limit') {
+      setFormError('ピン留めは最大30件までです')
+      return
+    }
+    saveHistory(next)
+    setHistory(next)
   }
 
   function exportHistory() {
@@ -452,7 +462,7 @@ export default function App() {
     a.href = url
     a.download = `kie-studio-history-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   function importHistory(raw: string) {

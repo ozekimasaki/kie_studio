@@ -2,6 +2,10 @@ import type { HistoryItem, TaskState } from './models/types.ts'
 
 const KEY = 'kie-studio-history'
 const MAX_ITEMS = 30
+const MAX_PINNED = 30
+
+/** Matches App polling: unknown items older than this are not refetched. */
+export const UNKNOWN_STALE_MS = 10 * 60 * 1000
 
 export function loadHistory(): HistoryItem[] {
   try {
@@ -15,13 +19,24 @@ export function loadHistory(): HistoryItem[] {
 }
 
 /**
- * Keep all pinned items plus the newest MAX_ITEMS non-pinned items.
- * Pinned items don't consume the non-pinned budget, so a just-submitted
- * task is never evicted no matter how many items are pinned.
+ * Keep up to MAX_PINNED pinned items (newest first) plus the newest
+ * MAX_ITEMS non-pinned items. Excess pins are unpinned before the
+ * non-pinned budget is applied. Pinned items don't consume the
+ * non-pinned budget, so a just-submitted task is never evicted by pins.
  */
 function capItems(items: HistoryItem[]): HistoryItem[] {
+  let pinnedBudget = MAX_PINNED
+  const withPinCap = items.map((item) => {
+    if (!item.pinned) return item
+    if (pinnedBudget > 0) {
+      pinnedBudget--
+      return item
+    }
+    return { ...item, pinned: false }
+  })
+
   let nonPinnedBudget = MAX_ITEMS
-  return items.filter((item) => {
+  return withPinCap.filter((item) => {
     if (item.pinned) return true
     if (nonPinnedBudget > 0) {
       nonPinnedBudget--
@@ -65,13 +80,31 @@ export function removeFromList(
   return prev.filter((h) => h.taskId !== taskId)
 }
 
+export type TogglePinResult = {
+  next: HistoryItem[]
+  rejected?: 'pin-limit'
+}
+
 export function togglePinInList(
   prev: HistoryItem[],
   taskId: string,
-): HistoryItem[] {
-  return prev.map((h) =>
-    h.taskId === taskId ? { ...h, pinned: !h.pinned } : h,
-  )
+): TogglePinResult {
+  const target = prev.find((h) => h.taskId === taskId)
+  if (!target) return { next: prev }
+
+  const willPin = !target.pinned
+  if (willPin) {
+    const pinnedCount = prev.filter((h) => h.pinned).length
+    if (pinnedCount >= MAX_PINNED) {
+      return { next: prev, rejected: 'pin-limit' }
+    }
+  }
+
+  return {
+    next: prev.map((h) =>
+      h.taskId === taskId ? { ...h, pinned: !h.pinned } : h,
+    ),
+  }
 }
 
 export function exportHistoryJson(items: HistoryItem[]): string {
@@ -80,6 +113,25 @@ export function exportHistoryJson(items: HistoryItem[]): string {
     null,
     2,
   )
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function asFiniteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function asStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const urls = value.filter((u): u is string => typeof u === 'string')
+  return urls.length > 0 ? urls : undefined
+}
+
+function asInput(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  return value as Record<string, unknown>
 }
 
 /** Parse an exported JSON payload; throws with a user-facing message on bad input. */
@@ -96,29 +148,62 @@ export function parseHistoryJson(raw: string): HistoryItem[] {
   if (!Array.isArray(items)) {
     throw new Error('履歴データの形式が正しくありません')
   }
+  const now = Date.now()
+  const staleAt = now - UNKNOWN_STALE_MS
   const valid = items.flatMap((h): HistoryItem[] => {
-    if (!h || typeof h !== 'object') return []
-    const item = h as Partial<HistoryItem>
+    if (!h || typeof h !== 'object' || Array.isArray(h)) return []
+    const item = h as Record<string, unknown>
     if (typeof item.taskId !== 'string' || typeof item.model !== 'string') {
       return []
     }
     if (item.category !== 'image' && item.category !== 'video') return []
-    // 進行中状態は別環境のタスクを永久ポーリングしないよう unknown に落とす。
-    // 不明な state 値も unknown 扱い（10分で staleness 判定される）。
-    const state: TaskState =
-      item.state === 'success' || item.state === 'fail'
-        ? item.state
-        : 'unknown'
-    const createdAt =
-      typeof item.createdAt === 'number' && Number.isFinite(item.createdAt)
-        ? item.createdAt
-        : Date.now()
-    return [{ ...item, state, createdAt } as HistoryItem]
+
+    // 進行中状態は別環境のタスクをポーリングしないよう unknown に落とす。
+    // createdAt も stale にしてインポート直後の fetch を防ぐ。
+    const isTerminal = item.state === 'success' || item.state === 'fail'
+    const state: TaskState = isTerminal
+      ? (item.state as 'success' | 'fail')
+      : 'unknown'
+    const parsedCreatedAt = asFiniteNumber(item.createdAt) ?? now
+    const createdAt = isTerminal
+      ? parsedCreatedAt
+      : Math.min(parsedCreatedAt, staleAt)
+
+    const normalized: HistoryItem = {
+      taskId: item.taskId,
+      model: item.model,
+      category: item.category,
+      state,
+      createdAt,
+    }
+
+    const resultUrls = asStringArray(item.resultUrls)
+    if (resultUrls) normalized.resultUrls = resultUrls
+
+    const prompt = asString(item.prompt)
+    if (prompt !== undefined) normalized.prompt = prompt
+
+    const creditsConsumed = asFiniteNumber(item.creditsConsumed)
+    if (creditsConsumed !== undefined) normalized.creditsConsumed = creditsConsumed
+
+    const failMsg = asString(item.failMsg)
+    if (failMsg !== undefined) normalized.failMsg = failMsg
+
+    const modelId = asString(item.modelId)
+    if (modelId !== undefined) normalized.modelId = modelId
+
+    const input = asInput(item.input)
+    if (input) normalized.input = input
+
+    if (item.pinned === true) normalized.pinned = true
+
+    return [normalized]
   })
   if (valid.length === 0) {
     throw new Error('インポートできる履歴がありませんでした')
   }
-  return valid
+  // ピン超過は capItems で newest-first に切り詰める
+  return capItems(valid.sort((a, b) => b.createdAt - a.createdAt))
 }
 
 /** Merge imported items into current list (existing taskIds win), newest first. */

@@ -94,6 +94,6 @@ export interface HistoryItem {
   modelId?: string
   /** Full generation input — enables 再利用・リトライ・全文プロンプト表示 */
   input?: Record<string, unknown>
-  /** ピン留め: 最大件数の押し出しと「すべて削除」の対象外 */
+  /** ピン留め: 最大30件。押し出し・「すべて削除」の対象外 */
   pinned?: boolean
 }
