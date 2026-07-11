@@ -111,7 +111,7 @@ export function inputSchemaToFields(
     Record<string, unknown>
   >
   const required = Array.isArray(input.required)
-    ? (input.required as string[])
+    ? (input.required as string[]).map((n) => n.trim())
     : []
 
   const order = Array.isArray((input as { 'x-apidog-orders'?: string[] })[
@@ -125,7 +125,10 @@ export function inputSchemaToFields(
     ...Object.keys(properties).filter((n) => !order.includes(n)),
   ]
 
-  return names.map((name) => propertyToField(name, properties[name]!, required))
+  // OpenAPI keys sometimes include trailing spaces (e.g. Seedance docs).
+  return names.map((name) =>
+    propertyToField(name.trim(), properties[name]!, required),
+  )
 }
 
 export function detectCategory(

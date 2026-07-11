@@ -55,6 +55,7 @@ npm run sync:models -- --force
 | `PORT` | API ポート（既定 `8787`） |
 | `SYNC_MODELS_ON_START` | `0` で起動時同期オフ（既定オン） |
 | `SYNC_MODELS_FORCE` | `1` で起動時に強制フル同期 |
+| `SYNC_CONCURRENCY` | モデルページ取得の並列数（既定 `12`、最大 32） |
 
 ## 注意
 

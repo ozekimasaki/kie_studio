@@ -1,6 +1,7 @@
 {
-  "syncedAt": "2026-07-09T11:54:41.244Z",
+  "syncedAt": "2026-07-11T11:55:03.001Z",
   "source": "docs.kie.ai/llms.txt",
+  "sourceHash": "037f97937ac97234e0349732318588131d8184411f1c6f415de5371596dacc58",
   "models": [
     {
       "id": "flux-2/flex-image-to-image",
@@ -17,7 +18,8 @@
           "description": "Input reference images (1-8 images). (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 8,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "prompt",
@@ -81,7 +83,8 @@
           "description": "Input reference images (1-8 images). (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 8,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "prompt",
@@ -490,7 +493,8 @@
           "description": "Input images to transform or use as reference (supports up to 14 images) (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 30.0MB)",
           "required": false,
           "maxItems": 14,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -703,7 +707,8 @@
           "description": "Input images to transform or use as reference (supports up to 8 images) (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 30.0MB)",
           "required": false,
           "maxItems": 8,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -775,7 +780,8 @@
           "description": "Array of input image URLs.",
           "required": true,
           "maxItems": 16,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -831,7 +837,8 @@
           "description": "Upload an image file to use as input for the API (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "maxItems": 16,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "prompt",
@@ -2501,6 +2508,18 @@
           ]
         },
         {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Format of the output image",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
           "name": "nsfw_checker",
           "type": "boolean",
           "label": "Nsfw Checker",
@@ -2553,6 +2572,18 @@
           "enum": [
             "basic",
             "high"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Format of the output image",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
           ]
         },
         {
@@ -2620,6 +2651,18 @@
           ]
         },
         {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Format of the output image",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
           "name": "nsfw_checker",
           "type": "boolean",
           "label": "Nsfw Checker",
@@ -2671,6 +2714,18 @@
           "enum": [
             "basic",
             "high"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Format of the output image",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
           ]
         },
         {
@@ -3044,7 +3099,8 @@
           "description": "URLs of input images for image-to-video generation. Optional field.",
           "required": false,
           "maxItems": 2,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -3541,7 +3597,8 @@
           "description": "Array of audio IDs generated by the `gemini-omni-audio` endpoint. Useful for narration, dialogue, music, or audio guidance in the generated video. Max 3 items.",
           "required": false,
           "accept": "audio/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-audio"
         },
         {
           "name": "video_list",
@@ -3557,7 +3614,8 @@
           "description": "An array of character IDs generated by the `gemini-omni-character` API. Used to provide character appearance, identity, or person references for the video. Each character_id uses 1 image slot. The base limit is 7 image slots; if video_list is also provided, video_list uses 2 image slots, so character_ids can contain up to 3 IDs.",
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "none"
         },
         {
           "name": "duration",
@@ -4297,7 +4355,8 @@
           "required": true,
           "default": [],
           "maxItems": 9,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "none"
         },
         {
           "name": "resolution",
@@ -4421,9 +4480,9 @@
           "maxLength": 5000
         },
         {
-          "name": "image_urls ",
+          "name": "image_urls",
           "type": "reference",
-          "label": "Image Urls ",
+          "label": "Image Urls",
           "description": "First-frame image URL list. Exactly one image is required.",
           "required": true,
           "maxItems": 1,
@@ -4556,7 +4615,8 @@
           "description": "Reference image URL list. Provide 1–9 images. The order defines which image is character1, character2, etc.",
           "required": true,
           "maxItems": 9,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "none"
         },
         {
           "name": "resolution",
@@ -4633,13 +4693,14 @@
           "required": true
         },
         {
-          "name": "reference_image ",
+          "name": "reference_image",
           "type": "reference",
-          "label": "Reference Image ",
+          "label": "Reference Image",
           "description": "Optional reference image URL list (0–5).",
           "required": false,
           "maxItems": 5,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "none"
         },
         {
           "name": "resolution",
@@ -4972,7 +5033,8 @@
           "description": "An array containing a single image URL. The photo must clearly show the subject's head, shoulders, and torso. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/jpg; Max size: 10.0MB,size needs to be greater than 300px, aspect ratio 2:5 to 5:2.)",
           "required": true,
           "maxItems": 1,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "video_urls",
@@ -4981,7 +5043,8 @@
           "description": "An array containing a single video URL. The duration must be between 3 to 30 seconds, and the video must clearly show the subject's head, shoulders, and torso. (File URL after upload, not file content; Accepted types: video/mp4, video/quicktime, video/x-matroska; Max size: 100.0MB)",
           "required": true,
           "maxItems": 1,
-          "accept": "video/*,image/*"
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
         },
         {
           "name": "character_orientation",
@@ -5056,98 +5119,6 @@
             "5",
             "10"
           ]
-        }
-      ]
-    },
-    {
-      "id": "kling-3.0/video",
-      "model": "kling-3.0/video",
-      "title": "Kling 3.0 Video",
-      "category": "video",
-      "provider": "market",
-      "docsUrl": "https://docs.kie.ai/market/kling/kling-3-0",
-      "fields": [
-        {
-          "name": "prompt",
-          "type": "textarea",
-          "label": "Prompt",
-          "description": "Video generation prompt. Use @element_name to reference kling_elements.",
-          "required": true
-        },
-        {
-          "name": "image_urls",
-          "type": "reference",
-          "label": "Image Urls",
-          "description": "First/last frame images. Required when using @element references.",
-          "required": false,
-          "maxItems": 2,
-          "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
-        },
-        {
-          "name": "sound",
-          "type": "boolean",
-          "label": "Sound",
-          "default": false
-        },
-        {
-          "name": "duration",
-          "type": "enum",
-          "label": "Duration",
-          "default": "5",
-          "enum": [
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "11",
-            "12",
-            "13",
-            "14",
-            "15"
-          ],
-          "required": true
-        },
-        {
-          "name": "aspect_ratio",
-          "type": "enum",
-          "label": "Aspect Ratio",
-          "default": "16:9",
-          "enum": [
-            "16:9",
-            "9:16",
-            "1:1"
-          ],
-          "required": true
-        },
-        {
-          "name": "mode",
-          "type": "enum",
-          "label": "Mode",
-          "default": "pro",
-          "enum": [
-            "std",
-            "pro",
-            "4K"
-          ],
-          "required": true
-        },
-        {
-          "name": "multi_shots",
-          "type": "boolean",
-          "label": "Multi Shots",
-          "default": false
-        },
-        {
-          "name": "kling_elements",
-          "type": "kling_elements",
-          "label": "Kling Elements",
-          "description": "Named elements referenced via @name in the prompt. Max 3. Each needs 2-4 images.",
-          "maxItems": 3
         }
       ]
     },
@@ -5418,7 +5389,8 @@
           "description": "(Required) Include a URL of an image",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-image"
         },
         {
           "name": "video_urls",
@@ -5427,7 +5399,8 @@
           "description": "(Required) Include a video URL",
           "required": true,
           "accept": "video/*,image/*",
-          "maxItems": 8
+          "maxItems": 8,
+          "mentionStyle": "at-video"
         },
         {
           "name": "mode",
@@ -5474,7 +5447,8 @@
           "description": "Optional mask image URL(s). To have a specific subject in the image speak, use 'Subject Detection' to get the corresponding mask image and pass it as input. Accepted file types: image/jpeg, image/png, image/webp. Max file size: 10MB. Multiple file upload is supported, up to 5 files.",
           "required": false,
           "maxItems": 5,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "none"
         },
         {
           "name": "audio_url",
@@ -5685,7 +5659,8 @@
           "description": "The URL of the image used to generate video (File URL after upload, not file content; Accepted types: video/mp4, video/quicktime, video/x-matroska; Max size: 10.0MB)",
           "required": true,
           "maxItems": 3,
-          "accept": "video/*,image/*"
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
         },
         {
           "name": "duration",
@@ -6464,7 +6439,8 @@
           "description": "The URL of the image used to generate video (File URL after upload, not file content; Accepted types: video/mp4, video/quicktime, video/x-matroska; Max size: 10.0MB)",
           "required": true,
           "maxItems": 3,
-          "accept": "video/*,image/*"
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
         },
         {
           "name": "duration",
@@ -6640,7 +6616,8 @@
           "description": "Array of reference image URLs. At least one of `reference_image` or `reference_video` must be provided. The total number of images and videos cannot exceed 5.",
           "required": false,
           "maxItems": 5,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "none"
         },
         {
           "name": "reference_video",
@@ -6649,7 +6626,8 @@
           "description": "Array of reference video URLs. At least one of `reference_image` or `reference_video` must be provided. The total number of images and videos cannot exceed 5.",
           "required": false,
           "maxItems": 5,
-          "accept": "video/*,image/*"
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
         },
         {
           "name": "first_frame",
@@ -6987,7 +6965,8 @@
           "description": "(Optional) Array of input image URLs. The current project uses `input_urls` as a wrapper field.",
           "required": false,
           "maxItems": 9,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",
@@ -7109,7 +7088,8 @@
           "description": "(Optional) Array of input image URLs. The current project uses `input_urls` as a wrapper field.",
           "required": false,
           "maxItems": 9,
-          "accept": "image/jpeg,image/png,image/webp,image/*"
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         },
         {
           "name": "aspect_ratio",

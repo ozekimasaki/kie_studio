@@ -1,6 +1,7 @@
 /**
  * Sync Market IMAGE/VIDEO models from docs.kie.ai into src/data/catalog.json
  */
+import { createHash } from 'node:crypto'
 import { writeFile, mkdir, readFile } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,6 +18,8 @@ import type { Catalog, ModelDefinition } from '../../src/lib/models/types.ts'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 export const CATALOG_PATH = resolve(__dirname, '../../src/data/catalog.json')
 const LLMS_TXT = 'https://docs.kie.ai/llms.txt'
+const FETCH_TIMEOUT_MS = 15_000
+const DEFAULT_CONCURRENCY = 12
 
 const EXCLUDE_RE =
   /(suno|elevenlabs|audio|music|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail)/i
@@ -41,9 +44,22 @@ function isMarketModelPage(url: string, title: string): boolean {
   return true
 }
 
+function hashText(text: string): string {
+  return createHash('sha256').update(text).digest('hex')
+}
+
+function resolveConcurrency(): number {
+  const raw = process.env.SYNC_CONCURRENCY
+  if (!raw) return DEFAULT_CONCURRENCY
+  const n = Number.parseInt(raw, 10)
+  if (!Number.isFinite(n) || n < 1) return DEFAULT_CONCURRENCY
+  return Math.min(n, 32)
+}
+
 async function fetchText(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: { Accept: 'text/plain, text/markdown, */*' },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   })
   if (!res.ok) throw new Error(`Fetch failed ${res.status}: ${url}`)
   return res.text()
@@ -130,6 +146,31 @@ async function parseModelPage(
   }
 }
 
+/** Run async work over items with a fixed concurrency pool. */
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+
+  async function worker() {
+    while (true) {
+      const index = next++
+      if (index >= items.length) return
+      results[index] = await fn(items[index]!, index)
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  )
+  await Promise.all(workers)
+  return results
+}
+
 export async function readCatalog(): Promise<Catalog | null> {
   try {
     const raw = await readFile(CATALOG_PATH, 'utf8')
@@ -181,7 +222,27 @@ export async function syncCatalog(
   }
 
   if (!quiet) console.log('[catalog] Fetching llms.txt...')
+  const llmsStarted = Date.now()
   const llms = await fetchText(LLMS_TXT)
+  const sourceHash = hashText(llms)
+  if (!quiet) {
+    console.log(
+      `[catalog] llms.txt fetched in ${((Date.now() - llmsStarted) / 1000).toFixed(1)}s`,
+    )
+  }
+
+  if (
+    !options.force &&
+    existing?.sourceHash &&
+    existing.sourceHash === sourceHash
+  ) {
+    return {
+      skipped: true,
+      reason: 'llms.txt unchanged',
+      catalog: existing,
+    }
+  }
+
   const links = parseLlmsLinks(llms).filter((l) =>
     isMarketModelPage(l.url, l.title),
   )
@@ -193,25 +254,32 @@ export async function syncCatalog(
     return true
   })
 
-  if (!quiet) console.log(`[catalog] Found ${unique.length} candidate pages`)
-
-  const models: ModelDefinition[] = []
-  const concurrency = 4
-  for (let i = 0; i < unique.length; i += concurrency) {
-    const batch = unique.slice(i, i + concurrency)
-    const results = await Promise.all(
-      batch.map(async (l) => {
-        if (!quiet) {
-          process.stdout.write(
-            `  [${i + 1}-${i + batch.length}/${unique.length}] ${l.title}\n`,
-          )
-        }
-        return parseModelPage(l.title, l.url, quiet)
-      }),
+  const concurrency = resolveConcurrency()
+  if (!quiet) {
+    console.log(
+      `[catalog] Found ${unique.length} candidate pages (concurrency=${concurrency})`,
     )
-    for (const r of results) {
-      if (r) models.push(r)
+  }
+
+  const pagesStarted = Date.now()
+  let completed = 0
+  const results = await mapPool(unique, concurrency, async (l) => {
+    const model = await parseModelPage(l.title, l.url, quiet)
+    completed++
+    if (!quiet) {
+      process.stdout.write(
+        `  [${completed}/${unique.length}] ${l.title}\n`,
+      )
     }
+    return model
+  })
+
+  const models = results.filter((r): r is ModelDefinition => r !== null)
+  const pagesElapsed = ((Date.now() - pagesStarted) / 1000).toFixed(1)
+  if (!quiet) {
+    console.log(
+      `[catalog] Fetched ${unique.length} pages in ${pagesElapsed}s (${models.length} parsed)`,
+    )
   }
 
   const byId = new Map<string, ModelDefinition>()
@@ -228,6 +296,7 @@ export async function syncCatalog(
   const catalog: Catalog = {
     syncedAt: new Date().toISOString(),
     source: 'docs.kie.ai/llms.txt',
+    sourceHash,
     models: sorted,
   }
 

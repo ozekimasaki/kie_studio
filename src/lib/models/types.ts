@@ -58,6 +58,8 @@ export interface ModelDefinition {
 export interface Catalog {
   syncedAt: string | null
   source: string
+  /** SHA-256 (hex) of docs.kie.ai/llms.txt at last successful sync */
+  sourceHash?: string
   models: ModelDefinition[]
 }
 
