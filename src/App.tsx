@@ -15,6 +15,8 @@ import {
 } from './components/DynamicForm.tsx'
 import { CreditBadge } from './components/CreditBadge.tsx'
 import { HistoryGallery } from './components/HistoryGallery.tsx'
+import { StudioShell } from './components/shell/StudioShell.tsx'
+import { Pressable } from './components/motion/Pressable.tsx'
 import {
   fetchHealth,
   fetchModels,
@@ -544,40 +546,40 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col gap-4 p-4 md:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            KIE <span className="text-[var(--accent)]">STUDIO</span>
-          </h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            IMAGE / VIDEO playground for kie.ai Market API
-            {syncedAt && (
-              <span className="ml-2 text-[11px]">
-                catalog {new Date(syncedAt).toLocaleString()}
-              </span>
-            )}
-            {!syncedAt && modelsQuery.data?.data.source === 'seed' && (
-              <span className="ml-2 text-[11px] text-[var(--warning)]">
-                seed catalog · run npm run sync:models
-              </span>
-            )}
-          </p>
-        </div>
-        <CreditBadge lastUsed={lastUsedCredits} />
-      </header>
-
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[380px_1fr]">
-        <aside className="flex max-h-[calc(100vh-8rem)] flex-col gap-4 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-panel)] p-4">
-          <CategoryTabs
-            value={category}
-            onChange={(c) => {
-              // ユーザー操作での切替は保留中の履歴復元を破棄する
-              pendingRestoreRef.current = null
-              setCategory(c)
-              setModelId(null)
-            }}
-          />
+    <StudioShell
+      chromeTitle={
+        <>
+          KIE <span className="text-[var(--accent)]">STUDIO</span>
+        </>
+      }
+      chromeSubtitle="kie.ai Market API · IMAGE / VIDEO"
+      chromeMeta={
+        <>
+          {syncedAt && (
+            <p className="studio-meta">
+              catalog {new Date(syncedAt).toLocaleString()}
+            </p>
+          )}
+          {!syncedAt && modelsQuery.data?.data.source === 'seed' && (
+            <p className="studio-meta text-[var(--warning)]">
+              seed catalog · run npm run sync:models
+            </p>
+          )}
+        </>
+      }
+      chromeTrailing={<CreditBadge lastUsed={lastUsedCredits} />}
+      form={
+        <>
+          <div className="sticky top-0 z-[var(--z-sticky)] -mx-5 -mt-5 shrink-0 border-b border-[var(--border)] bg-[var(--surface-raised)] px-5 pt-5 pb-3">
+            <CategoryTabs
+              value={category}
+              onChange={(c) => {
+                pendingRestoreRef.current = null
+                setCategory(c)
+                setModelId(null)
+              }}
+            />
+          </div>
 
           {modelsQuery.isLoading ? (
             <p className="text-sm text-[var(--text-muted)]">モデル読込中…</p>
@@ -604,7 +606,7 @@ export default function App() {
                   href={selected.docsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 self-start text-xs text-[var(--accent)] hover:underline"
+                  className="inline-flex items-center gap-1 self-start text-xs font-medium text-[var(--accent)]"
                 >
                   Docs
                   <ExternalLink size={12} strokeWidth={2} aria-hidden />
@@ -637,7 +639,7 @@ export default function App() {
                 </p>
               )}
 
-              <div className="sticky bottom-0 space-y-2 bg-[var(--bg-panel)] pt-1">
+              <div className="studio-sticky-cta space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div
                     className="flex items-center gap-1"
@@ -648,20 +650,18 @@ export default function App() {
                       同時生成
                     </span>
                     {[1, 2, 3, 4].map((n) => (
-                      <button
+                      <Pressable
                         key={n}
-                        type="button"
                         disabled={submitting}
                         aria-pressed={batchCount === n}
                         onClick={() => setBatchCount(n)}
-                        className={`rounded-md px-2 py-1 text-xs font-semibold transition disabled:opacity-50 ${
-                          batchCount === n
-                            ? 'bg-[var(--accent)] text-white'
-                            : 'border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
+                        className={`studio-chip ${
+                          batchCount === n ? 'is-active' : ''
                         }`}
+                        scaleTo={0.96}
                       >
                         ×{n}
-                      </button>
+                      </Pressable>
                     ))}
                   </div>
                   {creditEstimate !== null && (
@@ -674,18 +674,18 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                <button
-                  type="button"
+                <Pressable
                   disabled={generateDisabled}
                   onClick={() => generate.mutate({ source: 'form' })}
-                  className="w-full rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="studio-btn-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  scaleTo={0.96}
                 >
                   {submitting
                     ? '送信中…'
                     : batchCount > 1
                       ? `Generate ×${batchCount}`
                       : 'Generate'}
-                </button>
+                </Pressable>
               </div>
             </>
           ) : (
@@ -693,40 +693,39 @@ export default function App() {
               モデルを選択してください
             </p>
           )}
-        </aside>
-
-        <main className="max-h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-panel)] p-4">
-          <HistoryGallery
-            items={history}
-            activeTaskId={viewerTaskId}
-            pendingCount={pendingCount}
-            onSelect={selectHistory}
-            onClose={closeViewer}
-            onReuse={reuseHistory}
-            onRetry={retryHistory}
-            onSendToInput={sendToInput}
-            onTogglePin={togglePin}
-            onExport={exportHistory}
-            onImport={importHistory}
-            retryDisabled={generateDisabled}
-            onRemove={(taskId) => {
-              setHistory((prev) => saveHistory(removeFromList(prev, taskId)))
-              if (viewerTaskId === taskId) setViewerTaskId(null)
-            }}
-            onClear={() => {
-              if (
-                !window.confirm(
-                  'ピン留め以外の履歴をすべて削除しますか？この操作は取り消せません。',
-                )
-              ) {
-                return
-              }
-              setHistory((prev) => saveHistory(prev.filter((h) => h.pinned)))
-              setViewerTaskId(null)
-            }}
-          />
-        </main>
-      </div>
-    </div>
+        </>
+      }
+      canvas={
+        <HistoryGallery
+          items={history}
+          activeTaskId={viewerTaskId}
+          pendingCount={pendingCount}
+          onSelect={selectHistory}
+          onClose={closeViewer}
+          onReuse={reuseHistory}
+          onRetry={retryHistory}
+          onSendToInput={sendToInput}
+          onTogglePin={togglePin}
+          onExport={exportHistory}
+          onImport={importHistory}
+          retryDisabled={generateDisabled}
+          onRemove={(taskId) => {
+            setHistory((prev) => saveHistory(removeFromList(prev, taskId)))
+            if (viewerTaskId === taskId) setViewerTaskId(null)
+          }}
+          onClear={() => {
+            if (
+              !window.confirm(
+                'ピン留め以外の履歴をすべて削除しますか？この操作は取り消せません。',
+              )
+            ) {
+              return
+            }
+            setHistory((prev) => saveHistory(prev.filter((h) => h.pinned)))
+            setViewerTaskId(null)
+          }}
+        />
+      }
+    />
   )
 }

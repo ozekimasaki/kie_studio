@@ -146,7 +146,8 @@ export function KlingElementsEditor({
                           ),
                         })
                       }
-                      className="absolute right-0.5 top-0.5 inline-flex items-center justify-center rounded bg-white/90 p-0.5 shadow-sm transition hover:text-[var(--danger)] disabled:opacity-50"
+                      className="absolute right-0.5 top-0.5 inline-flex size-5 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] p-0.5 text-[var(--text)] hover:text-[var(--danger)] disabled:opacity-50"
+                      aria-label="参照画像を削除"
                     >
                       <X size={10} strokeWidth={2.5} aria-hidden />
                     </button>

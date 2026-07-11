@@ -6,6 +6,7 @@ import {
   removeSnippet,
   type PromptSnippet,
 } from '../lib/snippets.ts'
+import { Pressable } from './motion/Pressable.tsx'
 
 /**
  * よく使うプロンプト断片の保存・挿入パネル。
@@ -34,11 +35,11 @@ export function PromptSnippets({
 
   return (
     <div className="mt-2">
-      <button
-        type="button"
+      <Pressable
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] transition hover:text-[var(--accent)]"
+        className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--accent)]"
         aria-expanded={open}
+        scaleTo={0.97}
       >
         {open ? (
           <ChevronDown size={14} strokeWidth={2} aria-hidden />
@@ -47,10 +48,10 @@ export function PromptSnippets({
         )}
         スニペット
         {snippets.length > 0 && ` (${snippets.length})`}
-      </button>
+      </Pressable>
 
       {open && (
-        <div className="mt-2 space-y-2 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-2.5">
+        <div className="mt-2 space-y-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] p-3">
           <div className="flex gap-1.5">
             <input
               type="text"
@@ -58,17 +59,17 @@ export function PromptSnippets({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="名前（省略可）"
               disabled={disabled}
-              className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 text-xs outline-none focus:border-[var(--accent)]"
+              className="studio-input min-w-0 flex-1 px-2 py-1.5 text-xs"
             />
-            <button
-              type="button"
+            <Pressable
               disabled={disabled || !prompt.trim()}
               onClick={handleSave}
               title="現在のプロンプトをスニペットとして保存"
-              className="shrink-0 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs transition hover:border-[var(--accent)] disabled:opacity-50"
+              className="studio-btn shrink-0"
+              scaleTo={0.96}
             >
               現在の内容を保存
-            </button>
+            </Pressable>
           </div>
 
           {snippets.length === 0 ? (

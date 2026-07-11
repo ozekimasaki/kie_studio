@@ -3,6 +3,7 @@ import { LoaderCircle, Plus, X } from 'lucide-react'
 import { uploadFile } from '../lib/api.ts'
 import { formatMention } from '../lib/models/mentions.ts'
 import type { MentionStyle } from '../lib/models/types.ts'
+import { Pressable } from './motion/Pressable.tsx'
 
 export function ReferenceUpload({
   value,
@@ -54,7 +55,7 @@ export function ReferenceUpload({
           return (
             <div
               key={`${url}-${i}`}
-              className="relative w-[88px] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg)]"
+              className="studio-tile relative w-[88px]"
             >
               <div className="relative h-20 w-full">
                 {/\.(mp4|webm|mov)(\?|$)/i.test(url) ? (
@@ -78,7 +79,7 @@ export function ReferenceUpload({
                   disabled={disabled}
                   aria-label={`参照 ${i + 1} を削除`}
                   onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-                  className="absolute right-1 top-1 inline-flex items-center justify-center rounded bg-white/90 p-0.5 text-[var(--text)] shadow transition hover:bg-white disabled:opacity-50"
+                  className="absolute right-1 top-1 inline-flex size-6 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] p-0.5 text-[var(--text)] disabled:opacity-50"
                 >
                   <X size={12} strokeWidth={2.5} aria-hidden />
                 </button>
@@ -98,12 +99,12 @@ export function ReferenceUpload({
           )
         })}
         {value.length < maxItems && (
-          <button
-            type="button"
+          <Pressable
             id={inputId}
             disabled={disabled || uploading}
             onClick={() => inputRef.current?.click()}
-            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+            scaleTo={0.96}
+            className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] bg-[var(--surface-raised)] text-xs font-medium text-[var(--text-muted)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] disabled:opacity-50"
           >
             {uploading ? (
               <LoaderCircle size={16} strokeWidth={2} className="animate-spin" aria-hidden />
@@ -113,7 +114,7 @@ export function ReferenceUpload({
                 追加
               </>
             )}
-          </button>
+          </Pressable>
         )}
       </div>
       <input
@@ -128,7 +129,7 @@ export function ReferenceUpload({
         {value.length}/{maxItems} · File Upload API（24h 有効）
         {canMention && ' · チップを押すとプロンプトへ挿入'}
       </p>
-      {error && <p className="text-xs text-[var(--danger)]">{error}</p>}
+      {error && <p className="studio-field-error">{error}</p>}
     </div>
   )
 }

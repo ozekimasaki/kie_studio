@@ -5,9 +5,9 @@ import {
   fetchOptimizeProfile,
   optimizePrompt,
 } from '../lib/api.ts'
+import { Pressable } from './motion/Pressable.tsx'
 
-const inputClass =
-  'w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--accent)] disabled:opacity-50'
+const inputClass = 'studio-input'
 
 export function PromptOptimizePanel({
   prompt,
@@ -88,7 +88,7 @@ export function PromptOptimizePanel({
       : null
 
   return (
-    <div className="mt-3 space-y-2">
+    <div className="mt-3 space-y-2.5 border-t border-[var(--border)] pt-3">
       {profile && (
         <p className="text-[11px] text-[var(--text-muted)]">
           {mode === 'generate' ? '生成ルール' : '最適化ルール'}:{' '}
@@ -103,13 +103,15 @@ export function PromptOptimizePanel({
       <div>
         <label
           htmlFor="prompt-optimize-custom"
-          className="mb-1.5 block text-xs font-medium text-[var(--text-muted)]"
+          className="studio-label mb-1.5"
         >
           {mode === 'generate'
             ? 'やりたいこと・メモ'
             : 'カスタム指示（任意）'}
           {mode === 'generate' && (
-            <span className="ml-1 text-[var(--danger)]">*</span>
+            <span className="ml-1 normal-case tracking-normal text-[var(--danger)]">
+              *
+            </span>
           )}
         </label>
         <textarea
@@ -127,10 +129,10 @@ export function PromptOptimizePanel({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+        <Pressable
+          className="studio-btn font-medium"
           disabled={!canRun}
+          scaleTo={0.96}
           onClick={() => {
             setPreview(null)
             setPreviewMode(null)
@@ -140,7 +142,7 @@ export function PromptOptimizePanel({
           }}
         >
           {buttonLabel}
-        </button>
+        </Pressable>
         {hint && (
           <span className="text-[11px] text-[var(--text-muted)]">{hint}</span>
         )}
@@ -157,7 +159,7 @@ export function PromptOptimizePanel({
       )}
 
       {preview !== null && (
-        <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
+        <div className="space-y-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg)] p-3">
           <p className="text-xs font-medium text-[var(--text-muted)]">
             {previewMode === 'generate' ? '生成プレビュー' : '最適化プレビュー'}
             {appliedProfileLabel ? ` · ${appliedProfileLabel}` : ''}
@@ -166,10 +168,10 @@ export function PromptOptimizePanel({
             {preview}
           </pre>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+            <Pressable
+              className="studio-btn-primary w-auto px-3 py-1.5 text-xs disabled:opacity-50"
               disabled={busy || disabled}
+              scaleTo={0.96}
               onClick={() => {
                 onApply(preview)
                 setPreview(null)
@@ -179,11 +181,11 @@ export function PromptOptimizePanel({
               }}
             >
               適用
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--text-muted)] disabled:opacity-50"
+            </Pressable>
+            <Pressable
+              className="studio-btn font-medium"
               disabled={busy}
+              scaleTo={0.96}
               onClick={() => {
                 setPreview(null)
                 setPreviewMode(null)
@@ -192,7 +194,7 @@ export function PromptOptimizePanel({
               }}
             >
               破棄
-            </button>
+            </Pressable>
           </div>
         </div>
       )}

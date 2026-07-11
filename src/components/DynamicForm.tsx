@@ -1,10 +1,13 @@
 import { useMemo, useRef } from 'react'
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import type { FieldSchema, KlingElement, MentionStyle } from '../lib/models/types.ts'
 import { insertMentionToken } from '../lib/models/mentions.ts'
+import { fadeQuick, springUi } from '../lib/motion.ts'
 import { ReferenceUpload } from './ReferenceUpload.tsx'
 import { KlingElementsEditor } from './KlingElementsEditor.tsx'
 import { PromptOptimizePanel } from './PromptOptimizePanel.tsx'
 import { PromptSnippets } from './PromptSnippets.tsx'
+import { Pressable } from './motion/Pressable.tsx'
 
 function fieldId(name: string): string {
   return `field-${name}`
@@ -29,8 +32,8 @@ function FieldLabel({
   hint?: string | null
 }) {
   return (
-    <div className="mb-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
+    <div className="mb-2">
+      <label htmlFor={htmlFor} className="text-sm font-semibold">
         {field.label}
         {field.required && <span className="ml-1 text-[var(--danger)]">*</span>}
         {hint && (
@@ -40,7 +43,7 @@ function FieldLabel({
         )}
       </label>
       {field.description && (
-        <p className="mt-0.5 text-[11px] leading-snug text-[var(--text-muted)]">
+        <p className="mt-1 text-[11px] leading-snug text-[var(--text-muted)]">
           {field.description}
         </p>
       )}
@@ -48,18 +51,110 @@ function FieldLabel({
   )
 }
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ message, id }: { message?: string; id?: string }) {
   if (!message) return null
   return (
-    <p className="mt-1.5 text-xs text-[var(--danger)]" role="alert">
+    <p id={id} className="studio-field-error" role="alert">
       {message}
     </p>
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none transition focus:border-[var(--accent)] disabled:opacity-50'
-const inputErrorClass = 'border-[var(--danger)] focus:border-[var(--danger)]'
+const inputClass = 'studio-input'
+
+function BooleanToggle({
+  id,
+  field,
+  on,
+  disabled,
+  error,
+  onChange,
+}: {
+  id: string
+  field: FieldSchema
+  on: boolean
+  disabled?: boolean
+  error?: string
+  onChange: (next: boolean) => void
+}) {
+  const reduce = useReducedMotion()
+
+  return (
+    <div className="border-b border-[var(--border)] py-3 last:border-b-0">
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold" id={id}>
+            {field.label}
+            {field.required && (
+              <span className="ml-1 text-[var(--danger)]">*</span>
+            )}
+          </div>
+          {field.description && (
+            <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-muted)]">
+              {field.description}
+            </p>
+          )}
+        </div>
+        <span
+          className={`rounded-[var(--radius-md)] px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+            on
+              ? 'bg-[var(--on-soft)] text-[var(--on)]'
+              : 'bg-[var(--off-soft)] text-[var(--off)]'
+          }`}
+        >
+          {on ? 'ON' : 'OFF'}
+        </span>
+      </div>
+      <LayoutGroup id={`bool-${field.name}`}>
+        <div
+          role="group"
+          aria-labelledby={id}
+          className="studio-segment"
+        >
+          <Pressable
+            disabled={disabled}
+            aria-pressed={!on}
+            onClick={() => onChange(false)}
+            scaleTo={0.96}
+            className={`studio-segment-item ${
+              !on ? '!text-[var(--text)]' : ''
+            }`}
+          >
+            {!on && (
+              <motion.span
+                layoutId={`bool-pill-${field.name}`}
+                className="absolute inset-0 z-0 bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+                transition={reduce ? fadeQuick : springUi}
+                aria-hidden
+              />
+            )}
+            <span className="relative z-10">Off</span>
+          </Pressable>
+          <Pressable
+            disabled={disabled}
+            aria-pressed={on}
+            onClick={() => onChange(true)}
+            scaleTo={0.96}
+            className={`studio-segment-item ${
+              on ? '!text-[var(--on-accent)]' : ''
+            }`}
+          >
+            {on && (
+              <motion.span
+                layoutId={`bool-pill-${field.name}`}
+                className="absolute inset-0 z-0 bg-[var(--on)]"
+                transition={reduce ? fadeQuick : springUi}
+                aria-hidden
+              />
+            )}
+            <span className="relative z-10">On</span>
+          </Pressable>
+        </div>
+      </LayoutGroup>
+      <FieldError message={error} />
+    </div>
+  )
+}
 
 function resolveMentionStyle(field: FieldSchema): MentionStyle {
   if (field.mentionStyle) return field.mentionStyle
@@ -152,7 +247,6 @@ export function DynamicForm({
         const value = values[field.name]
         const error = fieldErrors?.[field.name]
         const id = fieldId(field.name)
-        const errBorder = error ? inputErrorClass : ''
 
         switch (field.type) {
           case 'textarea':
@@ -164,7 +258,7 @@ export function DynamicForm({
                   ref={
                     field.name === promptFieldName ? promptRef : undefined
                   }
-                  className={`${inputClass} min-h-28 resize-y ${errBorder}`}
+                  className={`${inputClass} min-h-28 resize-y`}
                   value={typeof value === 'string' ? value : ''}
                   maxLength={field.maxLength}
                   disabled={disabled}
@@ -179,7 +273,7 @@ export function DynamicForm({
                       : field.label
                   }
                 />
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
                 {field.name === 'prompt' && (
                   <>
                     <PromptOptimizePanel
@@ -206,7 +300,7 @@ export function DynamicForm({
                 <input
                   id={id}
                   type="text"
-                  className={`${inputClass} ${errBorder}`}
+                  className={inputClass}
                   value={typeof value === 'string' ? value : ''}
                   maxLength={field.maxLength}
                   disabled={disabled}
@@ -243,7 +337,7 @@ export function DynamicForm({
                   <input
                     id={id}
                     type="number"
-                    className={`${inputClass} w-24 ${errBorder}`}
+                    className={`${inputClass} w-24`}
                     min={field.min}
                     max={field.max}
                     step={field.step ?? 1}
@@ -265,68 +359,15 @@ export function DynamicForm({
           case 'boolean': {
             const on = Boolean(value)
             return (
-              <div
+              <BooleanToggle
                 key={field.name}
-                className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-3"
-              >
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium" id={id}>
-                      {field.label}
-                      {field.required && (
-                        <span className="ml-1 text-[var(--danger)]">*</span>
-                      )}
-                    </div>
-                    {field.description && (
-                      <p className="mt-0.5 line-clamp-2 text-[11px] text-[var(--text-muted)]">
-                        {field.description}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide ${
-                      on
-                        ? 'bg-[var(--on-soft)] text-[var(--on)]'
-                        : 'bg-[var(--off-soft)] text-[var(--off)]'
-                    }`}
-                  >
-                    {on ? 'ON' : 'OFF'}
-                  </span>
-                </div>
-                <div
-                  role="group"
-                  aria-labelledby={id}
-                  className="grid grid-cols-2 gap-1 rounded-lg bg-[var(--bg)] p-1"
-                >
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    aria-pressed={!on}
-                    onClick={() => clearErrorOnChange(field.name, false)}
-                    className={`rounded-md px-3 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                      !on
-                        ? 'bg-[var(--bg-elevated)] text-[var(--text)] shadow-sm ring-1 ring-[var(--border)]'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                    }`}
-                  >
-                    Off
-                  </button>
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    aria-pressed={on}
-                    onClick={() => clearErrorOnChange(field.name, true)}
-                    className={`rounded-md px-3 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                      on
-                        ? 'bg-[var(--on)] text-white shadow-sm'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                    }`}
-                  >
-                    On
-                  </button>
-                </div>
-                <FieldError message={error} />
-              </div>
+                id={id}
+                field={field}
+                on={on}
+                disabled={disabled}
+                error={error}
+                onChange={(next) => clearErrorOnChange(field.name, next)}
+              />
             )
           }
           case 'enum':
@@ -335,7 +376,7 @@ export function DynamicForm({
                 <FieldLabel field={field} htmlFor={id} />
                 <select
                   id={id}
-                  className={`${inputClass} ${errBorder}`}
+                  className="studio-select w-full"
                   value={
                     typeof value === 'string'
                       ? value
@@ -409,7 +450,7 @@ export function DynamicForm({
                 <FieldLabel field={field} htmlFor={id} />
                 <textarea
                   id={id}
-                  className={`${inputClass} min-h-24 font-mono text-xs ${errBorder}`}
+                  className={`${inputClass} min-h-24 font-mono text-xs`}
                   disabled={disabled}
                   aria-invalid={Boolean(error)}
                   value={
