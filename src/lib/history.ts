@@ -103,9 +103,12 @@ export function togglePinInList(
   }
 
   return {
-    next: prev.map((h) =>
-      h.taskId === taskId ? { ...h, pinned: !h.pinned } : h,
-    ),
+    next: prev
+      .map((h) =>
+        h.taskId === taskId ? { ...h, pinned: !h.pinned } : h,
+      )
+      // ピン留めを先頭に（同グループ内は相対順を維持）
+      .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))),
   }
 }
 

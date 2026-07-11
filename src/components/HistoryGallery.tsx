@@ -129,26 +129,30 @@ export function HistoryGallery({
     [items],
   )
 
-  const filtered = useMemo(
-    () =>
-      items.filter((h) => {
-        if (categoryFilter !== 'all' && h.category !== categoryFilter) {
-          return false
-        }
-        if (modelFilter !== 'all' && h.model !== modelFilter) return false
-        switch (stateFilter) {
-          case 'success':
-            return h.state === 'success'
-          case 'fail':
-            return h.state === 'fail'
-          case 'busy':
-            return isBusyState(h.state)
-          default:
-            return true
-        }
-      }),
-    [items, categoryFilter, modelFilter, stateFilter],
-  )
+  const filtered = useMemo(() => {
+    const list = items.filter((h) => {
+      if (categoryFilter !== 'all' && h.category !== categoryFilter) {
+        return false
+      }
+      if (modelFilter !== 'all' && h.model !== modelFilter) return false
+      switch (stateFilter) {
+        case 'success':
+          return h.state === 'success'
+        case 'fail':
+          return h.state === 'fail'
+        case 'busy':
+          return isBusyState(h.state)
+        default:
+          return true
+      }
+    })
+    // ピン留めを先頭に表示（同グループ内は createdAt 降順）
+    return [...list].sort((a, b) => {
+      const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))
+      if (pinDiff !== 0) return pinDiff
+      return (b.createdAt ?? 0) - (a.createdAt ?? 0)
+    })
+  }, [items, categoryFilter, modelFilter, stateFilter])
 
   const compareItems = useMemo(
     () =>
