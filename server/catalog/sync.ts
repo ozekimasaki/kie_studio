@@ -171,11 +171,22 @@ async function mapPool<T, R>(
   return results
 }
 
+/** In-memory catalog cache — avoids readFile+JSON.parse on every /api/models. */
+let cachedCatalog: Catalog | null | undefined
+
+function setCachedCatalog(catalog: Catalog | null): void {
+  cachedCatalog = catalog
+}
+
 export async function readCatalog(): Promise<Catalog | null> {
+  if (cachedCatalog !== undefined) return cachedCatalog
   try {
     const raw = await readFile(CATALOG_PATH, 'utf8')
-    return JSON.parse(raw) as Catalog
+    const catalog = JSON.parse(raw) as Catalog
+    setCachedCatalog(catalog)
+    return catalog
   } catch {
+    setCachedCatalog(null)
     return null
   }
 }
@@ -293,6 +304,20 @@ export async function syncCatalog(
     return a.title.localeCompare(b.title)
   })
 
+  // 全ページパース失敗時に既存の有効 catalog を空で潰さない
+  if (sorted.length === 0 && (existing?.models.length ?? 0) > 0) {
+    if (!quiet) {
+      console.warn(
+        `[catalog] Parsed 0 models; keeping existing catalog (${existing!.models.length} models)`,
+      )
+    }
+    return {
+      skipped: true,
+      reason: 'parsed 0 models; kept existing catalog',
+      catalog: existing!,
+    }
+  }
+
   const catalog: Catalog = {
     syncedAt: new Date().toISOString(),
     source: 'docs.kie.ai/llms.txt',
@@ -302,6 +327,7 @@ export async function syncCatalog(
 
   await mkdir(dirname(CATALOG_PATH), { recursive: true })
   await writeFile(CATALOG_PATH, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8')
+  setCachedCatalog(catalog)
 
   if (!quiet) {
     console.log(

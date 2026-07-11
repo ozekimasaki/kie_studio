@@ -439,12 +439,15 @@ export function HistoryGallery({
                           <video
                             src={thumb}
                             muted
+                            preload="none"
                             className="h-full w-full object-cover"
                           />
                         ) : (
                           <img
                             src={thumb}
                             alt={h.prompt || shortModel(h.model)}
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full object-cover"
                           />
                         )
@@ -696,12 +699,14 @@ export function HistoryGallery({
                       <video
                         src={url}
                         controls
+                        preload="metadata"
                         className="mx-auto max-h-[55vh] w-full rounded-xl bg-black object-contain"
                       />
                     ) : (
                       <img
                         src={url}
                         alt={active.prompt || '生成結果'}
+                        decoding="async"
                         className="mx-auto max-h-[55vh] w-full rounded-xl object-contain"
                       />
                     )}
@@ -841,12 +846,15 @@ export function HistoryGallery({
                               src={url}
                               controls
                               muted
+                              preload="metadata"
                               className="aspect-square w-full bg-black object-contain"
                             />
                           ) : (
                             <img
                               src={url}
                               alt={h.prompt || shortModel(h.model)}
+                              loading="lazy"
+                              decoding="async"
                               className="aspect-square w-full object-contain"
                             />
                           )

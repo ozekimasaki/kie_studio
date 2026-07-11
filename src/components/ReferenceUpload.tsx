@@ -34,10 +34,7 @@ export function ReferenceUpload({
     try {
       const remaining = Math.max(0, maxItems - value.length)
       const list = [...files].slice(0, remaining)
-      const urls: string[] = []
-      for (const file of list) {
-        urls.push(await uploadFile(file))
-      }
+      const urls = await Promise.all(list.map((file) => uploadFile(file)))
       onChange([...value, ...urls])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'アップロードに失敗しました')
@@ -61,11 +58,18 @@ export function ReferenceUpload({
             >
               <div className="relative h-20 w-full">
                 {/\.(mp4|webm|mov)(\?|$)/i.test(url) ? (
-                  <video src={url} className="h-full w-full object-cover" muted />
+                  <video
+                    src={url}
+                    className="h-full w-full object-cover"
+                    muted
+                    preload="metadata"
+                  />
                 ) : (
                   <img
                     src={url}
                     alt={`参照 ${i + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover"
                   />
                 )}
