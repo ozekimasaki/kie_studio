@@ -10,7 +10,33 @@ import {
 } from 'lucide-react'
 import { fetchDownloadUrl } from '../lib/api.ts'
 import { isVideoUrl } from '../lib/media.ts'
+import {
+  mediaExpiry,
+  mediaExpiryCardLabel,
+  mediaExpiryViewerLabel,
+  type MediaExpiry,
+} from '../lib/mediaExpiry.ts'
 import type { HistoryItem, TaskState } from '../lib/models/types.ts'
+
+function successExpiry(item: HistoryItem): MediaExpiry | null {
+  if (item.state !== 'success' || !(item.resultUrls?.length ?? 0)) return null
+  return mediaExpiry(item.createdAt)
+}
+
+function expiryTextClass(status: MediaExpiry['status']): string {
+  switch (status) {
+    case 'expired':
+      return 'text-[var(--danger)]'
+    case 'soon':
+      return 'text-[var(--warning)]'
+    case 'ok':
+      return 'text-white/70'
+    default: {
+      const _exhaustive: never = status
+      return _exhaustive
+    }
+  }
+}
 
 function relativeTime(ts: number): string {
   const diff = Date.now() - ts
@@ -116,6 +142,7 @@ export function HistoryGallery({
   const [copied, setCopied] = useState(false)
 
   const active = items.find((h) => h.taskId === activeTaskId) ?? null
+  const activeExpiry = active ? successExpiry(active) : null
   const showViewer = Boolean(
     active &&
       (isBusyState(active.state) ||
@@ -240,6 +267,9 @@ export function HistoryGallery({
               : pendingCount > 0
                 ? `${items.length} 件 · ${pendingCount} 件生成中`
                 : `${items.length} 件（ピン留めは押し出されません）`}
+          </p>
+          <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+            生成メディアは kie.ai 側で約14日で削除されます
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -381,6 +411,7 @@ export function HistoryGallery({
               const comparing = compareIds.includes(h.taskId)
               const thumb = h.resultUrls?.[0]
               const busy = isBusyState(h.state)
+              const expiry = successExpiry(h)
 
               return (
                 <div
@@ -452,15 +483,32 @@ export function HistoryGallery({
                         </div>
                       )}
 
+                      {expiry?.status === 'expired' && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 px-2">
+                          <span className="rounded-md bg-black/70 px-2 py-1 text-center text-[10px] font-semibold text-white">
+                            期限切れの可能性
+                          </span>
+                        </div>
+                      )}
+
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-2 pt-8">
                         <div className="truncate text-[11px] font-medium text-white">
                           {shortModel(h.model)}
                         </div>
                         <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80">
                           <span>{relativeTime(h.createdAt)}</span>
-                          {typeof h.creditsConsumed === 'number' && (
-                            <span>−{h.creditsConsumed}</span>
-                          )}
+                          <span className="flex shrink-0 items-center gap-1.5">
+                            {expiry && (
+                              <span
+                                className={`font-semibold ${expiryTextClass(expiry.status)}`}
+                              >
+                                {mediaExpiryCardLabel(expiry)}
+                              </span>
+                            )}
+                            {typeof h.creditsConsumed === 'number' && (
+                              <span>−{h.creditsConsumed}</span>
+                            )}
+                          </span>
                         </div>
                       </div>
 
@@ -642,7 +690,7 @@ export function HistoryGallery({
                 </p>
               )}
               {active.state === 'success' &&
-                (active.resultUrls ?? []).map((url) => (
+                (active.resultUrls ?? []).map((url, index) => (
                   <div key={url} className="space-y-3">
                     {isVideoUrl(url) ? (
                       <video
@@ -694,6 +742,19 @@ export function HistoryGallery({
                         </span>
                       )}
                     </div>
+                    {index === 0 && activeExpiry && (
+                      <p
+                        className={`text-xs ${
+                          activeExpiry.status === 'ok'
+                            ? 'text-[var(--text-muted)]'
+                            : activeExpiry.status === 'soon'
+                              ? 'text-[var(--warning)]'
+                              : 'text-[var(--danger)]'
+                        }`}
+                      >
+                        {mediaExpiryViewerLabel(activeExpiry)}
+                      </p>
+                    )}
                     {download.isError && (
                       <p className="text-xs text-[var(--danger)]">
                         {(download.error as Error).message ||
