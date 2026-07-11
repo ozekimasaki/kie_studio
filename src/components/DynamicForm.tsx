@@ -67,6 +67,8 @@ const inputErrorClass = 'border-[var(--danger)] focus:border-[var(--danger)]'
 function resolveMentionStyle(field: FieldSchema): MentionStyle {
   if (field.mentionStyle) return field.mentionStyle
   const hay = `${field.name} ${field.description ?? ''}`.toLowerCase()
+  if (/audio/i.test(field.name)) return 'at-audio'
+  if (/video/i.test(field.name)) return 'at-video'
   if (hay.includes('[image')) return 'bracket-image'
   if (hay.includes('@image')) return 'at-image'
   if (/(image_?urls?|input_?urls?|reference_?urls?)/i.test(field.name)) {

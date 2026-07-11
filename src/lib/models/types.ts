@@ -11,7 +11,12 @@ export type FieldType =
   | 'json'
 
 /** How to mention uploaded references inside the prompt */
-export type MentionStyle = 'at-image' | 'bracket-image' | 'none'
+export type MentionStyle =
+  | 'at-image'
+  | 'at-video'
+  | 'at-audio'
+  | 'bracket-image'
+  | 'none'
 
 export interface KlingElement {
   name: string

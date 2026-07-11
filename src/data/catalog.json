@@ -3149,13 +3149,14 @@
           "mentionStyle": "at-image"
         },
         {
-          "name": "reference_video_urls ",
+          "name": "reference_video_urls",
           "type": "reference",
-          "label": "Reference Video Urls ",
+          "label": "Reference Video Urls",
           "description": "Enter a list of video URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
           "required": false,
           "maxItems": 3,
-          "accept": "video/*,image/*"
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
         },
         {
           "name": "reference_audio_urls",
@@ -3164,7 +3165,8 @@
           "description": "Enter a list of audio URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
           "required": false,
           "maxItems": 3,
-          "accept": "audio/*"
+          "accept": "audio/*",
+          "mentionStyle": "at-audio"
         },
         {
           "name": "return_last_frame",
@@ -3415,13 +3417,14 @@
           "mentionStyle": "at-image"
         },
         {
-          "name": "reference_video_urls ",
+          "name": "reference_video_urls",
           "type": "reference",
-          "label": "Reference Video Urls ",
+          "label": "Reference Video Urls",
           "description": "Enter a list of video URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj) .",
           "required": false,
           "maxItems": 3,
-          "accept": "video/*,image/*"
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
         },
         {
           "name": "reference_audio_urls",
@@ -3430,7 +3433,8 @@
           "description": "Enter a list of audio URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj) .",
           "required": false,
           "maxItems": 3,
-          "accept": "audio/*"
+          "accept": "audio/*",
+          "mentionStyle": "at-audio"
         },
         {
           "name": "return_last_frame",

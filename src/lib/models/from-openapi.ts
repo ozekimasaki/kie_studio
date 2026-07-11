@@ -26,6 +26,8 @@ function detectMentionStyle(
   description?: string,
 ): FieldSchema['mentionStyle'] {
   const hay = `${name} ${description ?? ''}`.toLowerCase()
+  if (/audio/i.test(name)) return 'at-audio'
+  if (/video/i.test(name)) return 'at-video'
   if (hay.includes('[image')) return 'bracket-image'
   if (hay.includes('@image') || REFERENCE_NAME_RE.test(name)) return 'at-image'
   return 'none'

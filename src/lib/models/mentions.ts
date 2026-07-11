@@ -4,6 +4,10 @@ export function formatMention(style: MentionStyle, index1Based: number): string 
   switch (style) {
     case 'at-image':
       return `@image${index1Based}`
+    case 'at-video':
+      return `@Video${index1Based}`
+    case 'at-audio':
+      return `@Audio${index1Based}`
     case 'bracket-image':
       return `[Image ${index1Based}]`
     case 'none':
