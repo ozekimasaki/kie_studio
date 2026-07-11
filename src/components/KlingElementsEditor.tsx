@@ -41,8 +41,7 @@ export function KlingElementsEditor({
     try {
       const remaining = Math.max(0, 4 - el.element_input_urls.length)
       const list = [...files].slice(0, remaining)
-      const urls: string[] = []
-      for (const file of list) urls.push(await uploadFile(file))
+      const urls = await Promise.all(list.map((file) => uploadFile(file)))
       update(index, {
         element_input_urls: [...el.element_input_urls, ...urls],
       })
@@ -130,7 +129,13 @@ export function KlingElementsEditor({
                     key={`${url}-${ui}`}
                     className="group relative h-16 w-16 overflow-hidden rounded-lg border border-[var(--border)]"
                   >
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={url}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
                     <button
                       type="button"
                       disabled={disabled}

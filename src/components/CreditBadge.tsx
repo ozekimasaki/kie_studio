@@ -17,6 +17,7 @@ export function CreditBadge({
     queryFn: fetchCredits,
     enabled: health.data?.hasKey === true,
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
     retry: 1,
   })
 

@@ -25,9 +25,12 @@ import {
   exportHistoryJson,
   loadHistory,
   mergeHistory,
+  normalizeTimestamp,
   parseHistoryJson,
+  PENDING_STALE_MS,
   removeFromList,
   saveHistory,
+  saveHistoryDebounced,
   togglePinInList,
   UNKNOWN_STALE_MS,
   upsertInList,
@@ -73,15 +76,16 @@ type GenerateVars =
   | { source: 'retry'; item: HistoryItem }
 
 function isPendingState(item: HistoryItem): boolean {
+  const age = Date.now() - item.createdAt
   if (
     item.state === 'waiting' ||
     item.state === 'queuing' ||
     item.state === 'generating'
   ) {
-    return true
+    return age < PENDING_STALE_MS
   }
   if (item.state === 'unknown') {
-    return Date.now() - item.createdAt < UNKNOWN_STALE_MS
+    return age < UNKNOWN_STALE_MS
   }
   return false
 }
@@ -111,6 +115,7 @@ export default function App() {
   const modelsQuery = useQuery({
     queryKey: ['models', category],
     queryFn: () => fetchModels(category),
+    staleTime: 5 * 60_000,
   })
 
   const models = modelsQuery.data?.data.models ?? []
@@ -153,11 +158,38 @@ export default function App() {
 
   const pendingCount = pendingTaskIds.length
 
+  // 開いたまま期限切れになった進行中を unknown に落とす
+  useEffect(() => {
+    const demoteStalePending = () => {
+      setHistory((prev) => {
+        const now = Date.now()
+        let changed = false
+        const next = prev.map((h) => {
+          if (
+            (h.state === 'waiting' ||
+              h.state === 'queuing' ||
+              h.state === 'generating') &&
+            now - h.createdAt >= PENDING_STALE_MS
+          ) {
+            changed = true
+            return { ...h, state: 'unknown' as const }
+          }
+          return h
+        })
+        return changed ? saveHistory(next) : prev
+      })
+    }
+    demoteStalePending()
+    const id = window.setInterval(demoteStalePending, 60_000)
+    return () => window.clearInterval(id)
+  }, [])
+
   const taskQueries = useQueries({
     queries: pendingTaskIds.map((taskId) => ({
       queryKey: ['task', taskId] as const,
       queryFn: () => fetchTask(taskId),
       refetchInterval: 2500,
+      refetchIntervalInBackground: false,
       retry: 2,
     })),
   })
@@ -210,7 +242,7 @@ export default function App() {
           resultUrls: data.resultUrls,
           creditsConsumed: data.creditsConsumed,
           failMsg: data.failMsg,
-          createdAt: data.createTime ?? existing.createdAt,
+          createdAt: normalizeTimestamp(data.createTime, existing.createdAt),
         }
         next = upsertInList(next, item)
         changed = true
@@ -230,7 +262,7 @@ export default function App() {
       }
 
       if (!changed) return prev
-      return saveHistory(next)
+      return saveHistoryDebounced(next)
     })
 
     if (autoOpenTaskId) setViewerTaskId(autoOpenTaskId)
@@ -462,14 +494,16 @@ export default function App() {
   }
 
   function togglePin(taskId: string) {
+    let rejected: 'pin-limit' | undefined
     setHistory((prev) => {
-      const { next, rejected } = togglePinInList(prev, taskId)
-      if (rejected === 'pin-limit') {
-        setFormError('ピン留めは最大30件までです')
-        return prev
-      }
-      return saveHistory(next)
+      const result = togglePinInList(prev, taskId)
+      rejected = result.rejected
+      if (result.rejected) return prev
+      return saveHistory(result.next)
     })
+    if (rejected === 'pin-limit') {
+      setFormError('ピン留めは最大30件までです')
+    }
   }
 
   function exportHistory() {

@@ -7,12 +7,36 @@ const MAX_PINNED = 30
 /** Matches App polling: unknown items older than this are not refetched. */
 export const UNKNOWN_STALE_MS = 10 * 60 * 1000
 
+/** Cap for waiting/queuing/generating — stops eternal polling. */
+export const PENDING_STALE_MS = 60 * 60 * 1000
+
+const SAVE_DEBOUNCE_MS = 400
+
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let pendingPersist: HistoryItem[] | null = null
+
+/**
+ * Normalize API/local timestamps to milliseconds.
+ * Values below 1e12 are treated as Unix seconds.
+ */
+export function normalizeTimestamp(
+  value: number | undefined,
+  fallback: number,
+): number {
+  if (value === undefined || !Number.isFinite(value)) return fallback
+  return value < 1e12 ? value * 1000 : value
+}
+
 export function loadHistory(): HistoryItem[] {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw) as HistoryItem[]
-    return Array.isArray(parsed) ? parsed : []
+    const data = JSON.parse(raw) as unknown
+    if (!Array.isArray(data)) return []
+    const normalized = normalizeHistoryItems(data, 'local')
+    // demote / 不正データの除去をディスクにも反映
+    persistToStorage(normalized)
+    return normalized
   } catch {
     return []
   }
@@ -46,9 +70,7 @@ function capItems(items: HistoryItem[]): HistoryItem[] {
   })
 }
 
-/** Persist to localStorage (capped). Returns the in-memory capped list for setState. */
-export function saveHistory(items: HistoryItem[]): HistoryItem[] {
-  const capped = capItems(items)
+function persistToStorage(capped: HistoryItem[]): void {
   const stripInput = ({ input: _input, ...rest }: HistoryItem) => rest
   // 容量超過時は input を段階的に落とす（ピン留めの input は最後まで守る）
   const attempts = [
@@ -59,11 +81,47 @@ export function saveHistory(items: HistoryItem[]): HistoryItem[] {
   for (const attempt of attempts) {
     try {
       localStorage.setItem(KEY, JSON.stringify(attempt))
-      break
+      return
     } catch {
       // 次の縮小版で再試行
     }
   }
+}
+
+function clearSaveDebounce(): void {
+  if (saveDebounceTimer) {
+    clearTimeout(saveDebounceTimer)
+    saveDebounceTimer = null
+  }
+  pendingPersist = null
+}
+
+/** Persist to localStorage (capped). Returns the in-memory capped list for setState. */
+export function saveHistory(items: HistoryItem[]): HistoryItem[] {
+  clearSaveDebounce()
+  const capped = capItems(items)
+  persistToStorage(capped)
+  return capped
+}
+
+/**
+ * Cap for setState immediately; debounce localStorage writes.
+ * User actions should keep using saveHistory for instant persistence.
+ */
+export function saveHistoryDebounced(
+  items: HistoryItem[],
+  delayMs = SAVE_DEBOUNCE_MS,
+): HistoryItem[] {
+  const capped = capItems(items)
+  pendingPersist = capped
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
+  saveDebounceTimer = setTimeout(() => {
+    saveDebounceTimer = null
+    if (pendingPersist) {
+      persistToStorage(pendingPersist)
+      pendingPersist = null
+    }
+  }, delayMs)
   return capped
 }
 
@@ -139,22 +197,21 @@ function asInput(value: unknown): Record<string, unknown> | undefined {
   return value as Record<string, unknown>
 }
 
-/** Parse an exported JSON payload; throws with a user-facing message on bad input. */
-export function parseHistoryJson(raw: string): HistoryItem[] {
-  let data: unknown
-  try {
-    data = JSON.parse(raw)
-  } catch {
-    throw new Error('JSON として読み込めませんでした')
-  }
-  const items = Array.isArray(data)
-    ? data
-    : (data as { items?: unknown })?.items
-  if (!Array.isArray(items)) {
-    throw new Error('履歴データの形式が正しくありません')
-  }
+type NormalizeMode = 'local' | 'import'
+
+/**
+ * Validate and normalize history items.
+ * - import: non-terminal → unknown + stale createdAt (avoid polling foreign tasks)
+ * - local: keep recent pending; demote stale pending to unknown
+ */
+export function normalizeHistoryItems(
+  items: unknown[],
+  mode: NormalizeMode,
+): HistoryItem[] {
   const now = Date.now()
-  const staleAt = now - UNKNOWN_STALE_MS
+  const unknownStaleAt = now - UNKNOWN_STALE_MS
+  const pendingStaleAt = now - PENDING_STALE_MS
+
   const valid = items.flatMap((h): HistoryItem[] => {
     if (!h || typeof h !== 'object' || Array.isArray(h)) return []
     const item = h as Record<string, unknown>
@@ -163,16 +220,36 @@ export function parseHistoryJson(raw: string): HistoryItem[] {
     }
     if (item.category !== 'image' && item.category !== 'video') return []
 
-    // 進行中状態は別環境のタスクをポーリングしないよう unknown に落とす。
-    // createdAt も stale にしてインポート直後の fetch を防ぐ。
     const isTerminal = item.state === 'success' || item.state === 'fail'
-    const state: TaskState = isTerminal
-      ? (item.state as 'success' | 'fail')
-      : 'unknown'
-    const parsedCreatedAt = asFiniteNumber(item.createdAt) ?? now
-    const createdAt = isTerminal
-      ? parsedCreatedAt
-      : Math.min(parsedCreatedAt, staleAt)
+    const rawCreatedAt = asFiniteNumber(item.createdAt) ?? now
+    const parsedCreatedAt = normalizeTimestamp(rawCreatedAt, now)
+
+    let state: TaskState
+    let createdAt: number
+
+    if (isTerminal) {
+      state = item.state as 'success' | 'fail'
+      createdAt = parsedCreatedAt
+    } else if (mode === 'import') {
+      // 別環境のタスクをポーリングしない
+      state = 'unknown'
+      createdAt = Math.min(parsedCreatedAt, unknownStaleAt)
+    } else if (
+      item.state === 'waiting' ||
+      item.state === 'queuing' ||
+      item.state === 'generating'
+    ) {
+      if (parsedCreatedAt < pendingStaleAt) {
+        state = 'unknown'
+        createdAt = Math.min(parsedCreatedAt, unknownStaleAt)
+      } else {
+        state = item.state
+        createdAt = parsedCreatedAt
+      }
+    } else {
+      state = 'unknown'
+      createdAt = parsedCreatedAt
+    }
 
     const normalized: HistoryItem = {
       taskId: item.taskId,
@@ -204,11 +281,29 @@ export function parseHistoryJson(raw: string): HistoryItem[] {
 
     return [normalized]
   })
+
+  return capItems(valid.sort((a, b) => b.createdAt - a.createdAt))
+}
+
+/** Parse an exported JSON payload; throws with a user-facing message on bad input. */
+export function parseHistoryJson(raw: string): HistoryItem[] {
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    throw new Error('JSON として読み込めませんでした')
+  }
+  const items = Array.isArray(data)
+    ? data
+    : (data as { items?: unknown })?.items
+  if (!Array.isArray(items)) {
+    throw new Error('履歴データの形式が正しくありません')
+  }
+  const valid = normalizeHistoryItems(items, 'import')
   if (valid.length === 0) {
     throw new Error('インポートできる履歴がありませんでした')
   }
-  // ピン超過は capItems で newest-first に切り詰める
-  return capItems(valid.sort((a, b) => b.createdAt - a.createdAt))
+  return valid
 }
 
 /** Merge imported items into current list (existing taskIds win), newest first. */
@@ -222,4 +317,3 @@ export function mergeHistory(
     [...current, ...added].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
   )
 }
-

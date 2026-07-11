@@ -478,8 +478,23 @@ export function validateFields(
 ): Record<string, string> {
   const errors: Record<string, string> = {}
   for (const field of fields) {
-    if (!field.required) continue
     const v = values[field.name]
+
+    if (field.type === 'json') {
+      if (v === undefined || v === null || v === '') {
+        if (field.required) {
+          errors[field.name] = `${field.label}は必須です`
+        }
+        continue
+      }
+      // DynamicForm はパース失敗時に文字列を保持する → 送信不可
+      if (typeof v === 'string' || typeof v !== 'object') {
+        errors[field.name] = `${field.label}のJSONが不正です`
+      }
+      continue
+    }
+
+    if (!field.required) continue
     if (v === undefined || v === null || v === '') {
       errors[field.name] = `${field.label}は必須です`
       continue
