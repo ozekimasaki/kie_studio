@@ -43,6 +43,11 @@ export interface FieldSchema {
   accept?: string
   /** For reference fields: how to insert into prompt */
   mentionStyle?: MentionStyle
+  /**
+   * When true, the form stores string[] but the API payload is a single string
+   * (first item). Used for OpenAPI string fields like image_url.
+   */
+  scalar?: boolean
 }
 
 export interface ModelDefinition {

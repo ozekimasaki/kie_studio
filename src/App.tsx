@@ -5,6 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { ExternalLink } from 'lucide-react'
 import { CategoryTabs } from './components/CategoryTabs.tsx'
 import { ModelSelect } from './components/ModelSelect.tsx'
 import {
@@ -51,9 +52,18 @@ function mergeInputWithDefaults(
 ): Record<string, unknown> {
   const values = buildDefaultValues(fields)
   for (const field of fields) {
-    if (input[field.name] !== undefined) {
-      values[field.name] = input[field.name]
+    const raw = input[field.name]
+    if (raw === undefined) continue
+    // History may store scalar reference as a bare string URL.
+    if (
+      field.type === 'reference' &&
+      field.scalar &&
+      typeof raw === 'string'
+    ) {
+      values[field.name] = raw ? [raw] : []
+      continue
     }
+    values[field.name] = raw
   }
   return values
 }
@@ -220,8 +230,7 @@ export default function App() {
       }
 
       if (!changed) return prev
-      saveHistory(next)
-      return next
+      return saveHistory(next)
     })
 
     if (autoOpenTaskId) setViewerTaskId(autoOpenTaskId)
@@ -271,6 +280,16 @@ export default function App() {
         const v = values[field.name]
         if (v === undefined || v === '') continue
         if (field.type === 'reference' && Array.isArray(v) && v.length === 0) {
+          continue
+        }
+        if (
+          field.type === 'reference' &&
+          field.scalar &&
+          Array.isArray(v)
+        ) {
+          const first = v.find((u) => typeof u === 'string' && u.length > 0)
+          if (typeof first !== 'string') continue
+          input[field.name] = first
           continue
         }
         if (field.type === 'kling_elements' && Array.isArray(v)) {
@@ -338,8 +357,7 @@ export default function App() {
           }
           next = upsertInList(next, item)
         }
-        saveHistory(next)
-        return next
+        return saveHistory(next)
       })
       if (taskIds.length === 1) setViewerTaskId(taskIds[0])
       if (failedCount > 0) {
@@ -444,13 +462,14 @@ export default function App() {
   }
 
   function togglePin(taskId: string) {
-    const { next, rejected } = togglePinInList(history, taskId)
-    if (rejected === 'pin-limit') {
-      setFormError('ピン留めは最大30件までです')
-      return
-    }
-    saveHistory(next)
-    setHistory(next)
+    setHistory((prev) => {
+      const { next, rejected } = togglePinInList(prev, taskId)
+      if (rejected === 'pin-limit') {
+        setFormError('ピン留めは最大30件までです')
+        return prev
+      }
+      return saveHistory(next)
+    })
   }
 
   function exportHistory() {
@@ -468,11 +487,7 @@ export default function App() {
   function importHistory(raw: string) {
     try {
       const items = parseHistoryJson(raw)
-      setHistory((prev) => {
-        const next = mergeHistory(prev, items)
-        saveHistory(next)
-        return next
-      })
+      setHistory((prev) => saveHistory(mergeHistory(prev, items)))
     } catch (e) {
       window.alert(
         e instanceof Error ? e.message : '履歴のインポートに失敗しました',
@@ -555,9 +570,10 @@ export default function App() {
                   href={selected.docsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="self-start text-xs text-[var(--accent)] hover:underline"
+                  className="inline-flex items-center gap-1 self-start text-xs text-[var(--accent)] hover:underline"
                 >
-                  Docs ↗
+                  Docs
+                  <ExternalLink size={12} strokeWidth={2} aria-hidden />
                 </a>
               )}
 
@@ -660,11 +676,7 @@ export default function App() {
             onImport={importHistory}
             retryDisabled={generateDisabled}
             onRemove={(taskId) => {
-              setHistory((prev) => {
-                const next = removeFromList(prev, taskId)
-                saveHistory(next)
-                return next
-              })
+              setHistory((prev) => saveHistory(removeFromList(prev, taskId)))
               if (viewerTaskId === taskId) setViewerTaskId(null)
             }}
             onClear={() => {
@@ -675,11 +687,7 @@ export default function App() {
               ) {
                 return
               }
-              setHistory((prev) => {
-                const next = prev.filter((h) => h.pinned)
-                saveHistory(next)
-                return next
-              })
+              setHistory((prev) => saveHistory(prev.filter((h) => h.pinned)))
               setViewerTaskId(null)
             }}
           />

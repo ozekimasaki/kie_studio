@@ -46,7 +46,8 @@ function capItems(items: HistoryItem[]): HistoryItem[] {
   })
 }
 
-export function saveHistory(items: HistoryItem[]) {
+/** Persist to localStorage (capped). Returns the in-memory capped list for setState. */
+export function saveHistory(items: HistoryItem[]): HistoryItem[] {
   const capped = capItems(items)
   const stripInput = ({ input: _input, ...rest }: HistoryItem) => rest
   // 容量超過時は input を段階的に落とす（ピン留めの input は最後まで守る）
@@ -58,11 +59,12 @@ export function saveHistory(items: HistoryItem[]) {
   for (const attempt of attempts) {
     try {
       localStorage.setItem(KEY, JSON.stringify(attempt))
-      return
+      break
     } catch {
       // 次の縮小版で再試行
     }
   }
+  return capped
 }
 
 /** Merge into an in-memory list (avoids localStorage race on rapid updates). */
@@ -101,9 +103,12 @@ export function togglePinInList(
   }
 
   return {
-    next: prev.map((h) =>
-      h.taskId === taskId ? { ...h, pinned: !h.pinned } : h,
-    ),
+    next: prev
+      .map((h) =>
+        h.taskId === taskId ? { ...h, pinned: !h.pinned } : h,
+      )
+      // ピン留めを先頭に（同グループ内は相対順を維持）
+      .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))),
   }
 }
 
@@ -218,19 +223,3 @@ export function mergeHistory(
   )
 }
 
-export function upsertHistory(item: HistoryItem): HistoryItem[] {
-  const next = upsertInList(loadHistory(), item)
-  saveHistory(next)
-  return next
-}
-
-export function removeHistory(taskId: string): HistoryItem[] {
-  const next = removeFromList(loadHistory(), taskId)
-  saveHistory(next)
-  return next
-}
-
-export function clearHistory(): HistoryItem[] {
-  saveHistory([])
-  return []
-}

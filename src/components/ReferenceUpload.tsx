@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { LoaderCircle, Plus, X } from 'lucide-react'
 import { uploadFile } from '../lib/api.ts'
 import { formatMention } from '../lib/models/mentions.ts'
 import type { MentionStyle } from '../lib/models/types.ts'
@@ -73,9 +74,9 @@ export function ReferenceUpload({
                   disabled={disabled}
                   aria-label={`参照 ${i + 1} を削除`}
                   onClick={() => onChange(value.filter((_, idx) => idx !== i))}
-                  className="absolute right-1 top-1 rounded bg-white/90 px-1.5 text-xs text-[var(--text)] shadow transition hover:bg-white disabled:opacity-50"
+                  className="absolute right-1 top-1 inline-flex items-center justify-center rounded bg-white/90 p-0.5 text-[var(--text)] shadow transition hover:bg-white disabled:opacity-50"
                 >
-                  ×
+                  <X size={12} strokeWidth={2.5} aria-hidden />
                 </button>
               </div>
               {canMention && token && (
@@ -98,9 +99,16 @@ export function ReferenceUpload({
             id={inputId}
             disabled={disabled || uploading}
             onClick={() => inputRef.current?.click()}
-            className="flex h-20 w-20 flex-col items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
           >
-            {uploading ? '…' : '+ 追加'}
+            {uploading ? (
+              <LoaderCircle size={16} strokeWidth={2} className="animate-spin" aria-hidden />
+            ) : (
+              <>
+                <Plus size={16} strokeWidth={2} aria-hidden />
+                追加
+              </>
+            )}
           </button>
         )}
       </div>

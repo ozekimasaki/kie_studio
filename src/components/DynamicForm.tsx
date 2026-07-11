@@ -29,7 +29,7 @@ function FieldLabel({
   hint?: string | null
 }) {
   return (
-    <div className="mb-1.5 flex items-baseline justify-between gap-2">
+    <div className="mb-1.5">
       <label htmlFor={htmlFor} className="text-sm font-medium">
         {field.label}
         {field.required && <span className="ml-1 text-[var(--danger)]">*</span>}
@@ -40,12 +40,9 @@ function FieldLabel({
         )}
       </label>
       {field.description && (
-        <span
-          className="max-w-[55%] truncate text-[11px] text-[var(--text-muted)]"
-          title={field.description}
-        >
+        <p className="mt-0.5 text-[11px] leading-snug text-[var(--text-muted)]">
           {field.description}
-        </span>
+        </p>
       )}
     </div>
   )
