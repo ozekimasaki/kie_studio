@@ -17,6 +17,9 @@ import {
   type MediaExpiry,
 } from '../lib/mediaExpiry.ts'
 import type { HistoryItem, TaskState } from '../lib/models/types.ts'
+import { Pressable, PressableDiv } from './motion/Pressable.tsx'
+import { SharedMedia } from './motion/SharedMedia.tsx'
+import { SpringSheet } from './motion/SpringSheet.tsx'
 
 function successExpiry(item: HistoryItem): MediaExpiry | null {
   if (item.state !== 'success' || !(item.resultUrls?.length ?? 0)) return null
@@ -97,8 +100,8 @@ type CategoryFilter = 'all' | 'image' | 'video'
 
 const MAX_COMPARE = 4
 
-const smallBtnClass =
-  'rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]'
+const smallBtnClass = 'studio-btn'
+const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
 
 export function HistoryGallery({
   items,
@@ -258,9 +261,11 @@ export function HistoryGallery({
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-[var(--text)]">ギャラリー</h2>
+      <div className="gallery-toolbar flex flex-wrap items-start justify-between gap-3 rounded-[var(--radius-md)] px-3 py-2.5">
+        <div className="min-w-0 space-y-0.5">
+          <h2 className="text-[0.9375rem] font-bold text-[var(--text)]">
+            ギャラリー
+          </h2>
           <p className="text-xs text-[var(--text-muted)]">
             {items.length === 0
               ? 'まだ生成がありません'
@@ -268,39 +273,37 @@ export function HistoryGallery({
                 ? `${items.length} 件 · ${pendingCount} 件生成中`
                 : `${items.length} 件（ピン留めは押し出されません）`}
           </p>
-          <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+          <p className="text-[11px] text-[var(--text-muted)]">
             生成メディアは kie.ai 側で約14日で削除されます
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {(items.length > 1 || compareMode) && (
-            <button
-              type="button"
+            <Pressable
               onClick={() =>
                 compareMode ? exitCompareMode() : setCompareMode(true)
               }
               aria-pressed={compareMode}
               className={`${smallBtnClass} ${
-                compareMode
-                  ? 'border-[var(--accent)] text-[var(--accent)]'
-                  : ''
+                compareMode ? 'border-[var(--accent)] text-[var(--accent)]' : ''
               }`}
+              scaleTo={0.96}
             >
               {compareMode ? '比較を終了' : '比較'}
-            </button>
+            </Pressable>
           )}
           {items.length > 0 && (
-            <button type="button" onClick={onExport} className={smallBtnClass}>
+            <Pressable onClick={onExport} className={smallBtnClass} scaleTo={0.96}>
               書き出し
-            </button>
+            </Pressable>
           )}
-          <button
-            type="button"
+          <Pressable
             onClick={() => importInputRef.current?.click()}
             className={smallBtnClass}
+            scaleTo={0.96}
           >
             読み込み
-          </button>
+          </Pressable>
           <input
             ref={importInputRef}
             type="file"
@@ -314,13 +317,13 @@ export function HistoryGallery({
             }}
           />
           {items.length > 0 && (
-            <button
-              type="button"
+            <Pressable
               onClick={onClear}
               className={`${smallBtnClass} hover:border-[var(--danger)] hover:text-[var(--danger)]`}
+              scaleTo={0.96}
             >
               すべて削除
-            </button>
+            </Pressable>
           )}
         </div>
       </div>
@@ -333,7 +336,7 @@ export function HistoryGallery({
               setCategoryFilter(e.target.value as CategoryFilter)
             }
             aria-label="カテゴリで絞り込み"
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 outline-none focus:border-[var(--accent)]"
+            className={filterSelectClass}
           >
             <option value="all">全カテゴリ</option>
             <option value="image">IMAGE</option>
@@ -343,7 +346,7 @@ export function HistoryGallery({
             value={stateFilter}
             onChange={(e) => setStateFilter(e.target.value as StateFilter)}
             aria-label="状態で絞り込み"
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 outline-none focus:border-[var(--accent)]"
+            className={filterSelectClass}
           >
             <option value="all">全状態</option>
             <option value="success">成功</option>
@@ -354,7 +357,7 @@ export function HistoryGallery({
             value={modelFilter}
             onChange={(e) => setModelFilter(e.target.value)}
             aria-label="モデルで絞り込み"
-            className="max-w-44 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 outline-none focus:border-[var(--accent)]"
+            className={`${filterSelectClass} max-w-44`}
           >
             <option value="all">全モデル</option>
             {modelOptions.map((m) => (
@@ -372,16 +375,18 @@ export function HistoryGallery({
       )}
 
       {compareMode && (
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3 py-2">
           <span className="text-xs text-[var(--text)]">
-            比較するカードを選択（最大 {MAX_COMPARE} 件）:{' '}
-            <span className="font-semibold">{compareItems.length} 件選択中</span>
+            比較する項目を選択（最大 {MAX_COMPARE} 件）:{' '}
+            <span className="font-semibold tabular-nums">
+              {compareItems.length} 件選択中
+            </span>
           </span>
           <button
             type="button"
             disabled={compareItems.length < 2}
             onClick={() => setShowCompare(true)}
-            className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+            className="studio-btn-primary w-auto cursor-pointer px-3 py-1.5 text-xs disabled:opacity-50"
           >
             並べて比較
           </button>
@@ -389,23 +394,23 @@ export function HistoryGallery({
       )}
 
       {items.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg)] px-6 py-16 text-center">
-          <div>
-            <p className="text-sm font-medium text-[var(--text)]">履歴ギャラリー</p>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
+        <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
+          <div className="max-w-sm">
+            <p className="studio-empty-title">まだ何もありません</p>
+            <p className="studio-empty-body">
               左のフォームから生成すると、ここに並びます
             </p>
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg)] px-6 py-16 text-center">
-          <p className="text-xs text-[var(--text-muted)]">
+        <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
+          <p className="studio-empty-body">
             絞り込み条件に一致する履歴がありません
           </p>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
             {filtered.map((h) => {
               const selected = h.taskId === activeTaskId
               const comparing = compareIds.includes(h.taskId)
@@ -414,15 +419,16 @@ export function HistoryGallery({
               const expiry = successExpiry(h)
 
               return (
-                <div
+                <PressableDiv
                   key={h.taskId}
-                  className={`relative overflow-hidden rounded-2xl border bg-[var(--bg)] transition ${
+                  className={`studio-tile group relative ${
                     compareMode && comparing
-                      ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/40'
+                      ? 'is-selected'
                       : selected && !compareMode
-                        ? 'border-[var(--accent)] shadow-md ring-2 ring-[var(--accent)]/20'
-                        : 'border-[var(--border)] hover:border-[var(--accent)]/50 hover:shadow-sm'
+                        ? 'is-selected'
+                        : ''
                   }`}
+                  scaleTo={0.98}
                 >
                   <button
                     type="button"
@@ -433,7 +439,10 @@ export function HistoryGallery({
                       compareMode ? toggleCompare(h.taskId) : onSelect(h)
                     }
                   >
-                    <div className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]">
+                    <SharedMedia
+                      layoutId={`media-${h.taskId}`}
+                      className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]"
+                    >
                       {thumb ? (
                         isVideoUrl(thumb) ? (
                           <video
@@ -452,9 +461,9 @@ export function HistoryGallery({
                           />
                         )
                       ) : busy ? (
-                        <div className="flex h-full flex-col items-center justify-center gap-3 bg-[linear-gradient(145deg,#eef3f9,#f8fafc)] p-3">
+                        <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-3">
                           <div className="relative">
-                            <div className="size-10 animate-spin rounded-full border-[3px] border-[var(--border)] border-t-[var(--accent)]" />
+                            <div className="size-9 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
                           </div>
                           <div className="text-center">
                             <div className="text-xs font-semibold text-[var(--accent)]">
@@ -487,18 +496,18 @@ export function HistoryGallery({
                       )}
 
                       {expiry?.status === 'expired' && (
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 px-2">
-                          <span className="rounded-md bg-black/70 px-2 py-1 text-center text-[10px] font-semibold text-white">
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[var(--overlay)] px-2">
+                          <span className="rounded-[var(--radius-sm)] bg-[var(--text)] px-2 py-1 text-center text-[10px] font-semibold text-[var(--on-accent)]">
                             期限切れの可能性
                           </span>
                         </div>
                       )}
 
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-2 pt-8">
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[oklch(0.15_0.02_250_/_0.72)] p-2">
                         <div className="truncate text-[11px] font-medium text-white">
                           {shortModel(h.model)}
                         </div>
-                        <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80">
+                        <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
                           <span>{relativeTime(h.createdAt)}</span>
                           <span className="flex shrink-0 items-center gap-1.5">
                             {expiry && (
@@ -515,16 +524,16 @@ export function HistoryGallery({
                         </div>
                       </div>
 
-                      <span className="absolute left-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--text)] shadow-sm">
+                      <span className="absolute left-2 top-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--text)]">
                         {h.category}
                       </span>
 
                       {compareMode && (
                         <span
-                          className={`absolute right-2 top-2 flex size-6 items-center justify-center rounded-full text-xs font-bold shadow-sm ${
+                          className={`absolute right-2 top-2 flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-xs font-bold tabular-nums ${
                             comparing
-                              ? 'bg-[var(--accent)] text-white'
-                              : 'bg-white/90 text-[var(--text-muted)]'
+                              ? 'bg-[var(--accent)] text-[var(--on-accent)]'
+                              : 'border border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)]'
                           }`}
                         >
                           {comparing ? (
@@ -534,21 +543,27 @@ export function HistoryGallery({
                           )}
                         </span>
                       )}
-                    </div>
+                    </SharedMedia>
                   </button>
 
                   {!compareMode && (
-                    <div className="absolute right-2 top-2 flex items-center gap-1">
-                      <button
-                        type="button"
+                    <div
+                      className={`absolute right-2 top-2 flex items-center gap-1 transition ${
+                        h.pinned
+                          ? 'opacity-100'
+                          : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100'
+                      }`}
+                    >
+                      <Pressable
                         title={h.pinned ? 'ピンを外す' : 'ピン留め'}
                         aria-label={h.pinned ? 'ピンを外す' : 'ピン留め'}
                         aria-pressed={Boolean(h.pinned)}
                         onClick={() => onTogglePin(h.taskId)}
-                        className={`rounded-md p-1 shadow-sm transition ${
+                        scaleTo={0.96}
+                        className={`rounded-[var(--radius-sm)] border border-[var(--border)] p-1.5 ${
                           h.pinned
-                            ? 'bg-[var(--accent)] text-white'
-                            : 'bg-white/90 text-[var(--text-muted)] hover:text-[var(--accent)]'
+                            ? 'border-transparent bg-[var(--accent)] text-[var(--on-accent)]'
+                            : 'bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--accent)]'
                         }`}
                       >
                         <Pin
@@ -557,63 +572,60 @@ export function HistoryGallery({
                           aria-hidden
                           fill={h.pinned ? 'currentColor' : 'none'}
                         />
-                      </button>
+                      </Pressable>
                       {canReuse(h) && (
-                        <button
-                          type="button"
+                        <Pressable
                           title="この入力をフォームに復元"
                           aria-label="この入力をフォームに復元"
                           onClick={() => onReuse(h)}
-                          className="rounded-md bg-white/90 p-1 text-[var(--text-muted)] shadow-sm transition hover:text-[var(--accent)]"
+                          scaleTo={0.96}
+                          className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
                         >
                           <RotateCcw size={14} strokeWidth={2} aria-hidden />
-                        </button>
+                        </Pressable>
                       )}
-                      <button
-                        type="button"
+                      <Pressable
                         title="削除"
                         aria-label="削除"
                         onClick={() => onRemove(h.taskId)}
-                        className="rounded-md bg-white/90 p-1 text-[var(--text-muted)] shadow-sm transition hover:text-[var(--danger)]"
+                        scaleTo={0.96}
+                        className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] p-1.5 text-[var(--text-muted)] hover:text-[var(--danger)]"
                       >
                         <X size={14} strokeWidth={2} aria-hidden />
-                      </button>
+                      </Pressable>
                     </div>
                   )}
 
                   {!compareMode && h.state === 'fail' && canReuse(h) && (
-                    <button
-                      type="button"
+                    <Pressable
                       disabled={retryDisabled}
                       onClick={() => onRetry(h)}
-                      className="absolute bottom-2 right-2 rounded-md bg-white/90 px-2 py-1 text-[10px] font-semibold text-[var(--danger)] shadow-sm transition hover:brightness-95 disabled:opacity-50"
+                      scaleTo={0.96}
+                      className="absolute bottom-2 right-2 rounded-[var(--radius-md)] border border-[var(--danger)]/30 bg-[var(--surface-raised)] px-2.5 py-1 text-[10px] font-semibold text-[var(--danger)] disabled:opacity-50"
                     >
                       再実行
-                    </button>
+                    </Pressable>
                   )}
-                </div>
+                </PressableDiv>
               )
             })}
           </div>
         </div>
       )}
 
-      {showViewer && active && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-          onClick={onClose}
-          role="presentation"
-        >
-          <div
-            className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-panel)] shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="viewer-title"
-          >
-            <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+      <SpringSheet
+        open={Boolean(showViewer && active)}
+        onClose={onClose}
+        labelledBy="viewer-title"
+      >
+        {active && (
+          <>
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
               <div className="min-w-0">
-                <div id="viewer-title" className="truncate font-semibold">
+                <div
+                  id="viewer-title"
+                  className="truncate text-lg font-bold"
+                >
                   {shortModel(active.model)}
                   {active.pinned && (
                     <span
@@ -629,34 +641,34 @@ export function HistoryGallery({
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
+                <div className="mt-1 truncate text-xs text-[var(--text-muted)]">
                   {fullPrompt(active) || active.taskId}
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 {canReuse(active) && (
-                  <button
-                    type="button"
+                  <Pressable
                     onClick={() => onReuse(active)}
                     className={`${smallBtnClass} inline-flex items-center gap-1`}
                     title="この入力をフォームに復元"
+                    scaleTo={0.96}
                   >
                     <RotateCcw size={14} strokeWidth={2} aria-hidden />
                     再利用
-                  </button>
+                  </Pressable>
                 )}
-                <button
+                <Pressable
                   ref={closeBtnRef}
-                  type="button"
-                  className="rounded-lg border border-[var(--border)] px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
+                  className={smallBtnClass}
                   onClick={onClose}
+                  scaleTo={0.96}
                 >
                   閉じる
-                </button>
+                </Pressable>
               </div>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto bg-[var(--bg)] p-4">
+            <div className="max-h-[70vh] overflow-y-auto bg-[var(--bg)] p-5">
               {isBusyState(active.state) && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16">
                   <div className="size-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
@@ -676,14 +688,14 @@ export function HistoryGallery({
                     </p>
                   )}
                   {canReuse(active) && (
-                    <button
-                      type="button"
+                    <Pressable
                       disabled={retryDisabled}
                       onClick={() => onRetry(active)}
-                      className="rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+                      className="studio-btn-primary mx-auto w-auto px-4 py-2 text-xs disabled:opacity-50"
+                      scaleTo={0.97}
                     >
                       同じ入力で再実行
-                    </button>
+                    </Pressable>
                   )}
                 </div>
               )}
@@ -695,49 +707,52 @@ export function HistoryGallery({
               {active.state === 'success' &&
                 (active.resultUrls ?? []).map((url, index) => (
                   <div key={url} className="space-y-3">
-                    {isVideoUrl(url) ? (
-                      <video
-                        src={url}
-                        controls
-                        preload="metadata"
-                        className="mx-auto max-h-[55vh] w-full rounded-xl bg-black object-contain"
-                      />
-                    ) : (
-                      <img
-                        src={url}
-                        alt={active.prompt || '生成結果'}
-                        decoding="async"
-                        className="mx-auto max-h-[55vh] w-full rounded-xl object-contain"
-                      />
-                    )}
+                    <SharedMedia
+                      layoutId={index === 0 ? `media-${active.taskId}` : `media-${active.taskId}-${index}`}
+                      className="studio-tile overflow-hidden"
+                    >
+                      {isVideoUrl(url) ? (
+                        <video
+                          src={url}
+                          controls
+                          preload="metadata"
+                          className="mx-auto max-h-[55vh] w-full bg-black object-contain"
+                        />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={active.prompt || '生成結果'}
+                          decoding="async"
+                          className="mx-auto max-h-[55vh] w-full object-contain"
+                        />
+                      )}
+                    </SharedMedia>
                     <div className="flex flex-wrap gap-2">
                       <a
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
+                        className={smallBtnClass}
                       >
                         開く
                       </a>
-                      <button
-                        type="button"
+                      <Pressable
                         disabled={download.isPending}
                         onClick={() => download.mutate(url)}
-                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)] disabled:opacity-50"
+                        className={smallBtnClass}
+                        scaleTo={0.96}
                       >
-                        {download.isPending
-                          ? '取得中…'
-                          : 'Download via API'}
-                      </button>
-                      <button
-                        type="button"
+                        {download.isPending ? '取得中…' : 'Download via API'}
+                      </Pressable>
+                      <Pressable
                         onClick={() => onSendToInput(url)}
                         title="この結果を左フォームの参照入力に追加"
-                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
+                        className={`${smallBtnClass} inline-flex items-center gap-1`}
+                        scaleTo={0.96}
                       >
                         <ArrowRight size={14} strokeWidth={2} aria-hidden />
                         入力に使う
-                      </button>
+                      </Pressable>
                       {typeof active.creditsConsumed === 'number' && (
                         <span className="ml-auto self-center text-xs text-[var(--text-muted)]">
                           使用{' '}
@@ -761,7 +776,7 @@ export function HistoryGallery({
                       </p>
                     )}
                     {download.isError && (
-                      <p className="text-xs text-[var(--danger)]">
+                      <p className="studio-field-error">
                         {(download.error as Error).message ||
                           'ダウンロード URL の取得に失敗しました'}
                       </p>
@@ -770,15 +785,13 @@ export function HistoryGallery({
                 ))}
 
               {fullPrompt(active) && (
-                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+                <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                      Prompt
-                    </span>
-                    <button
-                      type="button"
+                    <span className="studio-label">Prompt</span>
+                    <Pressable
                       onClick={() => void copyPrompt(fullPrompt(active)!)}
-                      className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                      className={`${smallBtnClass} text-[11px]`}
+                      scaleTo={0.96}
                     >
                       {copied ? (
                         <>
@@ -788,7 +801,7 @@ export function HistoryGallery({
                       ) : (
                         'コピー'
                       )}
-                    </button>
+                    </Pressable>
                   </div>
                   <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--text)]">
                     {fullPrompt(active)}
@@ -796,111 +809,102 @@ export function HistoryGallery({
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </SpringSheet>
 
-      {showCompare && compareItems.length >= 2 && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-          onClick={() => setShowCompare(false)}
-          role="presentation"
-        >
-          <div
-            className="relative max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-panel)] shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="生成結果の比較"
+      <SpringSheet
+        open={showCompare && compareItems.length >= 2}
+        onClose={() => setShowCompare(false)}
+        label="生成結果の比較"
+        maxWidthClass="max-w-6xl"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
+          <div className="text-lg font-bold tabular-nums">
+            比較（{compareItems.length} 件）
+          </div>
+          <Pressable
+            className={smallBtnClass}
+            onClick={() => setShowCompare(false)}
+            scaleTo={0.96}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
-              <div className="font-semibold">
-                比較（{compareItems.length} 件）
-              </div>
-              <button
-                type="button"
-                className="rounded-lg border border-[var(--border)] px-2 py-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
-                onClick={() => setShowCompare(false)}
-              >
-                閉じる
-              </button>
-            </div>
-            <div className="max-h-[82vh] overflow-y-auto p-4">
-              <div
-                className="grid gap-3"
-                style={{
-                  gridTemplateColumns: `repeat(${compareItems.length}, minmax(0, 1fr))`,
-                }}
-              >
-                {compareItems.map((h) => {
-                  const url = h.resultUrls?.[0]
-                  return (
-                    <div
-                      key={h.taskId}
-                      className="flex min-w-0 flex-col gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-2.5"
-                    >
-                      <div className="overflow-hidden rounded-lg bg-[var(--bg-elevated)]">
-                        {url ? (
-                          isVideoUrl(url) ? (
-                            <video
-                              src={url}
-                              controls
-                              muted
-                              preload="metadata"
-                              className="aspect-square w-full bg-black object-contain"
-                            />
-                          ) : (
-                            <img
-                              src={url}
-                              alt={h.prompt || shortModel(h.model)}
-                              loading="lazy"
-                              decoding="async"
-                              className="aspect-square w-full object-contain"
-                            />
-                          )
-                        ) : (
-                          <div className="flex aspect-square items-center justify-center text-xs text-[var(--text-muted)]">
-                            {stateLabel(h.state)}
-                          </div>
-                        )}
+            閉じる
+          </Pressable>
+        </div>
+        <div className="max-h-[82vh] overflow-y-auto p-4">
+          <div
+            className="grid gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${compareItems.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {compareItems.map((h) => {
+              const url = h.resultUrls?.[0]
+              return (
+                <div
+                  key={h.taskId}
+                  className="studio-tile flex min-w-0 flex-col gap-2 p-2"
+                >
+                  <div className="overflow-hidden rounded-[var(--radius-sm)] bg-[var(--bg)]">
+                    {url ? (
+                      isVideoUrl(url) ? (
+                        <video
+                          src={url}
+                          controls
+                          muted
+                          preload="metadata"
+                          className="aspect-square w-full bg-black object-contain"
+                        />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={h.prompt || shortModel(h.model)}
+                          loading="lazy"
+                          decoding="async"
+                          className="aspect-square w-full object-contain"
+                        />
+                      )
+                    ) : (
+                      <div className="flex aspect-square items-center justify-center text-xs text-[var(--text-muted)]">
+                        {stateLabel(h.state)}
                       </div>
-                      <div className="min-w-0 space-y-1">
-                        <div className="truncate text-xs font-semibold">
-                          {shortModel(h.model)}
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
-                          <span>{relativeTime(h.createdAt)}</span>
-                          {typeof h.creditsConsumed === 'number' && (
-                            <span>−{h.creditsConsumed}</span>
-                          )}
-                        </div>
-                        {fullPrompt(h) && (
-                          <p className="line-clamp-6 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[var(--text-muted)]">
-                            {fullPrompt(h)}
-                          </p>
-                        )}
-                        {canReuse(h) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              exitCompareMode()
-                              onReuse(h)
-                            }}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[var(--border)] px-2 py-1.5 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
-                          >
-                            <RotateCcw size={12} strokeWidth={2} aria-hidden />
-                            この入力を再利用
-                          </button>
-                        )}
-                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <div className="truncate text-xs font-semibold">
+                      {shortModel(h.model)}
                     </div>
-                  )
-                })}
-              </div>
-            </div>
+                    <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                      <span>{relativeTime(h.createdAt)}</span>
+                      {typeof h.creditsConsumed === 'number' && (
+                        <span>−{h.creditsConsumed}</span>
+                      )}
+                    </div>
+                    {fullPrompt(h) && (
+                      <p className="line-clamp-6 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[var(--text-muted)]">
+                        {fullPrompt(h)}
+                      </p>
+                    )}
+                    {canReuse(h) && (
+                      <Pressable
+                        onClick={() => {
+                          exitCompareMode()
+                          onReuse(h)
+                        }}
+                        className={`${smallBtnClass} w-full`}
+                        scaleTo={0.97}
+                      >
+                        <RotateCcw size={12} strokeWidth={2} aria-hidden />
+                        この入力を再利用
+                      </Pressable>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
-      )}
+      </SpringSheet>
     </section>
   )
 }

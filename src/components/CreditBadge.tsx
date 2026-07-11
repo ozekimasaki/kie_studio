@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchCredits, fetchHealth } from '../lib/api.ts'
+import { Pressable } from './motion/Pressable.tsx'
 
 export function CreditBadge({
   lastUsed,
@@ -23,7 +24,7 @@ export function CreditBadge({
 
   if (health.isLoading) {
     return (
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2 text-xs text-[var(--text-muted)]">
+      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2 text-xs text-[var(--text-muted)]">
         クレジット読込中…
       </div>
     )
@@ -31,7 +32,7 @@ export function CreditBadge({
 
   if (health.data && !health.data.hasKey) {
     return (
-      <div className="rounded-xl border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-3 py-2 text-xs text-[var(--warning)]">
+      <div className="rounded-[var(--radius-md)] border border-[var(--warning)]/30 bg-[var(--warning)]/10 px-3 py-2 text-xs font-medium text-[var(--warning)]">
         API key 未設定
       </div>
     )
@@ -39,15 +40,15 @@ export function CreditBadge({
 
   if (credits.isError) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--danger)]/40 bg-[var(--danger)]/5 px-3 py-2 text-xs text-[var(--danger)]">
+      <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--danger)]/25 bg-[var(--danger)]/8 px-3 py-2 text-xs text-[var(--danger)]">
         <span>クレジット取得エラー</span>
-        <button
-          type="button"
+        <Pressable
           onClick={() => void credits.refetch()}
-          className="rounded-md border border-[var(--danger)]/40 px-2 py-0.5 font-medium hover:bg-[var(--danger)]/10"
+          className="studio-btn border-[var(--danger)]/30 px-2.5 py-0.5 font-medium text-[var(--danger)]"
+          scaleTo={0.96}
         >
           再試行
-        </button>
+        </Pressable>
       </div>
     )
   }
@@ -57,21 +58,17 @@ export function CreditBadge({
     : (credits.data?.data.credits ?? null)
 
   return (
-    <div className="flex items-stretch gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2 shadow-sm">
-      <div className="min-w-[88px]">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          残クレジット
-        </div>
-        <div className="text-lg font-bold leading-tight text-[var(--accent)]">
+    <div className="flex items-stretch gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2">
+      <div className="min-w-[72px]">
+        <div className="studio-label">残クレジット</div>
+        <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--accent)]">
           {remaining === null ? '…' : remaining.toLocaleString()}
         </div>
       </div>
       <div className="w-px self-stretch bg-[var(--border)]" />
-      <div className="min-w-[88px]">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-          直近の使用
-        </div>
-        <div className="text-lg font-bold leading-tight text-[var(--text)]">
+      <div className="min-w-[72px]">
+        <div className="studio-label">直近の使用</div>
+        <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--text)]">
           {typeof lastUsed === 'number' ? (
             <>
               <span className="text-[var(--danger)]">−</span>

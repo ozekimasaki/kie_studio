@@ -12,16 +12,13 @@ export function ModelSelect({
   disabled?: boolean
 }) {
   return (
-    <div className="space-y-1.5">
-      <label
-        htmlFor="model-select"
-        className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]"
-      >
+    <div className="space-y-2">
+      <label htmlFor="model-select" className="studio-label">
         Model
       </label>
       <select
         id="model-select"
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] disabled:opacity-50"
+        className="studio-select w-full py-2.5"
         value={value ?? ''}
         disabled={disabled || models.length === 0}
         onChange={(e) => onChange(e.target.value)}
