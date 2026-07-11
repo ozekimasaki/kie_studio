@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-07-11T11:55:03.001Z",
+  "syncedAt": "2026-07-11T12:18:49.876Z",
   "source": "docs.kie.ai/llms.txt",
   "sourceHash": "037f97937ac97234e0349732318588131d8184411f1c6f415de5371596dacc58",
   "models": [
@@ -1074,8 +1074,8 @@
           "description": "A set of images to use as character references. Currently only 1 image is supported, rest will be ignored. (maximum total size 10MB across all character references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "rendering_speed",
@@ -1176,17 +1176,25 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The image URL to generate an image from. Needs to match the dimensions of the mask. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "mask_url",
-          "type": "string",
+          "type": "reference",
           "label": "Mask Url",
           "description": "The mask URL to inpaint the image. Needs to match the dimensions of the input image. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_image_urls",
@@ -1195,8 +1203,8 @@
           "description": "A set of images to use as character references. Currently only 1 image is supported, rest will be ignored. (maximum total size 10MB across all character references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "rendering_speed",
@@ -1273,10 +1281,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The image URL to remix (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_image_urls",
@@ -1285,8 +1297,8 @@
           "description": "A set of images to use as character references. Currently only 1 image is supported, rest will be ignored. (maximum total size 10MB across all character references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "rendering_speed",
@@ -1385,15 +1397,19 @@
           "description": "A set of images to use as style references (maximum total size 10MB across all style references). The images should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "reference_mask_urls",
-          "type": "string",
+          "type": "reference",
           "label": "Reference Mask Urls",
           "description": "A set of masks to apply to the character references. Currently only 1 mask is supported, rest will be ignored. (maximum total size 10MB across all character references). The masks should be in JPEG, PNG or WebP format (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         }
       ]
     },
@@ -1415,17 +1431,25 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The image URL to generate an image from. Needs to match the dimensions of the mask.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "mask_url",
-          "type": "string",
+          "type": "reference",
           "label": "Mask Url",
           "description": "The mask URL to inpaint the image. Needs to match the dimensions of the input image.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "rendering_speed",
@@ -1476,10 +1500,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The image URL to remix.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "rendering_speed",
@@ -1668,10 +1696,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image to edit. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "acceleration",
@@ -1806,10 +1838,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The reference image to guide the generation (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "strength",
@@ -2030,10 +2066,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image to edit. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "image_size",
@@ -2092,10 +2132,14 @@
       "fields": [
         {
           "name": "image",
-          "type": "string",
+          "type": "reference",
           "label": "Image",
           "description": "Image to upscale (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         }
       ]
     },
@@ -2109,10 +2153,14 @@
       "fields": [
         {
           "name": "image",
-          "type": "string",
+          "type": "reference",
           "label": "Image",
           "description": "Image to remove background from. Supported formats: PNG, JPG, WEBP. Max 5MB, max 16MP, max dimension 4096px, min dimension 256px. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 5.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         }
       ]
     },
@@ -2747,10 +2795,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Url of the image to be upscaled (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "upscale_factor",
@@ -2826,10 +2878,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image used to generate video (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",
@@ -2883,10 +2939,14 @@
         },
         {
           "name": "end_image_url",
-          "type": "string",
+          "type": "reference",
           "label": "End Image Url",
           "description": "The URL of the image the video ends with. Defaults to None. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "nsfw_checker",
@@ -3182,17 +3242,25 @@
         },
         {
           "name": "first_frame_url",
-          "type": "string",
+          "type": "reference",
           "label": "First Frame Url",
           "description": "First frame image url or asset://{assetId}",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "last_frame_url",
-          "type": "string",
+          "type": "reference",
           "label": "Last Frame Url",
           "description": "End frame image url or asset://{assetId}",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_image_urls",
@@ -3312,10 +3380,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image used to generate video (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",
@@ -3368,10 +3440,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image used to generate video (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",
@@ -3450,17 +3526,25 @@
         },
         {
           "name": "first_frame_url",
-          "type": "string",
+          "type": "reference",
           "label": "First Frame Url",
           "description": "First frame image url or asset://{assetId}",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "last_frame_url",
-          "type": "string",
+          "type": "reference",
           "label": "Last Frame Url",
           "description": "End frame image url or asset://{assetId}",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_image_urls",
@@ -3587,8 +3671,8 @@
           "description": "Array of image URLs. You can provide one or more reference images for characters, scenes, styles, or storyboard guidance.",
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "audio_ids",
@@ -3597,8 +3681,8 @@
           "description": "Array of audio IDs generated by the `gemini-omni-audio` endpoint. Useful for narration, dialogue, music, or audio guidance in the generated video. Max 3 items.",
           "required": false,
           "accept": "audio/*",
-          "maxItems": 8,
-          "mentionStyle": "at-audio"
+          "mentionStyle": "at-audio",
+          "maxItems": 8
         },
         {
           "name": "video_list",
@@ -3614,8 +3698,8 @@
           "description": "An array of character IDs generated by the `gemini-omni-character` API. Used to provide character appearance, identity, or person references for the video. Each character_id uses 1 image slot. The base limit is 7 image slots; if video_list is also provided, video_list uses 2 image slots, so character_ids can contain up to 3 IDs.",
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "none"
+          "mentionStyle": "none",
+          "maxItems": 8
         },
         {
           "name": "duration",
@@ -3989,10 +4073,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Input image to animate (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -4045,10 +4133,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Input image to animate (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -4101,17 +4193,25 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Input image to animate (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "end_image_url",
-          "type": "string",
+          "type": "reference",
           "label": "End Image Url",
           "description": "Optional URL of the image to use as the last frame of the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "prompt_optimizer",
@@ -4179,17 +4279,25 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image to use as the first frame of the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "end_image_url",
-          "type": "string",
+          "type": "reference",
           "label": "End Image Url",
           "description": "Optional URL of the image to use as the last frame of the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -4687,10 +4795,14 @@
         },
         {
           "name": "video_url",
-          "type": "string",
+          "type": "reference",
           "label": "Video Url",
           "description": "Input video URL list. Exactly one video is required.",
-          "required": true
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_image",
@@ -4757,17 +4869,25 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the image to be used for the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "tail_image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Tail Image Url",
           "description": "Tail frame image of video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -4887,8 +5007,8 @@
           "description": "URL of the image to be used for the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "duration",
@@ -5132,10 +5252,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image to use as your avatar (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "audio_url",
@@ -5164,10 +5288,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "The URL of the image to use as your avatar (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "audio_url",
@@ -5266,10 +5394,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the image to be used for the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -5304,10 +5436,14 @@
         },
         {
           "name": "tail_image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Tail Image Url",
           "description": "URL of the image to be used for the end of the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         }
       ]
     },
@@ -5329,10 +5465,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the image to be used for the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -5389,8 +5529,8 @@
           "description": "(Required) Include a URL of an image",
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxItems": 8
         },
         {
           "name": "video_urls",
@@ -5399,8 +5539,8 @@
           "description": "(Required) Include a video URL",
           "required": true,
           "accept": "video/*,image/*",
-          "maxItems": 8,
-          "mentionStyle": "at-video"
+          "mentionStyle": "at-video",
+          "maxItems": 8
         },
         {
           "name": "mode",
@@ -5435,10 +5575,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Portrait image URL. Supports any aspect ratio with subjects including people, pets, anime, etc. Accepted file types: image/jpeg, image/png, image/webp. Max file size: 10MB.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "mask_url",
@@ -5448,7 +5592,7 @@
           "required": false,
           "maxItems": 5,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "none"
+          "mentionStyle": "at-image"
         },
         {
           "name": "audio_url",
@@ -5506,10 +5650,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Portrait image URL. Requirements: JPG/PNG/JPEG format, less than 5MB, resolution under 4096x4096. Recommended: single person facing forward, with the face occupying a large proportion of the image. Accepted file types: image/jpeg, image/png, image/jpg. Max file size: 5MB.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         }
       ]
     },
@@ -5523,10 +5671,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "Portrait image URL. Supports detection of up to 5 subjects in the image. Accepted file types: image/jpeg, image/png, image/jpg. Max file size: 5MB.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         }
       ]
     },
@@ -5540,10 +5692,14 @@
       "fields": [
         {
           "name": "video_url",
-          "type": "string",
+          "type": "reference",
           "label": "Video Url",
           "description": "URL of the video to upscale (File URL after upload, not file content; Accepted types: video/mp4, video/quicktime, video/x-matroska; Max size: 50.0MB)",
-          "required": true
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "upscale_factor",
@@ -5581,10 +5737,14 @@
         },
         {
           "name": "video_url",
-          "type": "string",
+          "type": "reference",
           "label": "Video Url",
           "description": "Video URL. Supported resolution: 360p–1080p. Videos above 1080p will be compressed to 1080p, while videos below 360p are not supported. Supported formats: MOV, MP4, HDR. Recommended codec: H.264. Other formats/codecs may be transcoded. Max file size: 500 MB. Bitrate: 1–30 Mbps. Frame rate: 24–60 fps.",
-          "required": true
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "audio_url",
@@ -5727,10 +5887,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the input image. If the input image does not match the chosen aspect ratio, it is resized and center cropped (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "audio_url",
@@ -5916,17 +6080,25 @@
       "fields": [
         {
           "name": "video_url",
-          "type": "string",
+          "type": "reference",
           "label": "Video Url",
           "description": "URL of the input video. (File URL after upload, not file content; Accepted types: video/mp4, video/quicktime, video/x-matroska; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the input image. If the input image does not match the chosen aspect ratio, it is resized and center cropped. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",
@@ -5960,17 +6132,25 @@
       "fields": [
         {
           "name": "video_url",
-          "type": "string",
+          "type": "reference",
           "label": "Video Url",
           "description": "URL of the input video. (File URL after upload, not file content; Accepted types: video/mp4, video/quicktime, video/x-matroska; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the input image. If the input image does not match the chosen aspect ratio, it is resized and center cropped. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",
@@ -6004,10 +6184,14 @@
       "fields": [
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the input image. If the input image does not match the chosen aspect ratio, it is resized and center cropped. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "prompt",
@@ -6165,10 +6349,14 @@
         },
         {
           "name": "image_url",
-          "type": "string",
+          "type": "reference",
           "label": "Image Url",
           "description": "URL of the image to use as the first frame. Must be publicly accessible.",
-          "required": true
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "duration",
@@ -6501,17 +6689,25 @@
         },
         {
           "name": "first_frame_url",
-          "type": "string",
+          "type": "reference",
           "label": "First Frame Url",
           "description": "First frame image URL.",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "last_frame_url",
-          "type": "string",
+          "type": "reference",
           "label": "Last Frame Url",
           "description": "Last frame image URL.",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "first_clip_url",
@@ -6631,10 +6827,14 @@
         },
         {
           "name": "first_frame",
-          "type": "string",
+          "type": "reference",
           "label": "First Frame",
           "description": "First frame image URL. At most one image can be provided. If supplied, `aspect_ratio` is ignored and the output uses a ratio close to the first frame image.",
-          "required": false
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_voice",
@@ -6846,10 +7046,14 @@
         },
         {
           "name": "video_url",
-          "type": "string",
+          "type": "reference",
           "label": "Video Url",
           "description": "URL of the source video to edit. Required. Only one video is supported.",
-          "required": true
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "reference_image",

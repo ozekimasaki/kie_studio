@@ -52,9 +52,18 @@ function mergeInputWithDefaults(
 ): Record<string, unknown> {
   const values = buildDefaultValues(fields)
   for (const field of fields) {
-    if (input[field.name] !== undefined) {
-      values[field.name] = input[field.name]
+    const raw = input[field.name]
+    if (raw === undefined) continue
+    // History may store scalar reference as a bare string URL.
+    if (
+      field.type === 'reference' &&
+      field.scalar &&
+      typeof raw === 'string'
+    ) {
+      values[field.name] = raw ? [raw] : []
+      continue
     }
+    values[field.name] = raw
   }
   return values
 }
@@ -271,6 +280,16 @@ export default function App() {
         const v = values[field.name]
         if (v === undefined || v === '') continue
         if (field.type === 'reference' && Array.isArray(v) && v.length === 0) {
+          continue
+        }
+        if (
+          field.type === 'reference' &&
+          field.scalar &&
+          Array.isArray(v)
+        ) {
+          const first = v.find((u) => typeof u === 'string' && u.length > 0)
+          if (typeof first !== 'string') continue
+          input[field.name] = first
           continue
         }
         if (field.type === 'kling_elements' && Array.isArray(v)) {

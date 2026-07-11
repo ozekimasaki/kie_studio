@@ -1,7 +1,7 @@
 import type { FieldSchema, FieldType, ModelCategory } from './types.ts'
 
 const REFERENCE_NAME_RE =
-  /(image_?urls?|image_?input|input_?urls?|reference_?urls?|video_?urls?|end_?image|start_?image|first_?frame|last_?frame)/i
+  /(image_?urls?|image_?input|input_?urls?|reference_?urls?|reference_?mask|mask_?urls?|video_?urls?|end_?image|start_?image|first_?frame|last_?frame|^image$|^mask$|^video$|^audio$)/i
 
 const TEXTAREA_NAME_RE = /(prompt|negative|description|caption|text)/i
 
@@ -47,6 +47,9 @@ function detectFieldType(
     return 'reference'
   }
   if (prop.type === 'string') {
+    if (REFERENCE_NAME_RE.test(name)) {
+      return 'reference'
+    }
     return TEXTAREA_NAME_RE.test(name) ? 'textarea' : 'string'
   }
   if (prop.type === 'array' || prop.type === 'object') return 'json'
@@ -91,9 +94,15 @@ export function propertyToField(
   }
   if (type === 'reference') {
     field.accept = acceptForField(name)
-    if (typeof prop.maxItems === 'number') field.maxItems = prop.maxItems
-    else field.maxItems = 8
     field.mentionStyle = detectMentionStyle(name, description)
+    if (prop.type === 'string') {
+      field.maxItems = 1
+      field.scalar = true
+    } else if (typeof prop.maxItems === 'number') {
+      field.maxItems = prop.maxItems
+    } else {
+      field.maxItems = 8
+    }
   }
   if (type === 'kling_elements') {
     field.maxItems = typeof prop.maxItems === 'number' ? prop.maxItems : 3
