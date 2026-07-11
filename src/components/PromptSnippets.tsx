@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import {
   addSnippet,
   loadSnippets,
@@ -36,10 +37,15 @@ export function PromptSnippets({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="text-xs text-[var(--text-muted)] transition hover:text-[var(--accent)]"
+        className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] transition hover:text-[var(--accent)]"
         aria-expanded={open}
       >
-        {open ? '▾' : '▸'} スニペット
+        {open ? (
+          <ChevronDown size={14} strokeWidth={2} aria-hidden />
+        ) : (
+          <ChevronRight size={14} strokeWidth={2} aria-hidden />
+        )}
+        スニペット
         {snippets.length > 0 && ` (${snippets.length})`}
       </button>
 
@@ -89,9 +95,9 @@ export function PromptSnippets({
                     type="button"
                     aria-label={`スニペット「${s.title}」を削除`}
                     onClick={() => setSnippets(removeSnippet(s.id))}
-                    className="shrink-0 rounded-md px-1.5 py-1 text-xs text-[var(--text-muted)] transition hover:text-[var(--danger)]"
+                    className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-[var(--text-muted)] transition hover:text-[var(--danger)]"
                   >
-                    ×
+                    <X size={14} strokeWidth={2} aria-hidden />
                   </button>
                 </li>
               ))}

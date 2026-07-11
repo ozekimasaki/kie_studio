@@ -1,6 +1,7 @@
+import { useRef, useState } from 'react'
+import { LoaderCircle, Plus, X } from 'lucide-react'
 import { uploadFile } from '../lib/api.ts'
 import type { KlingElement } from '../lib/models/types.ts'
-import { useRef, useState } from 'react'
 
 function emptyElement(index: number): KlingElement {
   return {
@@ -140,9 +141,9 @@ export function KlingElementsEditor({
                           ),
                         })
                       }
-                      className="absolute right-0.5 top-0.5 rounded bg-white/90 px-1 text-[10px] shadow-sm transition hover:text-[var(--danger)] disabled:opacity-50"
+                      className="absolute right-0.5 top-0.5 inline-flex items-center justify-center rounded bg-white/90 p-0.5 shadow-sm transition hover:text-[var(--danger)] disabled:opacity-50"
                     >
-                      ×
+                      <X size={10} strokeWidth={2.5} aria-hidden />
                     </button>
                   </div>
                 ))}
@@ -151,9 +152,18 @@ export function KlingElementsEditor({
                     type="button"
                     disabled={disabled || uploadingKey === inputKey}
                     onClick={() => fileRefs.current[inputKey]?.click()}
-                    className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] hover:border-[var(--accent)]"
+                    className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
                   >
-                    {uploadingKey === inputKey ? '…' : '+'}
+                    {uploadingKey === inputKey ? (
+                      <LoaderCircle
+                        size={16}
+                        strokeWidth={2}
+                        className="animate-spin"
+                        aria-hidden
+                      />
+                    ) : (
+                      <Plus size={16} strokeWidth={2} aria-hidden />
+                    )}
                   </button>
                 )}
               </div>
@@ -180,9 +190,10 @@ export function KlingElementsEditor({
           type="button"
           disabled={disabled}
           onClick={() => onChange([...value, emptyElement(value.length)])}
-          className="w-full rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
-          + Element を追加
+          <Plus size={16} strokeWidth={2} aria-hidden />
+          Element を追加
         </button>
       )}
 

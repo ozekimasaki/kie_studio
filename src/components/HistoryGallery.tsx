@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import {
+  ArrowRight,
+  Check,
+  Pin,
+  Plus,
+  RotateCcw,
+  X,
+} from 'lucide-react'
 import { fetchDownloadUrl } from '../lib/api.ts'
 import { isVideoUrl } from '../lib/media.ts'
 import type { HistoryItem, TaskState } from '../lib/models/types.ts'
@@ -464,7 +472,11 @@ export function HistoryGallery({
                               : 'bg-white/90 text-[var(--text-muted)]'
                           }`}
                         >
-                          {comparing ? compareIds.indexOf(h.taskId) + 1 : '+'}
+                          {comparing ? (
+                            compareIds.indexOf(h.taskId) + 1
+                          ) : (
+                            <Plus size={12} strokeWidth={2.5} aria-hidden />
+                          )}
                         </span>
                       )}
                     </div>
@@ -478,13 +490,18 @@ export function HistoryGallery({
                         aria-label={h.pinned ? 'ピンを外す' : 'ピン留め'}
                         aria-pressed={Boolean(h.pinned)}
                         onClick={() => onTogglePin(h.taskId)}
-                        className={`rounded-md px-1.5 py-0.5 text-xs shadow-sm transition ${
+                        className={`rounded-md p-1 shadow-sm transition ${
                           h.pinned
                             ? 'bg-[var(--accent)] text-white'
                             : 'bg-white/90 text-[var(--text-muted)] hover:text-[var(--accent)]'
                         }`}
                       >
-                        📌
+                        <Pin
+                          size={14}
+                          strokeWidth={2}
+                          aria-hidden
+                          fill={h.pinned ? 'currentColor' : 'none'}
+                        />
                       </button>
                       {canReuse(h) && (
                         <button
@@ -492,9 +509,9 @@ export function HistoryGallery({
                           title="この入力をフォームに復元"
                           aria-label="この入力をフォームに復元"
                           onClick={() => onReuse(h)}
-                          className="rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] shadow-sm transition hover:text-[var(--accent)]"
+                          className="rounded-md bg-white/90 p-1 text-[var(--text-muted)] shadow-sm transition hover:text-[var(--accent)]"
                         >
-                          ↺
+                          <RotateCcw size={14} strokeWidth={2} aria-hidden />
                         </button>
                       )}
                       <button
@@ -502,9 +519,9 @@ export function HistoryGallery({
                         title="削除"
                         aria-label="削除"
                         onClick={() => onRemove(h.taskId)}
-                        className="rounded-md bg-white/90 px-1.5 py-0.5 text-xs text-[var(--text-muted)] shadow-sm transition hover:text-[var(--danger)]"
+                        className="rounded-md bg-white/90 p-1 text-[var(--text-muted)] shadow-sm transition hover:text-[var(--danger)]"
                       >
-                        ×
+                        <X size={14} strokeWidth={2} aria-hidden />
                       </button>
                     </div>
                   )}
@@ -544,8 +561,16 @@ export function HistoryGallery({
                 <div id="viewer-title" className="truncate font-semibold">
                   {shortModel(active.model)}
                   {active.pinned && (
-                    <span className="ml-2 text-xs" title="ピン留め済み">
-                      📌
+                    <span
+                      className="ml-2 inline-flex align-middle text-[var(--accent)]"
+                      title="ピン留め済み"
+                    >
+                      <Pin
+                        size={14}
+                        strokeWidth={2}
+                        aria-hidden
+                        fill="currentColor"
+                      />
                     </span>
                   )}
                 </div>
@@ -558,10 +583,11 @@ export function HistoryGallery({
                   <button
                     type="button"
                     onClick={() => onReuse(active)}
-                    className={smallBtnClass}
+                    className={`${smallBtnClass} inline-flex items-center gap-1`}
                     title="この入力をフォームに復元"
                   >
-                    ↺ 再利用
+                    <RotateCcw size={14} strokeWidth={2} aria-hidden />
+                    再利用
                   </button>
                 )}
                 <button
@@ -650,9 +676,10 @@ export function HistoryGallery({
                         type="button"
                         onClick={() => onSendToInput(url)}
                         title="この結果を左フォームの参照入力に追加"
-                        className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
+                        className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs hover:border-[var(--accent)]"
                       >
-                        → 入力に使う
+                        <ArrowRight size={14} strokeWidth={2} aria-hidden />
+                        入力に使う
                       </button>
                       {typeof active.creditsConsumed === 'number' && (
                         <span className="ml-auto self-center text-xs text-[var(--text-muted)]">
@@ -681,9 +708,16 @@ export function HistoryGallery({
                     <button
                       type="button"
                       onClick={() => void copyPrompt(fullPrompt(active)!)}
-                      className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
                     >
-                      {copied ? 'コピーしました ✓' : 'コピー'}
+                      {copied ? (
+                        <>
+                          コピーしました
+                          <Check size={12} strokeWidth={2.5} aria-hidden />
+                        </>
+                      ) : (
+                        'コピー'
+                      )}
                     </button>
                   </div>
                   <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--text)]">
@@ -779,9 +813,10 @@ export function HistoryGallery({
                               exitCompareMode()
                               onReuse(h)
                             }}
-                            className="w-full rounded-lg border border-[var(--border)] px-2 py-1.5 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[var(--border)] px-2 py-1.5 text-[11px] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
                           >
-                            ↺ この入力を再利用
+                            <RotateCcw size={12} strokeWidth={2} aria-hidden />
+                            この入力を再利用
                           </button>
                         )}
                       </div>
