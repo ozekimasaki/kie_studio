@@ -439,7 +439,7 @@ export function HistoryGallery({
                           <video
                             src={thumb}
                             muted
-                            preload="none"
+                            preload="metadata"
                             className="h-full w-full object-cover"
                           />
                         ) : (

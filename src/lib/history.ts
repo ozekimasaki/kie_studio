@@ -33,7 +33,10 @@ export function loadHistory(): HistoryItem[] {
     if (!raw) return []
     const data = JSON.parse(raw) as unknown
     if (!Array.isArray(data)) return []
-    return normalizeHistoryItems(data, 'local')
+    const normalized = normalizeHistoryItems(data, 'local')
+    // demote / 不正データの除去をディスクにも反映
+    persistToStorage(normalized)
+    return normalized
   } catch {
     return []
   }

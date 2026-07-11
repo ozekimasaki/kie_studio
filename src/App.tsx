@@ -503,8 +503,6 @@ export default function App() {
     })
     if (rejected === 'pin-limit') {
       setFormError('ピン留めは最大30件までです')
-    } else {
-      setFormError(null)
     }
   }
 
