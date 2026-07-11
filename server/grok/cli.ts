@@ -137,7 +137,10 @@ export async function getGrokStatus(options?: {
   }
 }
 
-function buildOptimizeRequest(params: {
+export type PromptAssistMode = 'generate' | 'optimize'
+
+function buildAssistRequest(params: {
+  mode: PromptAssistMode
   prompt: string
   customInstructions?: string
   modelId?: string
@@ -148,15 +151,39 @@ function buildOptimizeRequest(params: {
   const modelLine = params.modelId
     ? `対象モデル ID: ${params.modelId}`
     : '対象モデル: （未指定）'
+  const isGenerate = params.mode === 'generate'
 
   const guideInstruction = params.guideFileName
     ? `同じ作業ディレクトリの ${params.guideFileName} を読み、そのガイドを最優先で従う。下記プロファイルは補足とする。`
-    : '下記の最適化プロファイルに従って下書きプロンプトを改善する。'
+    : isGenerate
+      ? '下記の最適化プロファイルに従って、本番品質のプロンプトを一から作成する。'
+      : '下記の最適化プロファイルに従って下書きプロンプトを改善する。'
 
   const role =
     params.profile.modality === 'video'
-      ? 'あなたは動画生成向けプロンプト最適化アシスタントです。'
-      : 'あなたは画像生成向けプロンプト最適化アシスタントです。'
+      ? isGenerate
+        ? 'あなたは動画生成向けプロンプト作成アシスタントです。'
+        : 'あなたは動画生成向けプロンプト最適化アシスタントです。'
+      : isGenerate
+        ? 'あなたは画像生成向けプロンプト作成アシスタントです。'
+        : 'あなたは画像生成向けプロンプト最適化アシスタントです。'
+
+  const intentSection = isGenerate
+    ? [
+        '## ユーザーの意図・メモ（これを元にプロンプトを作成）',
+        custom ?? '',
+        '',
+      ].join('\n')
+    : [
+        custom
+          ? ['## ユーザーのカスタム指示（最優先で反映）', custom, ''].join('\n')
+          : '',
+        '## 最適化対象のプロンプト',
+        params.prompt,
+        '',
+      ]
+        .filter((line) => line !== '')
+        .join('\n')
 
   return [
     role,
@@ -166,16 +193,15 @@ function buildOptimizeRequest(params: {
     '',
     formatProfileRulesMarkdown(params.profile),
     '',
-    custom
-      ? ['## ユーザーのカスタム指示（最優先で反映）', custom, ''].join('\n')
-      : '',
-    '## 最適化対象のプロンプト',
-    params.prompt,
-    '',
+    intentSection,
     '## 出力ルール',
-    '- 最適化後のプロンプト本文のみを出力する。',
+    isGenerate
+      ? '- 完成したプロンプト本文のみを出力する。'
+      : '- 最適化後のプロンプト本文のみを出力する。',
     '- 説明・前置き・箇条書きの解説は禁止。',
-    '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。',
+    isGenerate
+      ? '- 参照タグはユーザー意図に含まれる場合のみ使い、勝手に番号を捏造しない。'
+      : '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。',
     `- 必ず次のマーカーで囲む: ${OPT_START} と ${OPT_END}`,
     '- マーカーの外側には何も書かない。',
   ]
@@ -195,15 +221,35 @@ function extractOptimized(raw: string): string {
 }
 
 export async function optimizePromptWithGrok(params: {
-  prompt: string
+  prompt?: string
   customInstructions?: string
   modelId?: string
-}): Promise<{ optimizedPrompt: string; profile: OptimizeProfile }> {
+  mode?: PromptAssistMode
+}): Promise<{
+  optimizedPrompt: string
+  profile: OptimizeProfile
+  mode: PromptAssistMode
+}> {
   const status = await getGrokStatus()
   if (!status.available) {
     throw new GrokCliError(
       'Grok Build がインストールされていません',
       'unavailable',
+    )
+  }
+
+  const prompt = params.prompt?.trim() ?? ''
+  const custom = params.customInstructions?.trim() ?? ''
+  const mode: PromptAssistMode =
+    params.mode ?? (prompt ? 'optimize' : 'generate')
+
+  if (mode === 'optimize' && !prompt) {
+    throw new GrokCliError('最適化にはプロンプトが必要です', 'empty')
+  }
+  if (mode === 'generate' && !custom) {
+    throw new GrokCliError(
+      'プロンプト生成にはカスタム指示（やりたいことのメモ）が必要です',
+      'empty',
     )
   }
 
@@ -227,9 +273,10 @@ export async function optimizePromptWithGrok(params: {
 
     await writeFile(
       requestPath,
-      buildOptimizeRequest({
-        prompt: params.prompt,
-        customInstructions: params.customInstructions,
+      buildAssistRequest({
+        mode,
+        prompt,
+        customInstructions: custom || undefined,
         modelId: params.modelId,
         profile,
         guideFileName,
@@ -244,7 +291,7 @@ export async function optimizePromptWithGrok(params: {
     const headlessPrompt = [
       `Read ${fileMentions}.`,
       'Follow the request file exactly.',
-      `Reply with only the optimized prompt wrapped in ${OPT_START} and ${OPT_END}.`,
+      `Reply with only the ${mode === 'generate' ? 'generated' : 'optimized'} prompt wrapped in ${OPT_START} and ${OPT_END}.`,
       'Do not use tools other than reading those files. Do not explain.',
     ].join(' ')
 
@@ -271,9 +318,12 @@ export async function optimizePromptWithGrok(params: {
 
     const optimized = extractOptimized(result.stdout || result.stderr)
     if (!optimized) {
-      throw new GrokCliError('最適化結果が空でした', 'empty')
+      throw new GrokCliError(
+        mode === 'generate' ? '生成結果が空でした' : '最適化結果が空でした',
+        'empty',
+      )
     }
-    return { optimizedPrompt: optimized, profile }
+    return { optimizedPrompt: optimized, profile, mode }
   } catch (e) {
     if (e instanceof GrokCliError) throw e
     throw new GrokCliError(

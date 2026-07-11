@@ -3,6 +3,7 @@ import {
   getGrokStatus,
   GrokCliError,
   optimizePromptWithGrok,
+  type PromptAssistMode,
 } from '../grok/cli.ts'
 import { getOptimizeProfile } from '../grok/optimize-profiles.ts'
 
@@ -33,11 +34,23 @@ optimizePromptRoutes.get('/optimize-profile', (c) => {
   })
 })
 
+function resolveMode(
+  mode: unknown,
+  prompt: string,
+): PromptAssistMode | null {
+  if (mode === 'generate' || mode === 'optimize') return mode
+  if (mode === undefined || mode === null || mode === '') {
+    return prompt ? 'optimize' : 'generate'
+  }
+  return null
+}
+
 optimizePromptRoutes.post('/optimize-prompt', async (c) => {
   let body: {
     prompt?: unknown
     customInstructions?: unknown
     modelId?: unknown
+    mode?: unknown
   }
   try {
     body = await c.req.json()
@@ -45,26 +58,41 @@ optimizePromptRoutes.post('/optimize-prompt', async (c) => {
     return c.json({ error: 'Invalid JSON' }, 400)
   }
 
-  if (typeof body.prompt !== 'string' || !body.prompt.trim()) {
-    return c.json({ error: 'prompt is required' }, 400)
-  }
-
+  const prompt =
+    typeof body.prompt === 'string' ? body.prompt.trim() : ''
   const customInstructions =
     typeof body.customInstructions === 'string'
-      ? body.customInstructions
-      : undefined
+      ? body.customInstructions.trim()
+      : ''
   const modelId =
     typeof body.modelId === 'string' ? body.modelId : undefined
 
+  const mode = resolveMode(body.mode, prompt)
+  if (!mode) {
+    return c.json({ error: 'mode must be generate or optimize' }, 400)
+  }
+
+  if (mode === 'optimize' && !prompt) {
+    return c.json({ error: 'prompt is required for optimize' }, 400)
+  }
+  if (mode === 'generate' && !customInstructions) {
+    return c.json(
+      { error: 'customInstructions is required for generate' },
+      400,
+    )
+  }
+
   try {
     const result = await optimizePromptWithGrok({
-      prompt: body.prompt.trim(),
-      customInstructions,
+      prompt,
+      customInstructions: customInstructions || undefined,
       modelId,
+      mode,
     })
     return c.json({
       data: {
         optimizedPrompt: result.optimizedPrompt,
+        mode: result.mode,
         profile: {
           family: result.profile.family,
           label: result.profile.label,
@@ -78,6 +106,9 @@ optimizePromptRoutes.post('/optimize-prompt', async (c) => {
       }
       if (e.code === 'timeout') {
         return c.json({ error: e.message }, 504)
+      }
+      if (e.code === 'empty') {
+        return c.json({ error: e.message }, 400)
       }
       return c.json({ error: e.message }, 500)
     }

@@ -104,9 +104,10 @@ export async function fetchOptimizeProfile(modelId?: string | null) {
 }
 
 export async function optimizePrompt(params: {
-  prompt: string
+  prompt?: string
   customInstructions?: string
   modelId?: string
+  mode: 'generate' | 'optimize'
 }) {
   const res = await fetch('/api/optimize-prompt', {
     method: 'POST',
@@ -116,6 +117,7 @@ export async function optimizePrompt(params: {
   return parseJson<{
     data: {
       optimizedPrompt: string
+      mode?: 'generate' | 'optimize'
       profile?: { family: string; label: string }
     }
   }>(res)

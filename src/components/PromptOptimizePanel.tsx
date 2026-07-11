@@ -22,6 +22,9 @@ export function PromptOptimizePanel({
 }) {
   const [customInstructions, setCustomInstructions] = useState('')
   const [preview, setPreview] = useState<string | null>(null)
+  const [previewMode, setPreviewMode] = useState<'generate' | 'optimize' | null>(
+    null,
+  )
   const [appliedProfileLabel, setAppliedProfileLabel] = useState<string | null>(
     null,
   )
@@ -40,15 +43,21 @@ export function PromptOptimizePanel({
     staleTime: 60_000,
   })
 
-  const optimize = useMutation({
+  const promptEmpty = !prompt.trim()
+  const mode: 'generate' | 'optimize' = promptEmpty ? 'generate' : 'optimize'
+  const customEmpty = !customInstructions.trim()
+
+  const assist = useMutation({
     mutationFn: () =>
       optimizePrompt({
-        prompt,
+        prompt: promptEmpty ? undefined : prompt,
         customInstructions: customInstructions.trim() || undefined,
         modelId: modelId ?? undefined,
+        mode,
       }),
     onSuccess: (res) => {
       setPreview(res.data.optimizedPrompt)
+      setPreviewMode(res.data.mode ?? mode)
       setAppliedProfileLabel(res.data.profile?.label ?? null)
     },
   })
@@ -58,16 +67,31 @@ export function PromptOptimizePanel({
     return null
   }
 
-  const promptEmpty = !prompt.trim()
-  const optimizing = optimize.isPending
-  const canOptimize = !optimizing && !disabled && !promptEmpty
+  const busy = assist.isPending
+  const canRun =
+    !busy &&
+    !disabled &&
+    (mode === 'optimize' ? !promptEmpty : !customEmpty)
   const profile = profileQuery.data?.data
+
+  const buttonLabel = busy
+    ? mode === 'generate'
+      ? '生成中…'
+      : '最適化中…'
+    : mode === 'generate'
+      ? 'プロンプトを生成'
+      : 'プロンプトを最適化'
+
+  const hint =
+    mode === 'generate' && customEmpty
+      ? 'やりたいことをカスタム指示に書いてください'
+      : null
 
   return (
     <div className="mt-3 space-y-2">
       {profile && (
         <p className="text-[11px] text-[var(--text-muted)]">
-          最適化ルール:{' '}
+          {mode === 'generate' ? '生成ルール' : '最適化ルール'}:{' '}
           <span className="font-medium text-[var(--text)]">{profile.label}</span>
           {profile.hasGuide ? ' · 専用ガイドあり' : ''}
           <span className="mt-0.5 block truncate" title={profile.formula}>
@@ -81,14 +105,23 @@ export function PromptOptimizePanel({
           htmlFor="prompt-optimize-custom"
           className="mb-1.5 block text-xs font-medium text-[var(--text-muted)]"
         >
-          カスタム指示（任意）
+          {mode === 'generate'
+            ? 'やりたいこと・メモ'
+            : 'カスタム指示（任意）'}
+          {mode === 'generate' && (
+            <span className="ml-1 text-[var(--danger)]">*</span>
+          )}
         </label>
         <textarea
           id="prompt-optimize-custom"
           className={`${inputClass} min-h-16 resize-y text-xs`}
           value={customInstructions}
-          disabled={optimizing || disabled}
-          placeholder="例: 英語で出力 / カメラは固定 / 6秒想定で簡潔に"
+          disabled={busy || disabled}
+          placeholder={
+            mode === 'generate'
+              ? '例: 夕暮れの海岸を歩く女性、シネマ風、6秒'
+              : '例: 英語で出力 / カメラは固定 / もっと短く'
+          }
           onChange={(e) => setCustomInstructions(e.target.value)}
         />
       </div>
@@ -97,35 +130,36 @@ export function PromptOptimizePanel({
         <button
           type="button"
           className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!canOptimize}
+          disabled={!canRun}
           onClick={() => {
             setPreview(null)
+            setPreviewMode(null)
             setAppliedProfileLabel(null)
-            optimize.reset()
-            optimize.mutate()
+            assist.reset()
+            assist.mutate()
           }}
         >
-          {optimizing ? '最適化中…' : 'プロンプト最適化'}
+          {buttonLabel}
         </button>
-        {promptEmpty && (
-          <span className="text-[11px] text-[var(--text-muted)]">
-            プロンプトを入力してください
-          </span>
+        {hint && (
+          <span className="text-[11px] text-[var(--text-muted)]">{hint}</span>
         )}
       </div>
 
-      {optimize.isError && (
+      {assist.isError && (
         <p className="text-xs text-[var(--danger)]" role="alert">
-          {optimize.error instanceof Error
-            ? optimize.error.message
-            : '最適化に失敗しました'}
+          {assist.error instanceof Error
+            ? assist.error.message
+            : mode === 'generate'
+              ? '生成に失敗しました'
+              : '最適化に失敗しました'}
         </p>
       )}
 
       {preview !== null && (
         <div className="space-y-2 rounded-lg border border-[var(--border)] p-3">
           <p className="text-xs font-medium text-[var(--text-muted)]">
-            最適化プレビュー
+            {previewMode === 'generate' ? '生成プレビュー' : '最適化プレビュー'}
             {appliedProfileLabel ? ` · ${appliedProfileLabel}` : ''}
           </p>
           <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
@@ -135,12 +169,13 @@ export function PromptOptimizePanel({
             <button
               type="button"
               className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-              disabled={optimizing || disabled}
+              disabled={busy || disabled}
               onClick={() => {
                 onApply(preview)
                 setPreview(null)
+                setPreviewMode(null)
                 setAppliedProfileLabel(null)
-                optimize.reset()
+                assist.reset()
               }}
             >
               適用
@@ -148,11 +183,12 @@ export function PromptOptimizePanel({
             <button
               type="button"
               className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--text-muted)] disabled:opacity-50"
-              disabled={optimizing}
+              disabled={busy}
               onClick={() => {
                 setPreview(null)
+                setPreviewMode(null)
                 setAppliedProfileLabel(null)
-                optimize.reset()
+                assist.reset()
               }}
             >
               破棄
