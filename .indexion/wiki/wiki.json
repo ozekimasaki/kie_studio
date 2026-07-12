@@ -1,0 +1,143 @@
+{
+  "title": "Wiki",
+  "pages": [
+    {
+      "id": "overview",
+      "title": "Overview",
+      "file": "overview.md",
+      "sources": [
+        "README.md",
+        "AGENTS.md",
+        "package.json"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "file": "getting-started.md",
+      "sources": [
+        ".env.example",
+        "package.json",
+        "README.md",
+        "vite.config.ts"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "core-concepts",
+      "title": "Core Concepts",
+      "file": "core-concepts.md",
+      "sources": [
+        "src/lib/models/types.ts",
+        "src/lib/history.ts",
+        "src/lib/models/mentions.ts",
+        "src/components/DynamicForm.tsx",
+        "server/db/history.ts"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "architecture",
+      "title": "Architecture",
+      "file": "architecture.md",
+      "sources": [
+        "AGENTS.md",
+        "server/index.ts",
+        "vite.config.ts",
+        "src/App.tsx",
+        "src/components/shell/",
+        "src/components/motion/",
+        "src/lib/motion.ts",
+        "server/db/"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "frontend",
+      "title": "Frontend",
+      "file": "frontend.md",
+      "sources": [
+        "src/App.tsx",
+        "src/components/",
+        "src/components/shell/",
+        "src/components/motion/",
+        "src/lib/motion.ts",
+        "src/main.tsx"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "client-lib",
+      "title": "Client Lib",
+      "file": "client-lib.md",
+      "sources": [
+        "src/lib/"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "server-api",
+      "title": "Server API",
+      "file": "server-api.md",
+      "sources": [
+        "server/index.ts",
+        "server/routes/",
+        "server/db/"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "kie-integration",
+      "title": "Kie Integration",
+      "file": "kie-integration.md",
+      "sources": [
+        "server/kie/"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "catalog-sync",
+      "title": "Catalog Sync",
+      "file": "catalog-sync.md",
+      "sources": [
+        "server/catalog/sync.ts",
+        "scripts/sync-models.ts",
+        "src/lib/models/from-openapi.ts",
+        "src/data/catalog.json"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "prompt-optimize",
+      "title": "Prompt Optimize",
+      "file": "prompt-optimize.md",
+      "sources": [
+        "server/grok/",
+        "server/routes/optimize-prompt.ts",
+        "src/components/PromptOptimizePanel.tsx"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    }
+  ]
+}

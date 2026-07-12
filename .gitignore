@@ -35,6 +35,9 @@ data/
 .agents/
 .claude/
 .cursor/
-.indexion/
 .kiro/
 skills-lock.json
+
+# indexion: keep wiki, ignore generated local cache
+.indexion/cache/
+.indexion/digest/
