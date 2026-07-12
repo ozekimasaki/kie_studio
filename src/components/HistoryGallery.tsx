@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   ArrowRight,
   Check,
+  Ellipsis,
   Pin,
   Plus,
   RotateCcw,
@@ -201,13 +202,8 @@ export function HistoryGallery({
 
   useEffect(() => {
     if (!showViewer) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
     closeBtnRef.current?.focus()
-    return () => window.removeEventListener('keydown', onKey)
-  }, [showViewer, onClose])
+  }, [showViewer])
 
   useEffect(() => {
     if (!showCompare) return
@@ -261,7 +257,7 @@ export function HistoryGallery({
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-3">
-      <div className="gallery-toolbar flex flex-wrap items-start justify-between gap-3 rounded-[var(--radius-md)] px-3 py-2.5">
+      <div className="gallery-toolbar flex flex-wrap items-start justify-between gap-3 px-0 py-2">
         <div className="min-w-0 space-y-0.5">
           <h2 className="text-[0.9375rem] font-bold text-[var(--text)]">
             ギャラリー
@@ -271,13 +267,10 @@ export function HistoryGallery({
               ? 'まだ生成がありません'
               : pendingCount > 0
                 ? `${items.length} 件 · ${pendingCount} 件生成中`
-                : `${items.length} 件（ピン留めは押し出されません）`}
-          </p>
-          <p className="text-[11px] text-[var(--text-muted)]">
-            生成メディアは kie.ai 側で約14日で削除されます
+                : `${items.length} 件（ピン留めは上限まで保持）`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="relative flex flex-wrap items-center gap-1.5">
           {(items.length > 1 || compareMode) && (
             <Pressable
               onClick={() =>
@@ -292,18 +285,44 @@ export function HistoryGallery({
               {compareMode ? '比較を終了' : '比較'}
             </Pressable>
           )}
-          {items.length > 0 && (
-            <Pressable onClick={onExport} className={smallBtnClass} scaleTo={0.96}>
-              書き出し
-            </Pressable>
-          )}
-          <Pressable
-            onClick={() => importInputRef.current?.click()}
-            className={smallBtnClass}
-            scaleTo={0.96}
-          >
-            読み込み
-          </Pressable>
+          <details className="relative">
+            <summary
+              className={`${smallBtnClass} list-none [&::-webkit-details-marker]:hidden`}
+              aria-label="その他の操作"
+            >
+              <Ellipsis size={14} strokeWidth={2} aria-hidden />
+            </summary>
+            <div className="absolute right-0 z-[var(--z-dropdown)] mt-1 min-w-36 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] py-1 shadow-[var(--shadow-context)]">
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onExport}
+                  className="block w-full px-3 py-2 text-left text-xs hover:bg-[var(--accent-soft)]"
+                >
+                  書き出し
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                className="block w-full px-3 py-2 text-left text-xs hover:bg-[var(--accent-soft)]"
+              >
+                読み込み
+              </button>
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClear}
+                  className="block w-full px-3 py-2 text-left text-xs text-[var(--danger)] hover:bg-[var(--accent-soft)]"
+                >
+                  すべて削除
+                </button>
+              )}
+              <p className="border-t border-[var(--border)] px-3 py-2 text-[10px] leading-snug text-[var(--text-muted)]">
+                生成メディアは kie.ai 側で約14日で削除されます
+              </p>
+            </div>
+          </details>
           <input
             ref={importInputRef}
             type="file"
@@ -316,15 +335,6 @@ export function HistoryGallery({
               e.target.value = ''
             }}
           />
-          {items.length > 0 && (
-            <Pressable
-              onClick={onClear}
-              className={`${smallBtnClass} hover:border-[var(--danger)] hover:text-[var(--danger)]`}
-              scaleTo={0.96}
-            >
-              すべて削除
-            </Pressable>
-          )}
         </div>
       </div>
 
@@ -339,8 +349,8 @@ export function HistoryGallery({
             className={filterSelectClass}
           >
             <option value="all">全カテゴリ</option>
-            <option value="image">IMAGE</option>
-            <option value="video">VIDEO</option>
+            <option value="image">画像</option>
+            <option value="video">動画</option>
           </select>
           <select
             value={stateFilter}
@@ -419,151 +429,149 @@ export function HistoryGallery({
               const expiry = successExpiry(h)
 
               return (
-                <PressableDiv
+                <div
                   key={h.taskId}
-                  className={`studio-tile group relative ${
+                  className={`studio-tile group flex flex-col ${
                     compareMode && comparing
                       ? 'is-selected'
                       : selected && !compareMode
                         ? 'is-selected'
                         : ''
                   }`}
-                  scaleTo={0.98}
                 >
-                  <button
-                    type="button"
-                    className="block w-full text-left"
-                    aria-current={selected ? 'true' : undefined}
-                    aria-pressed={compareMode ? comparing : undefined}
-                    onClick={() =>
-                      compareMode ? toggleCompare(h.taskId) : onSelect(h)
-                    }
+                  <PressableDiv
+                    className="relative"
+                    scaleTo={0.96}
                   >
-                    <SharedMedia
-                      layoutId={`media-${h.taskId}`}
-                      className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]"
+                    <button
+                      type="button"
+                      className="block w-full text-left"
+                      aria-current={selected ? 'true' : undefined}
+                      aria-pressed={compareMode ? comparing : undefined}
+                      onClick={() =>
+                        compareMode ? toggleCompare(h.taskId) : onSelect(h)
+                      }
                     >
-                      {thumb ? (
-                        isVideoUrl(thumb) ? (
-                          <video
-                            src={thumb}
-                            muted
-                            preload="metadata"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <img
-                            src={thumb}
-                            alt={h.prompt || shortModel(h.model)}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover"
-                          />
-                        )
-                      ) : busy ? (
-                        <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-3">
-                          <div className="relative">
-                            <div className="size-9 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
-                          </div>
-                          <div className="text-center">
-                            <div className="text-xs font-semibold text-[var(--accent)]">
-                              生成中
+                      <SharedMedia
+                        layoutId={`media-${h.taskId}`}
+                        className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]"
+                      >
+                        {thumb ? (
+                          isVideoUrl(thumb) ? (
+                            <video
+                              src={thumb}
+                              muted
+                              preload="metadata"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <img
+                              src={thumb}
+                              alt={h.prompt || shortModel(h.model)}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover"
+                            />
+                          )
+                        ) : busy ? (
+                          <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-3">
+                            <div className="relative">
+                              <div className="studio-spinner size-9 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
                             </div>
-                            <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                              {stateLabel(h.state)}
+                            <div className="text-center">
+                              <div className="text-xs font-semibold text-[var(--accent)]">
+                                生成中
+                              </div>
+                              <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+                                {stateLabel(h.state)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ) : h.state === 'fail' ? (
-                        <div className="flex h-full flex-col items-center justify-center gap-1 p-3 text-center">
-                          <span className="text-xs font-semibold text-[var(--danger)]">
-                            失敗
-                          </span>
-                          {h.failMsg && (
-                            <span className="line-clamp-3 text-[10px] text-[var(--text-muted)]">
-                              {h.failMsg}
+                        ) : h.state === 'fail' ? (
+                          <div className="flex h-full flex-col items-center justify-center gap-1 p-3 text-center">
+                            <span className="text-xs font-semibold text-[var(--danger)]">
+                              失敗
                             </span>
-                          )}
-                        </div>
-                      ) : h.state === 'unknown' ? (
-                        <div className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--warning)]">
-                          状態不明
-                        </div>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-[11px] uppercase text-[var(--text-muted)]">
-                          {h.category}
-                        </div>
-                      )}
-
-                      {expiry?.status === 'expired' && (
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[var(--overlay)] px-2">
-                          <span className="rounded-[var(--radius-sm)] bg-[var(--text)] px-2 py-1 text-center text-[10px] font-semibold text-[var(--on-accent)]">
-                            期限切れの可能性
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[oklch(0.15_0.02_250_/_0.72)] p-2">
-                        <div className="truncate text-[11px] font-medium text-white">
-                          {shortModel(h.model)}
-                        </div>
-                        <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
-                          <span>{relativeTime(h.createdAt)}</span>
-                          <span className="flex shrink-0 items-center gap-1.5">
-                            {expiry && (
-                              <span
-                                className={`font-semibold ${expiryTextClass(expiry.status)}`}
-                              >
-                                {mediaExpiryCardLabel(expiry)}
+                            {h.failMsg && (
+                              <span className="line-clamp-3 text-[10px] text-[var(--text-muted)]">
+                                {h.failMsg}
                               </span>
                             )}
-                            {typeof h.creditsConsumed === 'number' && (
-                              <span>−{h.creditsConsumed}</span>
+                          </div>
+                        ) : h.state === 'unknown' ? (
+                          <div className="flex h-full items-center justify-center p-3 text-center text-xs text-[var(--warning)]">
+                            状態不明
+                          </div>
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[11px] uppercase text-[var(--text-muted)]">
+                            {h.category}
+                          </div>
+                        )}
+
+                        {expiry?.status === 'expired' && (
+                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center studio-tile-scrim px-2">
+                            <span className="rounded-[var(--radius-sm)] bg-[var(--text)] px-2 py-1 text-center text-[10px] font-semibold text-[var(--on-accent)]">
+                              期限切れの可能性
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 studio-tile-scrim p-2">
+                          <div className="truncate text-[11px] font-medium text-white">
+                            {shortModel(h.model)}
+                          </div>
+                          <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
+                            <span>{relativeTime(h.createdAt)}</span>
+                            <span className="flex shrink-0 items-center gap-1.5">
+                              {expiry && (
+                                <span
+                                  className={`font-semibold ${expiryTextClass(expiry.status)}`}
+                                >
+                                  {mediaExpiryCardLabel(expiry)}
+                                </span>
+                              )}
+                              {typeof h.creditsConsumed === 'number' && (
+                                <span>−{h.creditsConsumed}</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="absolute left-2 top-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--text)]">
+                          {h.category === 'image' ? '画像' : '動画'}
+                        </span>
+
+                        {compareMode && (
+                          <span
+                            className={`absolute right-2 top-2 flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-xs font-bold tabular-nums ${
+                              comparing
+                                ? 'bg-[var(--accent)] text-[var(--on-accent)]'
+                                : 'border border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)]'
+                            }`}
+                          >
+                            {comparing ? (
+                              compareIds.indexOf(h.taskId) + 1
+                            ) : (
+                              <Plus size={12} strokeWidth={2.5} aria-hidden />
                             )}
                           </span>
-                        </div>
-                      </div>
-
-                      <span className="absolute left-2 top-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--text)]">
-                        {h.category}
-                      </span>
-
-                      {compareMode && (
-                        <span
-                          className={`absolute right-2 top-2 flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-xs font-bold tabular-nums ${
-                            comparing
-                              ? 'bg-[var(--accent)] text-[var(--on-accent)]'
-                              : 'border border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)]'
-                          }`}
-                        >
-                          {comparing ? (
-                            compareIds.indexOf(h.taskId) + 1
-                          ) : (
-                            <Plus size={12} strokeWidth={2.5} aria-hidden />
-                          )}
-                        </span>
-                      )}
-                    </SharedMedia>
-                  </button>
+                        )}
+                      </SharedMedia>
+                    </button>
+                  </PressableDiv>
 
                   {!compareMode && (
-                    <div
-                      className={`absolute right-2 top-2 flex items-center gap-1 transition ${
-                        h.pinned
-                          ? 'opacity-100'
-                          : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100'
-                      }`}
-                    >
+                    <div className="flex items-center gap-0.5 border-t border-[var(--border)] bg-[var(--surface-raised)] px-1 py-1">
                       <Pressable
                         title={h.pinned ? 'ピンを外す' : 'ピン留め'}
                         aria-label={h.pinned ? 'ピンを外す' : 'ピン留め'}
                         aria-pressed={Boolean(h.pinned)}
                         onClick={() => onTogglePin(h.taskId)}
                         scaleTo={0.96}
-                        className={`rounded-[var(--radius-sm)] border border-[var(--border)] p-1.5 ${
+                        className={`rounded-[var(--radius-sm)] p-1.5 ${
                           h.pinned
-                            ? 'border-transparent bg-[var(--accent)] text-[var(--on-accent)]'
-                            : 'bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--accent)]'
+                            ? 'bg-[var(--accent)] text-[var(--on-accent)]'
+                            : 'text-[var(--text-muted)] hover:text-[var(--accent)]'
                         }`}
                       >
                         <Pin
@@ -579,9 +587,19 @@ export function HistoryGallery({
                           aria-label="この入力をフォームに復元"
                           onClick={() => onReuse(h)}
                           scaleTo={0.96}
-                          className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                          className="rounded-[var(--radius-sm)] p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
                         >
                           <RotateCcw size={14} strokeWidth={2} aria-hidden />
+                        </Pressable>
+                      )}
+                      {h.state === 'fail' && canReuse(h) && (
+                        <Pressable
+                          disabled={retryDisabled}
+                          onClick={() => onRetry(h)}
+                          scaleTo={0.96}
+                          className="rounded-[var(--radius-sm)] px-2 py-1 text-[10px] font-semibold text-[var(--danger)] disabled:opacity-50"
+                        >
+                          再実行
                         </Pressable>
                       )}
                       <Pressable
@@ -589,24 +607,13 @@ export function HistoryGallery({
                         aria-label="削除"
                         onClick={() => onRemove(h.taskId)}
                         scaleTo={0.96}
-                        className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] p-1.5 text-[var(--text-muted)] hover:text-[var(--danger)]"
+                        className="ml-auto rounded-[var(--radius-sm)] p-1.5 text-[var(--text-muted)] hover:text-[var(--danger)]"
                       >
                         <X size={14} strokeWidth={2} aria-hidden />
                       </Pressable>
                     </div>
                   )}
-
-                  {!compareMode && h.state === 'fail' && canReuse(h) && (
-                    <Pressable
-                      disabled={retryDisabled}
-                      onClick={() => onRetry(h)}
-                      scaleTo={0.96}
-                      className="absolute bottom-2 right-2 rounded-[var(--radius-md)] border border-[var(--danger)]/30 bg-[var(--surface-raised)] px-2.5 py-1 text-[10px] font-semibold text-[var(--danger)] disabled:opacity-50"
-                    >
-                      再実行
-                    </Pressable>
-                  )}
-                </PressableDiv>
+                </div>
               )
             })}
           </div>
@@ -662,6 +669,7 @@ export function HistoryGallery({
                   className={smallBtnClass}
                   onClick={onClose}
                   scaleTo={0.96}
+                  data-sheet-initial-focus="true"
                 >
                   閉じる
                 </Pressable>
@@ -671,7 +679,7 @@ export function HistoryGallery({
             <div className="max-h-[70vh] overflow-y-auto bg-[var(--bg)] p-5">
               {isBusyState(active.state) && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16">
-                  <div className="size-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
+                  <div className="studio-spinner size-8 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
                   <p className="text-sm text-[var(--text-muted)]">
                     {stateLabel(active.state)}…
                   </p>
@@ -742,7 +750,7 @@ export function HistoryGallery({
                         className={smallBtnClass}
                         scaleTo={0.96}
                       >
-                        {download.isPending ? '取得中…' : 'Download via API'}
+                        {download.isPending ? '取得中…' : 'API でダウンロード'}
                       </Pressable>
                       <Pressable
                         onClick={() => onSendToInput(url)}
@@ -787,7 +795,7 @@ export function HistoryGallery({
               {fullPrompt(active) && (
                 <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="studio-label">Prompt</span>
+                    <span className="studio-label">プロンプト</span>
                     <Pressable
                       onClick={() => void copyPrompt(fullPrompt(active)!)}
                       className={`${smallBtnClass} text-[11px]`}
@@ -795,7 +803,9 @@ export function HistoryGallery({
                     >
                       {copied ? (
                         <>
-                          コピーしました
+                          <span role="status" aria-live="polite">
+                            コピーしました
+                          </span>
                           <Check size={12} strokeWidth={2.5} aria-hidden />
                         </>
                       ) : (
@@ -832,18 +842,19 @@ export function HistoryGallery({
           </Pressable>
         </div>
         <div className="max-h-[82vh] overflow-y-auto p-4">
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: `repeat(${compareItems.length}, minmax(0, 1fr))`,
-            }}
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:grid sm:overflow-visible sm:pb-0 sm:[grid-template-columns:repeat(var(--compare-cols),minmax(0,1fr))]"
+            style={
+              {
+                '--compare-cols': String(compareItems.length),
+              } as CSSProperties
+            }
           >
             {compareItems.map((h) => {
               const url = h.resultUrls?.[0]
               return (
                 <div
                   key={h.taskId}
-                  className="studio-tile flex min-w-0 flex-col gap-2 p-2"
+                  className="studio-tile flex w-[min(80vw,280px)] shrink-0 snap-center flex-col gap-2 p-2 sm:w-auto sm:min-w-0"
                 >
                   <div className="overflow-hidden rounded-[var(--radius-sm)] bg-[var(--bg)]">
                     {url ? (

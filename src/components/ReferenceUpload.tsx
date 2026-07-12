@@ -100,14 +100,21 @@ export function ReferenceUpload({
         })}
         {value.length < maxItems && (
           <Pressable
-            id={inputId}
             disabled={disabled || uploading}
             onClick={() => inputRef.current?.click()}
             scaleTo={0.96}
+            aria-controls={inputId}
+            aria-busy={uploading || undefined}
+            aria-label={uploading ? 'アップロード中' : '参照ファイルを追加'}
             className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] bg-[var(--surface-raised)] text-xs font-medium text-[var(--text-muted)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] disabled:opacity-50"
           >
             {uploading ? (
-              <LoaderCircle size={16} strokeWidth={2} className="animate-spin" aria-hidden />
+              <LoaderCircle
+                size={16}
+                strokeWidth={2}
+                className="studio-spinner"
+                aria-hidden
+              />
             ) : (
               <>
                 <Plus size={16} strokeWidth={2} aria-hidden />
@@ -118,18 +125,25 @@ export function ReferenceUpload({
         )}
       </div>
       <input
+        id={inputId}
         ref={inputRef}
         type="file"
         accept={accept}
         multiple={maxItems > 1}
-        className="hidden"
+        className="sr-only"
+        tabIndex={-1}
+        disabled={disabled || uploading}
         onChange={(e) => void handleFiles(e.target.files)}
       />
       <p className="text-[11px] text-[var(--text-muted)]">
         {value.length}/{maxItems} · File Upload API（24h 有効）
         {canMention && ' · チップを押すとプロンプトへ挿入'}
       </p>
-      {error && <p className="studio-field-error">{error}</p>}
+      {error && (
+        <p className="studio-field-error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

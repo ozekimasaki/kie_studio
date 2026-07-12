@@ -11,6 +11,8 @@ import { ModelSelect } from './components/ModelSelect.tsx'
 import {
   DynamicForm,
   buildDefaultValues,
+  focusFirstFieldError,
+  isFormDirty,
   validateFields,
 } from './components/DynamicForm.tsx'
 import { CreditBadge } from './components/CreditBadge.tsx'
@@ -105,6 +107,7 @@ export default function App() {
   const [values, setValues] = useState<Record<string, unknown>>({})
   const [viewerTaskId, setViewerTaskId] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [formNotice, setFormNotice] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
@@ -244,16 +247,19 @@ export default function App() {
       pendingRestoreRef.current = null
       setValues(mergeInputWithDefaults(selected.fields, pending.input))
       setFormError(null)
+      setFormNotice('履歴の入力をフォームに復元しました')
     } else if (pending && models.length > 0) {
       // 復元先モデルがカタログから消えている
       pendingRestoreRef.current = null
       setValues(buildDefaultValues(selected.fields))
+      setFormNotice(null)
       setFormError(
         '復元しようとしたモデルが現在のカタログに見つかりませんでした',
       )
     } else {
       setValues(buildDefaultValues(selected.fields))
       setFormError(null)
+      setFormNotice(null)
     }
     setFieldErrors({})
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -325,7 +331,6 @@ export default function App() {
 
     let creditsChanged = false
     let latestUsed: number | null = null
-    let autoOpenTaskId: string | null = null
 
     setHistory((prev) => {
       let next = prev
@@ -355,14 +360,6 @@ export default function App() {
         next = upsertInList(next, item)
         changed = true
 
-        if (
-          data.state === 'success' &&
-          existing.state !== 'success' &&
-          (data.resultUrls?.length ?? 0) > 0
-        ) {
-          autoOpenTaskId = data.taskId
-        }
-
         if (data.state === 'success' && typeof data.creditsConsumed === 'number') {
           latestUsed = data.creditsConsumed
           creditsChanged = true
@@ -373,7 +370,6 @@ export default function App() {
       return persistHistory(next, true)
     })
 
-    if (autoOpenTaskId) setViewerTaskId(autoOpenTaskId)
     if (latestUsed !== null) setLastUsedCredits(latestUsed)
     if (creditsChanged) {
       void queryClient.invalidateQueries({ queryKey: ['credits'] })
@@ -411,6 +407,7 @@ export default function App() {
       const errors = validateFields(selected.fields, values)
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors)
+        focusFirstFieldError(errors)
         throw new Error('入力内容を確認してください')
       }
       setFieldErrors({})
@@ -541,6 +538,12 @@ export default function App() {
       setValues(mergeInputWithDefaults(selected.fields, h.input))
       setFormError(null)
       setFieldErrors({})
+      setFormNotice('履歴の入力をフォームに復元しました')
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById('model-select')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
       return
     }
     // 同カテゴリならカタログの有無を即時判定できる。存在しないモデルへの
@@ -553,6 +556,7 @@ export default function App() {
       return
     }
     pendingRestoreRef.current = { modelId: h.modelId, input: h.input }
+    setFormNotice('履歴の入力をフォームに復元しています…')
     if (category !== h.category) setCategory(h.category)
     setModelId(h.modelId)
   }
@@ -645,8 +649,17 @@ export default function App() {
     setViewerTaskId(null)
   }
 
+  function confirmDiscardForm(): boolean {
+    if (!selected) return true
+    if (!isFormDirty(selected.fields, values)) return true
+    return window.confirm(
+      '入力内容が消えます。モデルまたはカテゴリを切り替えてもよろしいですか？',
+    )
+  }
+
   function handleFieldChange(name: string, value: unknown) {
     setValues((prev) => ({ ...prev, [name]: value }))
+    setFormNotice(null)
     setFieldErrors((prev) => {
       if (!prev[name]) return prev
       const next = { ...prev }
@@ -683,8 +696,12 @@ export default function App() {
           <div className="sticky top-0 z-[var(--z-sticky)] -mx-5 -mt-5 shrink-0 border-b border-[var(--border)] bg-[var(--surface-raised)] px-5 pt-5 pb-3">
             <CategoryTabs
               value={category}
+              disabled={submitting}
               onChange={(c) => {
+                if (c === category) return
+                if (!confirmDiscardForm()) return
                 pendingRestoreRef.current = null
+                setFormNotice(null)
                 setCategory(c)
                 setModelId(null)
               }}
@@ -694,7 +711,7 @@ export default function App() {
           {modelsQuery.isLoading ? (
             <p className="text-sm text-[var(--text-muted)]">モデル読込中…</p>
           ) : modelsQuery.isError ? (
-            <p className="text-sm text-[var(--danger)]">
+            <p className="text-sm text-[var(--danger)]" role="alert">
               {(modelsQuery.error as Error).message}
             </p>
           ) : (
@@ -702,7 +719,10 @@ export default function App() {
               models={models}
               value={selected?.id ?? null}
               onChange={(id) => {
+                if (id === selected?.id) return
+                if (!confirmDiscardForm()) return
                 pendingRestoreRef.current = null
+                setFormNotice(null)
                 setModelId(id)
               }}
               disabled={submitting}
@@ -711,6 +731,8 @@ export default function App() {
 
           {selected ? (
             <>
+              <div id="panel-image" hidden={category !== 'image'} />
+              <div id="panel-video" hidden={category !== 'video'} />
               {selected.docsUrl && (
                 <a
                   href={selected.docsUrl}
@@ -718,7 +740,7 @@ export default function App() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 self-start text-xs font-medium text-[var(--accent)]"
                 >
-                  Docs
+                  ドキュメント
                   <ExternalLink size={12} strokeWidth={2} aria-hidden />
                 </a>
               )}
@@ -733,18 +755,30 @@ export default function App() {
               />
 
               {formError && (
-                <p className="text-sm text-[var(--danger)]">{formError}</p>
+                <p className="text-sm text-[var(--danger)]" role="alert">
+                  {formError}
+                </p>
+              )}
+
+              {formNotice && !formError && (
+                <p
+                  className="text-sm text-[var(--accent)]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {formNotice}
+                </p>
               )}
 
               {!hasApiKey && !healthQuery.isLoading && (
-                <p className="text-sm text-[var(--warning)]">
+                <p className="text-sm text-[var(--warning)]" role="status">
                   API キー未設定のため生成できません。.env に KIE_API_KEY
                   を設定してください。
                 </p>
               )}
 
               {pendingCount > 0 && (
-                <p className="text-xs text-[var(--warning)]">
+                <p className="text-xs text-[var(--warning)]" role="status">
                   ギャラリーで {pendingCount} 件を並列生成中…
                 </p>
               )}
@@ -786,15 +820,19 @@ export default function App() {
                 </div>
                 <Pressable
                   disabled={generateDisabled}
-                  onClick={() => generate.mutate({ source: 'form' })}
+                  onClick={() => {
+                    setFormNotice(null)
+                    generate.mutate({ source: 'form' })
+                  }}
                   className="studio-btn-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   scaleTo={0.96}
+                  aria-busy={submitting || undefined}
                 >
                   {submitting
                     ? '送信中…'
                     : batchCount > 1
-                      ? `Generate ×${batchCount}`
-                      : 'Generate'}
+                      ? `生成 ×${batchCount}`
+                      : '生成'}
                 </Pressable>
               </div>
             </>
