@@ -6,6 +6,7 @@ import { FloatingChrome } from './FloatingChrome.tsx'
 /**
  * IA locked: left create form · right gallery.
  * Precision Light — solid surfaces, h-dvh workspace.
+ * Mobile: capped form height so gallery stays in viewport.
  */
 export function StudioShell({
   chromeTitle,
@@ -24,7 +25,7 @@ export function StudioShell({
 }) {
   return (
     <LayoutGroup>
-      <div className="mx-auto flex h-dvh max-w-[1600px] flex-col gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] md:gap-4 md:p-4">
+      <div className="mx-auto flex h-dvh max-w-[1600px] flex-col gap-3 overflow-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] md:gap-4 md:p-4">
         <FloatingChrome
           title={chromeTitle}
           subtitle={chromeSubtitle}
@@ -32,10 +33,10 @@ export function StudioShell({
           trailing={chromeTrailing}
         />
 
-        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(380px,440px)_1fr] lg:overflow-hidden">
+        <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,45dvh)_minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(380px,440px)_1fr] lg:grid-rows-none">
           <Material
             weight="panel"
-            className="material-panel-heavy flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-xl)] lg:max-h-full"
+            className="material-panel-heavy flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-xl)]"
             initial={false}
             role="complementary"
             aria-label="作成フォーム"
@@ -47,7 +48,7 @@ export function StudioShell({
 
           <Material
             weight="panel"
-            className="min-h-[40vh] overflow-hidden rounded-[var(--radius-xl)] lg:min-h-0 lg:max-h-full"
+            className="flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-xl)]"
             initial={false}
             role="main"
             aria-label="生成履歴"

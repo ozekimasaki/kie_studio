@@ -6,11 +6,14 @@ import {
 } from 'motion/react'
 import {
   useEffect,
+  useId,
   useRef,
   type ReactNode,
-  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { project, springMomentum, springUi, fadeQuick } from '../../lib/motion.ts'
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 type SpringSheetProps = {
   open: boolean
@@ -27,6 +30,7 @@ type SpringSheetProps = {
 /**
  * Gesture-dismissible sheet: 1:1 drag down, velocity projection on release,
  * scrim opacity tracks drag. Interruptible — drag anytime while open.
+ * Focus is trapped while open and restored to the previously focused element.
  */
 export function SpringSheet({
   open,
@@ -41,14 +45,70 @@ export function SpringSheet({
   const closeRef = useRef(onClose)
   closeRef.current = onClose
   const panelRef = useRef<HTMLDivElement>(null)
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
+  const titleId = useId()
 
   useEffect(() => {
     if (!open) return
+
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+
+    const panel = panelRef.current
+    if (!panel) return
+
+    const focusables = () =>
+      [...panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
+        (el) => !el.hasAttribute('disabled') && el.offsetParent !== null,
+      )
+
+    // Defer so children (e.g. close button) are mounted
+    const focusTimer = window.setTimeout(() => {
+      const nodes = focusables()
+      const preferred =
+        nodes.find((el) => el.dataset.sheetInitialFocus === 'true') ?? nodes[0]
+      preferred?.focus()
+    }, 0)
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') closeRef.current()
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        closeRef.current()
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const nodes = focusables()
+      if (nodes.length === 0) {
+        e.preventDefault()
+        panel?.focus()
+        return
+      }
+      const first = nodes[0]
+      const last = nodes[nodes.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey) {
+        if (active === first || !panel?.contains(active)) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else if (active === last || !panel?.contains(active)) {
+        e.preventDefault()
+        first.focus()
+      }
     }
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      window.clearTimeout(focusTimer)
+      window.removeEventListener('keydown', onKey)
+      const restore = restoreFocusRef.current
+      if (restore && document.contains(restore)) {
+        restore.focus()
+      }
+    }
   }, [open])
 
   function handleDragEnd(_: unknown, info: PanInfo) {
@@ -61,35 +121,28 @@ export function SpringSheet({
     }
   }
 
-  function onScrimKeyDown(e: ReactKeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      onClose()
-    }
-  }
-
   return (
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[var(--z-sheet)] flex items-end justify-center p-0 sm:items-center sm:p-4">
-          <motion.div
-            className="absolute inset-0 z-[var(--z-sheet-backdrop)] bg-[var(--overlay)]"
+          <motion.button
+            type="button"
+            className="absolute inset-0 z-[var(--z-sheet-backdrop)] cursor-default border-0 bg-[var(--overlay)] p-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={reduce ? fadeQuick : springUi}
             onClick={onClose}
-            onKeyDown={onScrimKeyDown}
-            role="button"
-            tabIndex={0}
             aria-label="閉じる"
+            tabIndex={-1}
           />
           <motion.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label={label}
-            aria-labelledby={labelledBy}
+            aria-label={labelledBy ? undefined : label}
+            aria-labelledby={labelledBy ?? (label ? titleId : undefined)}
+            tabIndex={-1}
             className={`material material-sheet relative z-[var(--z-sheet)] flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] ${maxWidthClass} ${className}`}
             initial={
               reduce
@@ -105,11 +158,16 @@ export function SpringSheet({
             transition={reduce ? fadeQuick : springMomentum}
             drag={reduce ? false : 'y'}
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0.06, bottom: 0.45 }}
+            dragElastic={{ top: 0.04, bottom: 0.12 }}
             dragMomentum={false}
             onDragEnd={handleDragEnd}
             style={{ touchAction: 'none' }}
           >
+            {label && !labelledBy && (
+              <span id={titleId} className="sr-only">
+                {label}
+              </span>
+            )}
             <div
               className="mx-auto mt-2.5 mb-1 h-1 w-10 shrink-0 rounded-full bg-[var(--border-strong)]"
               aria-hidden

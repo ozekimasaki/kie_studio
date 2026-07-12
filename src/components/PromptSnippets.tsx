@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import {
   addSnippet,
@@ -21,6 +21,7 @@ export function PromptSnippets({
   disabled?: boolean
   onInsert: (text: string) => void
 }) {
+  const panelId = useId()
   const [open, setOpen] = useState(false)
   const [snippets, setSnippets] = useState<PromptSnippet[]>(() =>
     loadSnippets(),
@@ -39,6 +40,7 @@ export function PromptSnippets({
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--accent)]"
         aria-expanded={open}
+        aria-controls={panelId}
         scaleTo={0.97}
       >
         {open ? (
@@ -51,7 +53,10 @@ export function PromptSnippets({
       </Pressable>
 
       {open && (
-        <div className="mt-2 space-y-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] p-3">
+        <div
+          id={panelId}
+          className="mt-2 space-y-2 border-t border-[var(--border)] pt-2"
+        >
           <div className="flex gap-1.5">
             <input
               type="text"
@@ -85,7 +90,7 @@ export function PromptSnippets({
                     disabled={disabled}
                     onClick={() => onInsert(s.text)}
                     title={s.text}
-                    className="min-w-0 flex-1 truncate rounded-lg border border-transparent bg-[var(--bg)] px-2 py-1.5 text-left text-xs transition hover:border-[var(--accent)] disabled:opacity-50"
+                    className="min-w-0 flex-1 truncate rounded-[var(--radius-md)] bg-[var(--bg)] px-2 py-1.5 text-left text-xs transition hover:bg-[var(--accent-soft)] disabled:opacity-50"
                   >
                     <span className="font-medium">{s.title}</span>
                     <span className="ml-1.5 text-[var(--text-muted)]">

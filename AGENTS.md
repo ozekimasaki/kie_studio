@@ -45,7 +45,7 @@ indexion agent orient --task "<英語の目的 gloss>" --output .indexion/cache/
 ### 検索
 
 ```powershell
-indexion search "history pin localStorage" src/
+indexion search "history pin SQLite" src/
 indexion grep "createTask" server/
 ```
 
@@ -82,7 +82,8 @@ src/
   data/catalog.json
 server/
   index.ts             # Hono エントリ・CORS・onError・起動時 sync
-  routes/              # upload, generate, task, models, credits, ...
+  routes/              # upload, generate, task, models, credits, history, ...
+  db/                  # SQLite（履歴ギャラリー）
   kie/                 # Market / Upload クライアント
   grok/                # Grok CLI 最適化
   catalog/             # docs → catalog.json
@@ -101,9 +102,10 @@ scripts/sync-models.ts
 | `src/components/shell/` | レイアウト枠 |
 | `src/components/motion/` + `src/lib/motion.ts` | インタラクション / モーション |
 | `src/lib/api.ts` | `/api` クライアント（キーは持たない） |
-| `src/lib/history.ts` | localStorage 履歴 |
+| `src/lib/history.ts` | 履歴の純粋関数（cap・正規化）。永続化は SQLite via `/api/history` |
 | `src/lib/models/` | 型・OpenAPI 抽出・メンション |
 | `server/routes/` | HTTP 境界 |
+| `server/db/` | SQLite（`data/studio.db`） |
 | `server/kie/` | kie.ai 呼び出し |
 | `server/grok/` | Grok CLI |
 | `server/catalog/` + `scripts/` | カタログ同期 |
@@ -144,7 +146,8 @@ npm run sync:models -- --force
 
 - カタログ同期は起動時に古いときだけ走る。毎回フル同期しない設計を壊さない
 - Seedance 等のリファレンスキー名・メンションタグは末尾スペースや表記ゆれに敏感
-- 履歴は localStorage。ピン上限・インポート正規化・入力復元の安全策を維持する
+- 履歴は SQLite（`data/studio.db`）。ピン上限・インポート正規化・入力復元の安全策を維持する
+- 旧 localStorage キーは初回起動時に `POST /api/history/migrate` で移行する
 - プロンプト最適化は Grok CLI 依存。未インストール時は 503 でよい
 - `FieldType` / 特殊 UI を増やすときは `types.ts` → `DynamicForm` → 必要ならカタログ抽出を一連で見る
 - Music / Suno / Veo / Runway 等の専用 API はスコープ外

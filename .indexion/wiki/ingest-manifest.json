@@ -1,0 +1,79 @@
+{
+  "version": "1",
+  "page_states": {
+    "overview": {
+      "page_hash": "3f006ccee36615ff277ddf8f2323784b",
+      "source_hashes": {
+        "README.md": "a37b785a45e9bb65e71f3114ad7dab31",
+        "AGENTS.md": "0c47f43b8190828da436070d28de47bb",
+        "package.json": "cb87dbe83b864dd3067e6de39a026e5f"
+      }
+    },
+    "getting-started": {
+      "page_hash": "be45b1cc1c56cd8d34a1518f77c9b3ba",
+      "source_hashes": {
+        ".env.example": "1e00c644a83bee7525b91309a08920a0",
+        "package.json": "cb87dbe83b864dd3067e6de39a026e5f",
+        "README.md": "a37b785a45e9bb65e71f3114ad7dab31",
+        "vite.config.ts": "2451699b10ce685296adcaedc3d6a27a"
+      }
+    },
+    "core-concepts": {
+      "page_hash": "cd1059241eab3fcd5706e05bf490a46e",
+      "source_hashes": {
+        "src/lib/models/types.ts": "7a40523ee4d037ff172836d9dea763ea",
+        "src/lib/history.ts": "40cb3a48755673e5f5f84394ad6c923d",
+        "src/lib/models/mentions.ts": "af7fe9767d994b47815012839284a8c2",
+        "src/components/DynamicForm.tsx": "77692c2549031f53d741e1ab4f5cd7fc"
+      }
+    },
+    "architecture": {
+      "page_hash": "07e8d63032bf046edfb6a3ca57543179",
+      "source_hashes": {
+        "AGENTS.md": "0c47f43b8190828da436070d28de47bb",
+        "server/index.ts": "7e18b7e12a3ab900b8a441e8e2a7deb0",
+        "vite.config.ts": "2451699b10ce685296adcaedc3d6a27a",
+        "src/App.tsx": "b9a7d4a98f42b2150bef231210715d86",
+        "src/lib/motion.ts": "67c5ea9e36ffd20705827eaca379b541"
+      }
+    },
+    "frontend": {
+      "page_hash": "e4d3b1fa28821963c1891d4ca37fb0ab",
+      "source_hashes": {
+        "src/App.tsx": "b9a7d4a98f42b2150bef231210715d86",
+        "src/lib/motion.ts": "67c5ea9e36ffd20705827eaca379b541",
+        "src/main.tsx": "4fe70ed61c436be715c5326f4f8de9f3"
+      }
+    },
+    "client-lib": {
+      "page_hash": "8c961b5055bd43ac1130d4f1ccb13c6e",
+      "source_hashes": {}
+    },
+    "server-api": {
+      "page_hash": "afe9639e630208dce78633c94d177ea9",
+      "source_hashes": {
+        "server/index.ts": "7e18b7e12a3ab900b8a441e8e2a7deb0"
+      }
+    },
+    "kie-integration": {
+      "page_hash": "e808534d3fb32ec4cbb8350b404bbb4d",
+      "source_hashes": {}
+    },
+    "catalog-sync": {
+      "page_hash": "51290183050e19d079a2269d9cca9f50",
+      "source_hashes": {
+        "server/catalog/sync.ts": "5a1024e2779848ace07097494c0e4b68",
+        "scripts/sync-models.ts": "33b691cf2c2cba5d58e450ff14561532",
+        "src/lib/models/from-openapi.ts": "ab670589b2c45dc8d4c0f3113e9ca48a",
+        "src/data/catalog.json": "8679a693bba57167f27acb72531160c3"
+      }
+    },
+    "prompt-optimize": {
+      "page_hash": "6e9262935c14a3a5d9de8221ed37f3b9",
+      "source_hashes": {
+        "server/routes/optimize-prompt.ts": "600c6f11028f2050c3f060fb06e03e42",
+        "src/components/PromptOptimizePanel.tsx": "ba7eb856fe6cc5a36475517c0d6f53cd"
+      }
+    }
+  }
+}

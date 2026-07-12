@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import {
   fetchGrokStatus,
   fetchOptimizeProfile,
@@ -20,6 +21,8 @@ export function PromptOptimizePanel({
   disabled?: boolean
   onApply: (optimized: string) => void
 }) {
+  const panelId = useId()
+  const [open, setOpen] = useState(false)
   const [customInstructions, setCustomInstructions] = useState('')
   const [preview, setPreview] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState<'generate' | 'optimize' | null>(
@@ -59,6 +62,7 @@ export function PromptOptimizePanel({
       setPreview(res.data.optimizedPrompt)
       setPreviewMode(res.data.mode ?? mode)
       setAppliedProfileLabel(res.data.profile?.label ?? null)
+      setOpen(true)
     },
   })
 
@@ -88,114 +92,137 @@ export function PromptOptimizePanel({
       : null
 
   return (
-    <div className="mt-3 space-y-2.5 border-t border-[var(--border)] pt-3">
-      {profile && (
-        <p className="text-[11px] text-[var(--text-muted)]">
-          {mode === 'generate' ? '生成ルール' : '最適化ルール'}:{' '}
-          <span className="font-medium text-[var(--text)]">{profile.label}</span>
-          {profile.hasGuide ? ' · 専用ガイドあり' : ''}
-          <span className="mt-0.5 block truncate" title={profile.formula}>
-            {profile.formula}
-          </span>
-        </p>
-      )}
-
-      <div>
-        <label
-          htmlFor="prompt-optimize-custom"
-          className="studio-label mb-1.5"
-        >
-          {mode === 'generate'
-            ? 'やりたいこと・メモ'
-            : 'カスタム指示（任意）'}
-          {mode === 'generate' && (
-            <span className="ml-1 normal-case tracking-normal text-[var(--danger)]">
-              *
-            </span>
-          )}
-        </label>
-        <textarea
-          id="prompt-optimize-custom"
-          className={`${inputClass} min-h-16 resize-y text-xs`}
-          value={customInstructions}
-          disabled={busy || disabled}
-          placeholder={
-            mode === 'generate'
-              ? '例: 夕暮れの海岸を歩く女性、シネマ風、6秒'
-              : '例: 英語で出力 / カメラは固定 / もっと短く'
-          }
-          onChange={(e) => setCustomInstructions(e.target.value)}
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Pressable
-          className="studio-btn font-medium"
-          disabled={!canRun}
-          scaleTo={0.96}
-          onClick={() => {
-            setPreview(null)
-            setPreviewMode(null)
-            setAppliedProfileLabel(null)
-            assist.reset()
-            assist.mutate()
-          }}
-        >
-          {buttonLabel}
-        </Pressable>
-        {hint && (
-          <span className="text-[11px] text-[var(--text-muted)]">{hint}</span>
+    <div className="mt-3 border-t border-[var(--border)] pt-3">
+      <Pressable
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--accent)]"
+        aria-expanded={open}
+        aria-controls={panelId}
+        scaleTo={0.97}
+      >
+        {open ? (
+          <ChevronDown size={14} strokeWidth={2} aria-hidden />
+        ) : (
+          <ChevronRight size={14} strokeWidth={2} aria-hidden />
         )}
-      </div>
+        Grok で最適化
+      </Pressable>
 
-      {assist.isError && (
-        <p className="text-xs text-[var(--danger)]" role="alert">
-          {assist.error instanceof Error
-            ? assist.error.message
-            : mode === 'generate'
-              ? '生成に失敗しました'
-              : '最適化に失敗しました'}
-        </p>
-      )}
+      {open && (
+        <div id={panelId} className="mt-2.5 space-y-2.5">
+          {profile && (
+            <p className="text-[11px] text-[var(--text-muted)]">
+              {mode === 'generate' ? '生成ルール' : '最適化ルール'}:{' '}
+              <span className="font-medium text-[var(--text)]">
+                {profile.label}
+              </span>
+              {profile.hasGuide ? ' · 専用ガイドあり' : ''}
+              <span className="mt-0.5 block truncate" title={profile.formula}>
+                {profile.formula}
+              </span>
+            </p>
+          )}
 
-      {preview !== null && (
-        <div className="space-y-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg)] p-3">
-          <p className="text-xs font-medium text-[var(--text-muted)]">
-            {previewMode === 'generate' ? '生成プレビュー' : '最適化プレビュー'}
-            {appliedProfileLabel ? ` · ${appliedProfileLabel}` : ''}
-          </p>
-          <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
-            {preview}
-          </pre>
-          <div className="flex flex-wrap gap-2">
-            <Pressable
-              className="studio-btn-primary w-auto px-3 py-1.5 text-xs disabled:opacity-50"
-              disabled={busy || disabled}
-              scaleTo={0.96}
-              onClick={() => {
-                onApply(preview)
-                setPreview(null)
-                setPreviewMode(null)
-                setAppliedProfileLabel(null)
-                assist.reset()
-              }}
+          <div>
+            <label
+              htmlFor="prompt-optimize-custom"
+              className="studio-label mb-1.5"
             >
-              適用
-            </Pressable>
+              {mode === 'generate'
+                ? 'やりたいこと・メモ'
+                : 'カスタム指示（任意）'}
+              {mode === 'generate' && (
+                <span className="ml-1 normal-case tracking-normal text-[var(--danger)]">
+                  *
+                </span>
+              )}
+            </label>
+            <textarea
+              id="prompt-optimize-custom"
+              className={`${inputClass} min-h-16 resize-y text-xs`}
+              value={customInstructions}
+              disabled={busy || disabled}
+              placeholder={
+                mode === 'generate'
+                  ? '例: 夕暮れの海岸を歩く女性、シネマ風、6秒'
+                  : '例: 英語で出力 / カメラは固定 / もっと短く'
+              }
+              onChange={(e) => setCustomInstructions(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <Pressable
               className="studio-btn font-medium"
-              disabled={busy}
+              disabled={!canRun}
               scaleTo={0.96}
               onClick={() => {
                 setPreview(null)
                 setPreviewMode(null)
                 setAppliedProfileLabel(null)
                 assist.reset()
+                assist.mutate()
               }}
             >
-              破棄
+              {buttonLabel}
             </Pressable>
+            {hint && (
+              <span className="text-[11px] text-[var(--text-muted)]">{hint}</span>
+            )}
           </div>
+
+          {assist.isError && (
+            <p className="text-xs text-[var(--danger)]" role="alert">
+              {assist.error instanceof Error
+                ? assist.error.message
+                : mode === 'generate'
+                  ? '生成に失敗しました'
+                  : '最適化に失敗しました'}
+            </p>
+          )}
+
+          {preview !== null && (
+            <div className="space-y-2 border-t border-[var(--border)] pt-3">
+              <p className="text-xs font-medium text-[var(--text-muted)]">
+                {previewMode === 'generate'
+                  ? '生成プレビュー'
+                  : '最適化プレビュー'}
+                {appliedProfileLabel ? ` · ${appliedProfileLabel}` : ''}
+              </p>
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
+                {preview}
+              </pre>
+              <div className="flex flex-wrap gap-2">
+                <Pressable
+                  className="studio-btn-primary w-auto px-3 py-1.5 text-xs disabled:opacity-50"
+                  disabled={busy || disabled}
+                  scaleTo={0.96}
+                  onClick={() => {
+                    onApply(preview)
+                    setPreview(null)
+                    setPreviewMode(null)
+                    setAppliedProfileLabel(null)
+                    assist.reset()
+                  }}
+                >
+                  適用
+                </Pressable>
+                <Pressable
+                  className="studio-btn font-medium"
+                  disabled={busy}
+                  scaleTo={0.96}
+                  onClick={() => {
+                    setPreview(null)
+                    setPreviewMode(null)
+                    setAppliedProfileLabel(null)
+                    assist.reset()
+                  }}
+                >
+                  破棄
+                </Pressable>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

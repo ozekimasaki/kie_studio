@@ -33,7 +33,7 @@ function FieldLabel({
 }) {
   return (
     <div className="mb-2">
-      <label htmlFor={htmlFor} className="text-sm font-semibold">
+      <label htmlFor={htmlFor} className="studio-label text-[var(--text)]">
         {field.label}
         {field.required && <span className="ml-1 text-[var(--danger)]">*</span>}
         {hint && (
@@ -80,10 +80,10 @@ function BooleanToggle({
   const reduce = useReducedMotion()
 
   return (
-    <div className="border-b border-[var(--border)] py-3 last:border-b-0">
+    <div className="py-3">
       <div className="mb-2.5 flex items-center justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold" id={id}>
+          <div className="studio-label text-[var(--text)]" id={id}>
             {field.label}
             {field.required && (
               <span className="ml-1 text-[var(--danger)]">*</span>
@@ -98,11 +98,11 @@ function BooleanToggle({
         <span
           className={`rounded-[var(--radius-md)] px-2 py-0.5 text-[11px] font-bold tabular-nums ${
             on
-              ? 'bg-[var(--on-soft)] text-[var(--on)]'
+              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
               : 'bg-[var(--off-soft)] text-[var(--off)]'
           }`}
         >
-          {on ? 'ON' : 'OFF'}
+          {on ? 'オン' : 'オフ'}
         </span>
       </div>
       <LayoutGroup id={`bool-${field.name}`}>
@@ -128,7 +128,7 @@ function BooleanToggle({
                 aria-hidden
               />
             )}
-            <span className="relative z-10">Off</span>
+            <span className="relative z-10">オフ</span>
           </Pressable>
           <Pressable
             disabled={disabled}
@@ -142,12 +142,12 @@ function BooleanToggle({
             {on && (
               <motion.span
                 layoutId={`bool-pill-${field.name}`}
-                className="absolute inset-0 z-0 bg-[var(--on)]"
+                className="absolute inset-0 z-0 bg-[var(--accent)]"
                 transition={reduce ? fadeQuick : springUi}
                 aria-hidden
               />
             )}
-            <span className="relative z-10">On</span>
+            <span className="relative z-10">オン</span>
           </Pressable>
         </div>
       </LayoutGroup>
@@ -242,16 +242,17 @@ export function DynamicForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-[var(--border)]">
       {orderedFields.map((field) => {
         const value = values[field.name]
         const error = fieldErrors?.[field.name]
         const id = fieldId(field.name)
+        const wrap = 'py-4 first:pt-0'
 
         switch (field.type) {
           case 'textarea':
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
                 <textarea
                   id={id}
@@ -295,7 +296,7 @@ export function DynamicForm({
             )
           case 'string':
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
                 <input
                   id={id}
@@ -305,16 +306,17 @@ export function DynamicForm({
                   maxLength={field.maxLength}
                   disabled={disabled}
                   aria-invalid={Boolean(error)}
+                  aria-describedby={error ? `${id}-error` : undefined}
                   onChange={(e) =>
                     clearErrorOnChange(field.name, e.target.value)
                   }
                 />
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
               </div>
             )
           case 'number':
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
                 <div className="flex items-center gap-3">
                   <input
@@ -343,6 +345,7 @@ export function DynamicForm({
                     step={field.step ?? 1}
                     disabled={disabled}
                     aria-invalid={Boolean(error)}
+                    aria-describedby={error ? `${id}-error` : undefined}
                     value={
                       typeof value === 'number'
                         ? value
@@ -353,26 +356,27 @@ export function DynamicForm({
                     }
                   />
                 </div>
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
               </div>
             )
           case 'boolean': {
             const on = Boolean(value)
             return (
-              <BooleanToggle
-                key={field.name}
-                id={id}
-                field={field}
-                on={on}
-                disabled={disabled}
-                error={error}
-                onChange={(next) => clearErrorOnChange(field.name, next)}
-              />
+              <div key={field.name} className="first:pt-0">
+                <BooleanToggle
+                  id={id}
+                  field={field}
+                  on={on}
+                  disabled={disabled}
+                  error={error}
+                  onChange={(next) => clearErrorOnChange(field.name, next)}
+                />
+              </div>
             )
           }
           case 'enum':
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
                 <select
                   id={id}
@@ -384,6 +388,7 @@ export function DynamicForm({
                   }
                   disabled={disabled}
                   aria-invalid={Boolean(error)}
+                  aria-describedby={error ? `${id}-error` : undefined}
                   onChange={(e) =>
                     clearErrorOnChange(field.name, e.target.value)
                   }
@@ -394,20 +399,15 @@ export function DynamicForm({
                     </option>
                   ))}
                 </select>
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
               </div>
             )
           case 'reference': {
             const max = field.maxItems ?? 8
             const media = acceptHint(field.accept)
-            const hint = [
-              `最大 ${max} 枚`,
-              media,
-            ]
-              .filter(Boolean)
-              .join(' · ')
+            const hint = [`最大 ${max} 枚`, media].filter(Boolean).join(' · ')
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} hint={hint} />
                 <ReferenceUpload
                   inputId={id}
@@ -421,13 +421,13 @@ export function DynamicForm({
                     promptFieldName ? insertIntoPrompt : undefined
                   }
                 />
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
               </div>
             )
           }
           case 'kling_elements':
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel
                   field={field}
                   hint={`最大 ${field.maxItems ?? 3} 件`}
@@ -441,18 +441,19 @@ export function DynamicForm({
                     promptFieldName ? insertIntoPrompt : undefined
                   }
                 />
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
               </div>
             )
           case 'json':
             return (
-              <div key={field.name}>
+              <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
                 <textarea
                   id={id}
                   className={`${inputClass} min-h-24 font-mono text-xs`}
                   disabled={disabled}
                   aria-invalid={Boolean(error)}
+                  aria-describedby={error ? `${id}-error` : undefined}
                   value={
                     typeof value === 'string'
                       ? value
@@ -470,7 +471,7 @@ export function DynamicForm({
                   }}
                   placeholder="{ }"
                 />
-                <FieldError message={error} />
+                <FieldError message={error} id={`${id}-error`} />
               </div>
             )
           default: {
@@ -513,6 +514,59 @@ export function buildDefaultValues(
   return values
 }
 
+function isKlingElementComplete(el: unknown): boolean {
+  if (!el || typeof el !== 'object') return false
+  const item = el as KlingElement
+  return (
+    typeof item.name === 'string' &&
+    item.name.trim().length > 0 &&
+    Array.isArray(item.element_input_urls) &&
+    item.element_input_urls.length >= 1
+  )
+}
+
+/** True when values differ from field defaults (used before model/category switch). */
+export function isFormDirty(
+  fields: FieldSchema[],
+  values: Record<string, unknown>,
+): boolean {
+  const defaults = buildDefaultValues(fields)
+  for (const field of fields) {
+    const v = values[field.name]
+    const d = defaults[field.name]
+    if (field.type === 'reference' || field.type === 'kling_elements') {
+      const arr = Array.isArray(v) ? v : []
+      const def = Array.isArray(d) ? d : []
+      if (arr.length !== def.length) return true
+      if (JSON.stringify(arr) !== JSON.stringify(def)) return true
+      continue
+    }
+    if (v !== d) return true
+  }
+  return false
+}
+
+export function focusFirstFieldError(errors: Record<string, string>): void {
+  const first = Object.keys(errors)[0]
+  if (!first) return
+  const id = fieldId(first)
+  window.requestAnimationFrame(() => {
+    const el = document.getElementById(id)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLTextAreaElement ||
+      el instanceof HTMLSelectElement ||
+      el instanceof HTMLButtonElement
+    ) {
+      el.focus({ preventScroll: true })
+    } else if (el instanceof HTMLElement) {
+      el.focus({ preventScroll: true })
+    }
+  })
+}
+
 export function validateFields(
   fields: FieldSchema[],
   values: Record<string, unknown>,
@@ -533,6 +587,15 @@ export function validateFields(
         errors[field.name] = `${field.label}のJSONが不正です`
       }
       continue
+    }
+
+    if (field.type === 'kling_elements' && Array.isArray(v) && v.length > 0) {
+      const incomplete = v.some((el) => !isKlingElementComplete(el))
+      if (incomplete) {
+        errors[field.name] =
+          `${field.label}: 各要素に名前と画像（1枚以上）が必要です`
+        continue
+      }
     }
 
     if (!field.required) continue

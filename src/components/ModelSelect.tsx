@@ -14,7 +14,7 @@ export function ModelSelect({
   return (
     <div className="space-y-2">
       <label htmlFor="model-select" className="studio-label">
-        Model
+        モデル
       </label>
       <select
         id="model-select"

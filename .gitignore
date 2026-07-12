@@ -14,6 +14,12 @@ dist-ssr
 .env
 .env.local
 
+# Local studio SQLite
+data/
+*.db
+*.db-shm
+*.db-wal
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -24,3 +30,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent / skill tooling (not part of the app)
+.agents/
+.claude/
+.cursor/
+.kiro/
+skills-lock.json
+
+# indexion: keep wiki, ignore generated local cache
+.indexion/cache/
+.indexion/digest/
