@@ -122,3 +122,47 @@ export async function optimizePrompt(params: {
     }
   }>(res)
 }
+
+export async function fetchHistory() {
+  const res = await fetch('/api/history')
+  return parseJson<{
+    data: { items: import('./models/types.ts').HistoryItem[]; count: number }
+  }>(res)
+}
+
+export async function putHistory(
+  items: import('./models/types.ts').HistoryItem[],
+) {
+  const res = await fetch('/api/history', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  })
+  return parseJson<{
+    data: { items: import('./models/types.ts').HistoryItem[] }
+  }>(res)
+}
+
+export async function importHistoryApi(
+  items: import('./models/types.ts').HistoryItem[],
+) {
+  const res = await fetch('/api/history/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  })
+  return parseJson<{
+    data: { items: import('./models/types.ts').HistoryItem[] }
+  }>(res)
+}
+
+export async function migrateHistory(items: unknown[]) {
+  const res = await fetch('/api/history/migrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  })
+  return parseJson<{
+    data: { items: import('./models/types.ts').HistoryItem[] }
+  }>(res)
+}

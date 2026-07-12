@@ -1,19 +1,15 @@
 import type { HistoryItem, TaskState } from './models/types.ts'
 
-const KEY = 'kie-studio-history'
-const MAX_ITEMS = 30
-const MAX_PINNED = 30
+/** Non-pinned budget (SQLite; was 30 under localStorage quota pressure). */
+export const MAX_ITEMS = 200
+/** Pin budget — UI rejects when at limit. */
+export const MAX_PINNED = 30
 
 /** Matches App polling: unknown items older than this are not refetched. */
 export const UNKNOWN_STALE_MS = 10 * 60 * 1000
 
 /** Cap for waiting/queuing/generating — stops eternal polling. */
 export const PENDING_STALE_MS = 60 * 60 * 1000
-
-const SAVE_DEBOUNCE_MS = 400
-
-let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
-let pendingPersist: HistoryItem[] | null = null
 
 /**
  * Normalize API/local timestamps to milliseconds.
@@ -27,28 +23,13 @@ export function normalizeTimestamp(
   return value < 1e12 ? value * 1000 : value
 }
 
-export function loadHistory(): HistoryItem[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return []
-    const data = JSON.parse(raw) as unknown
-    if (!Array.isArray(data)) return []
-    const normalized = normalizeHistoryItems(data, 'local')
-    // demote / 不正データの除去をディスクにも反映
-    persistToStorage(normalized)
-    return normalized
-  } catch {
-    return []
-  }
-}
-
 /**
  * Keep up to MAX_PINNED pinned items (newest first) plus the newest
  * MAX_ITEMS non-pinned items. Excess pins are unpinned before the
  * non-pinned budget is applied. Pinned items don't consume the
  * non-pinned budget, so a just-submitted task is never evicted by pins.
  */
-function capItems(items: HistoryItem[]): HistoryItem[] {
+export function capItems(items: HistoryItem[]): HistoryItem[] {
   let pinnedBudget = MAX_PINNED
   const withPinCap = items.map((item) => {
     if (!item.pinned) return item
@@ -70,62 +51,7 @@ function capItems(items: HistoryItem[]): HistoryItem[] {
   })
 }
 
-function persistToStorage(capped: HistoryItem[]): void {
-  const stripInput = ({ input: _input, ...rest }: HistoryItem) => rest
-  // 容量超過時は input を段階的に落とす（ピン留めの input は最後まで守る）
-  const attempts = [
-    capped,
-    capped.map((h) => (h.pinned ? h : stripInput(h))),
-    capped.map(stripInput),
-  ]
-  for (const attempt of attempts) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(attempt))
-      return
-    } catch {
-      // 次の縮小版で再試行
-    }
-  }
-}
-
-function clearSaveDebounce(): void {
-  if (saveDebounceTimer) {
-    clearTimeout(saveDebounceTimer)
-    saveDebounceTimer = null
-  }
-  pendingPersist = null
-}
-
-/** Persist to localStorage (capped). Returns the in-memory capped list for setState. */
-export function saveHistory(items: HistoryItem[]): HistoryItem[] {
-  clearSaveDebounce()
-  const capped = capItems(items)
-  persistToStorage(capped)
-  return capped
-}
-
-/**
- * Cap for setState immediately; debounce localStorage writes.
- * User actions should keep using saveHistory for instant persistence.
- */
-export function saveHistoryDebounced(
-  items: HistoryItem[],
-  delayMs = SAVE_DEBOUNCE_MS,
-): HistoryItem[] {
-  const capped = capItems(items)
-  pendingPersist = capped
-  if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
-  saveDebounceTimer = setTimeout(() => {
-    saveDebounceTimer = null
-    if (pendingPersist) {
-      persistToStorage(pendingPersist)
-      pendingPersist = null
-    }
-  }, delayMs)
-  return capped
-}
-
-/** Merge into an in-memory list (avoids localStorage race on rapid updates). */
+/** Merge into an in-memory list (avoids races on rapid updates). */
 export function upsertInList(
   prev: HistoryItem[],
   item: HistoryItem,
@@ -172,7 +98,12 @@ export function togglePinInList(
 
 export function exportHistoryJson(items: HistoryItem[]): string {
   return JSON.stringify(
-    { app: 'kie-studio', version: 1, exportedAt: new Date().toISOString(), items },
+    {
+      app: 'kie-studio',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      items,
+    },
     null,
     2,
   )

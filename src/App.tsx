@@ -19,20 +19,22 @@ import { StudioShell } from './components/shell/StudioShell.tsx'
 import { Pressable } from './components/motion/Pressable.tsx'
 import {
   fetchHealth,
+  fetchHistory,
   fetchModels,
   fetchTask,
   generateTask,
+  importHistoryApi,
+  migrateHistory,
+  putHistory,
 } from './lib/api.ts'
 import {
+  capItems,
   exportHistoryJson,
-  loadHistory,
-  mergeHistory,
+  MAX_PINNED,
   normalizeTimestamp,
   parseHistoryJson,
   PENDING_STALE_MS,
   removeFromList,
-  saveHistory,
-  saveHistoryDebounced,
   togglePinInList,
   UNKNOWN_STALE_MS,
   upsertInList,
@@ -92,6 +94,10 @@ function isPendingState(item: HistoryItem): boolean {
   return false
 }
 
+const LS_HISTORY_KEY = 'kie-studio-history'
+const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
+const HISTORY_SAVE_DEBOUNCE_MS = 400
+
 export default function App() {
   const queryClient = useQueryClient()
   const [category, setCategory] = useState<ModelCategory>('image')
@@ -100,19 +106,119 @@ export default function App() {
   const [viewerTaskId, setViewerTaskId] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
+  const [history, setHistory] = useState<HistoryItem[]>([])
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
   const [batchCount, setBatchCount] = useState(1)
   const pendingRestoreRef = useRef<{
     modelId: string
     input: Record<string, unknown>
   } | null>(null)
+  const historyHydratedRef = useRef(false)
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingPersistRef = useRef<HistoryItem[] | null>(null)
+  const persistHistoryRef = useRef<
+    (items: HistoryItem[], debounce?: boolean) => HistoryItem[]
+  >((items) => capItems(items))
 
   const healthQuery = useQuery({
     queryKey: ['health'],
     queryFn: fetchHealth,
     staleTime: 60_000,
   })
+
+  const historyQuery = useQuery({
+    queryKey: ['history'],
+    queryFn: async () => (await fetchHistory()).data.items,
+    staleTime: Infinity,
+  })
+
+  const flushHistoryPersist = (items: HistoryItem[]) => {
+    pendingPersistRef.current = null
+    void putHistory(items)
+      .then((res) => {
+        queryClient.setQueryData(['history'], res.data.items)
+      })
+      .catch(async (e) => {
+        setFormError(
+          e instanceof Error ? e.message : '履歴の保存に失敗しました',
+        )
+        try {
+          const res = await fetchHistory()
+          setHistory(res.data.items)
+          queryClient.setQueryData(['history'], res.data.items)
+        } catch {
+          // keep optimistic state if refetch also fails
+        }
+      })
+  }
+
+  const persistHistory = (items: HistoryItem[], debounce = false): HistoryItem[] => {
+    const capped = capItems(items)
+    if (!debounce) {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      flushHistoryPersist(capped)
+      return capped
+    }
+    pendingPersistRef.current = capped
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    persistTimerRef.current = setTimeout(() => {
+      persistTimerRef.current = null
+      if (pendingPersistRef.current) {
+        flushHistoryPersist(pendingPersistRef.current)
+      }
+    }, HISTORY_SAVE_DEBOUNCE_MS)
+    return capped
+  }
+  persistHistoryRef.current = persistHistory
+
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!historyQuery.isSuccess || historyHydratedRef.current) return
+    historyHydratedRef.current = true
+
+    let cancelled = false
+    void (async () => {
+      let items = historyQuery.data ?? []
+      try {
+        if (localStorage.getItem(LS_MIGRATED_KEY) !== '1') {
+          const raw = localStorage.getItem(LS_HISTORY_KEY)
+          if (raw) {
+            const parsed = JSON.parse(raw) as unknown
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const res = await migrateHistory(parsed)
+              items = res.data.items
+              localStorage.removeItem(LS_HISTORY_KEY)
+            }
+          }
+          localStorage.setItem(LS_MIGRATED_KEY, '1')
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setFormError(
+            e instanceof Error
+              ? `履歴の移行に失敗しました: ${e.message}`
+              : '履歴の移行に失敗しました',
+          )
+        }
+      }
+      if (!cancelled) {
+        setHistory(items)
+        queryClient.setQueryData(['history'], items)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [historyQuery.isSuccess, historyQuery.data, queryClient])
 
   const modelsQuery = useQuery({
     queryKey: ['models', category],
@@ -178,7 +284,7 @@ export default function App() {
           }
           return h
         })
-        return changed ? saveHistory(next) : prev
+        return changed ? persistHistoryRef.current(next) : prev
       })
     }
     demoteStalePending()
@@ -264,7 +370,7 @@ export default function App() {
       }
 
       if (!changed) return prev
-      return saveHistoryDebounced(next)
+      return persistHistory(next, true)
     })
 
     if (autoOpenTaskId) setViewerTaskId(autoOpenTaskId)
@@ -391,7 +497,7 @@ export default function App() {
           }
           next = upsertInList(next, item)
         }
-        return saveHistory(next)
+        return persistHistory(next)
       })
       if (taskIds.length === 1) setViewerTaskId(taskIds[0])
       if (failedCount > 0) {
@@ -501,10 +607,10 @@ export default function App() {
       const result = togglePinInList(prev, taskId)
       rejected = result.rejected
       if (result.rejected) return prev
-      return saveHistory(result.next)
+      return persistHistory(result.next)
     })
     if (rejected === 'pin-limit') {
-      setFormError('ピン留めは最大30件までです')
+      setFormError(`ピン留めは最大${MAX_PINNED}件までです`)
     }
   }
 
@@ -521,14 +627,18 @@ export default function App() {
   }
 
   function importHistory(raw: string) {
-    try {
-      const items = parseHistoryJson(raw)
-      setHistory((prev) => saveHistory(mergeHistory(prev, items)))
-    } catch (e) {
-      window.alert(
-        e instanceof Error ? e.message : '履歴のインポートに失敗しました',
-      )
-    }
+    void (async () => {
+      try {
+        const items = parseHistoryJson(raw)
+        const res = await importHistoryApi(items)
+        setHistory(res.data.items)
+        queryClient.setQueryData(['history'], res.data.items)
+      } catch (e) {
+        window.alert(
+          e instanceof Error ? e.message : '履歴のインポートに失敗しました',
+        )
+      }
+    })()
   }
 
   function closeViewer() {
@@ -710,7 +820,7 @@ export default function App() {
           onImport={importHistory}
           retryDisabled={generateDisabled}
           onRemove={(taskId) => {
-            setHistory((prev) => saveHistory(removeFromList(prev, taskId)))
+            setHistory((prev) => persistHistory(removeFromList(prev, taskId)))
             if (viewerTaskId === taskId) setViewerTaskId(null)
           }}
           onClear={() => {
@@ -721,7 +831,9 @@ export default function App() {
             ) {
               return
             }
-            setHistory((prev) => saveHistory(prev.filter((h) => h.pinned)))
+            setHistory((prev) =>
+              persistHistory(prev.filter((h) => h.pinned)),
+            )
             setViewerTaskId(null)
           }}
         />

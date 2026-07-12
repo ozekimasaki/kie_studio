@@ -11,8 +11,10 @@ import { creditsRoutes } from './routes/credits.ts'
 import { downloadUrlRoutes } from './routes/download-url.ts'
 import { modelsRoutes } from './routes/models.ts'
 import { optimizePromptRoutes } from './routes/optimize-prompt.ts'
+import { historyRoutes } from './routes/history.ts'
 import { KieApiError } from './kie/client.ts'
 import { syncCatalog } from './catalog/sync.ts'
+import { getDb, getDbPath } from './db/open.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 config({ path: resolve(__dirname, '../.env') })
@@ -42,6 +44,7 @@ app.route('/api', creditsRoutes)
 app.route('/api', downloadUrlRoutes)
 app.route('/api', modelsRoutes)
 app.route('/api', optimizePromptRoutes)
+app.route('/api', historyRoutes)
 
 app.onError((err, c) => {
   if (err instanceof KieApiError) {
@@ -60,6 +63,13 @@ const port = Number(process.env.PORT || 8787)
 
 serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, (info) => {
   console.log(`KIE STUDIO API listening on http://127.0.0.1:${info.port}`)
+
+  try {
+    getDb()
+    console.log(`[history] SQLite ready at ${getDbPath()}`)
+  } catch (err) {
+    console.error('[history] failed to open SQLite', err)
+  }
 
   // Startup catalog sync (non-blocking). Skips if catalog is < 12h old.
   // Set SYNC_MODELS_ON_START=0 to disable, or SYNC_MODELS_FORCE=1 to always refresh.
