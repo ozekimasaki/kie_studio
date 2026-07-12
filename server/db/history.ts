@@ -126,28 +126,35 @@ export function replaceAllFromUnknown(raw: unknown): HistoryItem[] {
   return replaceAllHistory(normalized)
 }
 
-/** Import merge: existing taskIds win. */
+/** Import merge: existing taskIds win. Atomic list → merge → replace. */
 export function importHistoryItems(raw: unknown): HistoryItem[] {
   if (!Array.isArray(raw)) {
     throw new Error('items must be an array')
   }
   const imported = normalizeHistoryItems(raw, 'import')
-  const current = listHistory()
-  return replaceAllHistory(mergeHistory(current, imported))
+  const db = getDb()
+  return db.transaction(() => {
+    const current = listHistory()
+    return replaceAllHistory(mergeHistory(current, imported))
+  })()
 }
 
 /**
  * One-shot localStorage migration: normalize as local, then merge
  * (or fill empty DB). Existing DB taskIds win.
+ * Atomic list → merge → replace so concurrent PUTs cannot be wiped.
  */
 export function migrateHistoryItems(raw: unknown): HistoryItem[] {
   if (!Array.isArray(raw)) {
     throw new Error('items must be an array')
   }
   const incoming = normalizeHistoryItems(raw, 'local')
-  const current = listHistory()
-  if (current.length === 0) {
-    return replaceAllHistory(incoming)
-  }
-  return replaceAllHistory(mergeHistory(current, incoming))
+  const db = getDb()
+  return db.transaction(() => {
+    const current = listHistory()
+    if (current.length === 0) {
+      return replaceAllHistory(incoming)
+    }
+    return replaceAllHistory(mergeHistory(current, incoming))
+  })()
 }

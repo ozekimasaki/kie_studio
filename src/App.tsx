@@ -33,6 +33,7 @@ import {
   capItems,
   exportHistoryJson,
   MAX_PINNED,
+  mergeHistory,
   normalizeTimestamp,
   parseHistoryJson,
   PENDING_STALE_MS,
@@ -179,7 +180,15 @@ export default function App() {
 
   useEffect(() => {
     return () => {
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      const pending = pendingPersistRef.current
+      if (pending) {
+        pendingPersistRef.current = null
+        void putHistory(pending)
+      }
     }
   }, [])
 
@@ -213,8 +222,13 @@ export default function App() {
         }
       }
       if (!cancelled) {
-        setHistory(items)
-        queryClient.setQueryData(['history'], items)
+        // Prefer in-memory updates that landed during migrate await
+        setHistory((prev) => {
+          const next =
+            prev.length === 0 ? items : mergeHistory(prev, items)
+          queryClient.setQueryData(['history'], next)
+          return next
+        })
       }
     })()
 
@@ -698,12 +712,13 @@ export default function App() {
               value={category}
               disabled={submitting}
               onChange={(c) => {
-                if (c === category) return
-                if (!confirmDiscardForm()) return
+                if (c === category) return true
+                if (!confirmDiscardForm()) return false
                 pendingRestoreRef.current = null
                 setFormNotice(null)
                 setCategory(c)
                 setModelId(null)
+                return true
               }}
             />
           </div>
