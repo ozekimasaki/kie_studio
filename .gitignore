@@ -30,3 +30,11 @@ data/
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent / skill tooling (not part of the app)
+.agents/
+.claude/
+.cursor/
+.indexion/
+.kiro/
+skills-lock.json
