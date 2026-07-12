@@ -78,6 +78,7 @@ function BooleanToggle({
   onChange: (next: boolean) => void
 }) {
   const reduce = useReducedMotion()
+  const current = on ? 'true' : 'false'
 
   return (
     <div className="py-3">
@@ -96,43 +97,50 @@ function BooleanToggle({
           )}
         </div>
         <span
-          className={`rounded-[var(--radius-md)] px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+          className={`rounded-[var(--radius-md)] px-2 py-0.5 font-mono text-[11px] font-bold tabular-nums ${
             on
-              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-              : 'bg-[var(--off-soft)] text-[var(--off)]'
+              ? 'bg-[var(--accent)] text-[var(--on-accent)]'
+              : 'bg-[var(--text)] text-[var(--on-accent)]'
           }`}
+          aria-live="polite"
         >
-          {on ? 'オン' : 'オフ'}
+          現在 {current}
         </span>
       </div>
       <LayoutGroup id={`bool-${field.name}`}>
         <div
           role="group"
           aria-labelledby={id}
+          aria-describedby={`${id}-value`}
           className="studio-segment"
         >
+          <span id={`${id}-value`} className="sr-only">
+            現在の値は {current}
+          </span>
           <Pressable
             disabled={disabled}
             aria-pressed={!on}
+            aria-label="false"
             onClick={() => onChange(false)}
             scaleTo={0.96}
             className={`studio-segment-item ${
-              !on ? '!text-[var(--text)]' : ''
+              !on ? '!text-[var(--on-accent)]' : ''
             }`}
           >
             {!on && (
               <motion.span
                 layoutId={`bool-pill-${field.name}`}
-                className="absolute inset-0 z-0 bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+                className="absolute inset-0 z-0 bg-[var(--text)]"
                 transition={reduce ? fadeQuick : springUi}
                 aria-hidden
               />
             )}
-            <span className="relative z-10">オフ</span>
+            <span className="relative z-10 font-mono">false</span>
           </Pressable>
           <Pressable
             disabled={disabled}
             aria-pressed={on}
+            aria-label="true"
             onClick={() => onChange(true)}
             scaleTo={0.96}
             className={`studio-segment-item ${
@@ -147,7 +155,7 @@ function BooleanToggle({
                 aria-hidden
               />
             )}
-            <span className="relative z-10">オン</span>
+            <span className="relative z-10 font-mono">true</span>
           </Pressable>
         </div>
       </LayoutGroup>
