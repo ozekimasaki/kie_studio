@@ -427,7 +427,12 @@ export function DynamicForm({
           }
           case 'kling_elements':
             return (
-              <div key={field.name} className={wrap}>
+              <div
+                key={field.name}
+                className={wrap}
+                id={id}
+                tabIndex={-1}
+              >
                 <FieldLabel
                   field={field}
                   hint={`最大 ${field.maxItems ?? 3} 件`}

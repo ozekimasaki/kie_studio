@@ -15,16 +15,23 @@ export function CategoryTabs({
   disabled,
 }: {
   value: ModelCategory
-  onChange: (v: ModelCategory) => void
+  /** Return false to abort the change (e.g. dirty confirm cancelled). */
+  onChange: (v: ModelCategory) => boolean | void
   disabled?: boolean
 }) {
   const reduce = useReducedMotion()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
+  function focusActiveTab() {
+    const activeIdx = TABS.findIndex((t) => t.id === value)
+    if (activeIdx >= 0) tabRefs.current[activeIdx]?.focus()
+  }
+
   function focusTab(index: number) {
     const tab = TABS[index]
     if (!tab) return
-    onChange(tab.id)
+    const ok = onChange(tab.id)
+    if (ok === false) return
     tabRefs.current[index]?.focus()
   }
 
@@ -83,7 +90,10 @@ export function CategoryTabs({
               aria-controls={tab.panelId}
               tabIndex={active ? 0 : -1}
               disabled={disabled}
-              onClick={() => onChange(tab.id)}
+              onClick={() => {
+                const ok = onChange(tab.id)
+                if (ok === false) focusActiveTab()
+              }}
               scaleTo={0.98}
               className={`relative flex min-h-10 flex-1 cursor-pointer items-center justify-center px-3 py-2.5 text-[0.8125rem] font-semibold transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50 ${
                 active

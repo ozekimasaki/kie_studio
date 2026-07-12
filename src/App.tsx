@@ -33,6 +33,7 @@ import {
   capItems,
   exportHistoryJson,
   MAX_PINNED,
+  mergeHistory,
   normalizeTimestamp,
   parseHistoryJson,
   PENDING_STALE_MS,
@@ -117,11 +118,14 @@ export default function App() {
     input: Record<string, unknown>
   } | null>(null)
   const historyHydratedRef = useRef(false)
+  /** False until hydrate/migrate finishes — blocks PUT that could wipe migrate. */
+  const historyPersistReadyRef = useRef(false)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingPersistRef = useRef<HistoryItem[] | null>(null)
   const persistHistoryRef = useRef<
     (items: HistoryItem[], debounce?: boolean) => HistoryItem[]
   >((items) => capItems(items))
+  const flushHistoryPersistRef = useRef<(items: HistoryItem[]) => void>(() => {})
 
   const healthQuery = useQuery({
     queryKey: ['health'],
@@ -136,6 +140,10 @@ export default function App() {
   })
 
   const flushHistoryPersist = (items: HistoryItem[]) => {
+    if (!historyPersistReadyRef.current) {
+      pendingPersistRef.current = items
+      return
+    }
     pendingPersistRef.current = null
     void putHistory(items)
       .then((res) => {
@@ -154,6 +162,7 @@ export default function App() {
         }
       })
   }
+  flushHistoryPersistRef.current = flushHistoryPersist
 
   const persistHistory = (items: HistoryItem[], debounce = false): HistoryItem[] => {
     const capped = capItems(items)
@@ -179,7 +188,16 @@ export default function App() {
 
   useEffect(() => {
     return () => {
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      const pending = pendingPersistRef.current
+      pendingPersistRef.current = null
+      // Skip PUT before hydrate/migrate — stale snapshot can wipe migrated rows
+      if (pending && historyPersistReadyRef.current) {
+        void putHistory(pending)
+      }
     }
   }, [])
 
@@ -213,8 +231,19 @@ export default function App() {
         }
       }
       if (!cancelled) {
-        setHistory(items)
-        queryClient.setQueryData(['history'], items)
+        // Prefer in-memory updates that landed during migrate await
+        setHistory((prev) => {
+          const next =
+            prev.length === 0 ? items : mergeHistory(prev, items)
+          queryClient.setQueryData(['history'], next)
+          return next
+        })
+        historyPersistReadyRef.current = true
+        // Flush any pre-hydrate pending after merging with migrate result
+        const pending = pendingPersistRef.current
+        if (pending) {
+          flushHistoryPersistRef.current(mergeHistory(pending, items))
+        }
       }
     })()
 
@@ -698,12 +727,13 @@ export default function App() {
               value={category}
               disabled={submitting}
               onChange={(c) => {
-                if (c === category) return
-                if (!confirmDiscardForm()) return
+                if (c === category) return true
+                if (!confirmDiscardForm()) return false
                 pendingRestoreRef.current = null
                 setFormNotice(null)
                 setCategory(c)
                 setModelId(null)
+                return true
               }}
             />
           </div>
