@@ -16,6 +16,7 @@ import {
   validateFields,
 } from './components/DynamicForm.tsx'
 import { CreditBadge } from './components/CreditBadge.tsx'
+import { CreditPurchaseSheet } from './components/CreditPurchaseSheet.tsx'
 import { HistoryGallery } from './components/HistoryGallery.tsx'
 import { StudioShell } from './components/shell/StudioShell.tsx'
 import { Pressable } from './components/motion/Pressable.tsx'
@@ -100,7 +101,6 @@ function isPendingState(item: HistoryItem): boolean {
 const LS_HISTORY_KEY = 'kie-studio-history'
 const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
 const HISTORY_SAVE_DEBOUNCE_MS = 400
-const KIE_CREDITS_URL = 'https://kie.ai?ref=dd87d42d5f68654c2f773c290afc7b6e'
 
 function isInsufficientCreditsError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error)
@@ -121,6 +121,8 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
   const [batchCount, setBatchCount] = useState(1)
+  const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
+    useState(false)
   const pendingRestoreRef = useRef<{
     modelId: string
     input: Record<string, unknown>
@@ -554,18 +556,23 @@ export default function App() {
             insufficientCredits ? '。クレジットが不足している可能性があります' : ''
           }`,
         )
+        if (insufficientCredits) {
+          setCreditPurchaseSheetOpen(true)
+          void queryClient.invalidateQueries({ queryKey: ['credits'] })
+        }
       }
     },
     onError: (e) => {
       setFormError(e instanceof Error ? e.message : '生成に失敗しました')
+      if (isInsufficientCreditsError(e)) {
+        setCreditPurchaseSheetOpen(true)
+        void queryClient.invalidateQueries({ queryKey: ['credits'] })
+      }
     },
   })
 
   const submitting = generate.isPending
   const generateDisabled = submitting || !hasApiKey || healthQuery.isLoading
-  const needsCreditPurchase = formError
-    ? isInsufficientCreditsError(formError)
-    : false
 
   // 同モデルの直近成功実績からクレジット消費を推定
   const creditEstimate = useMemo(() => {
@@ -725,7 +732,8 @@ export default function App() {
   }
 
   return (
-    <StudioShell
+    <>
+      <StudioShell
       chromeTitle={
         <>
           KIE <span className="text-[var(--accent)]">STUDIO</span>
@@ -814,17 +822,6 @@ export default function App() {
               {formError && (
                 <div className="text-sm text-[var(--danger)]" role="alert">
                   <p>{formError}</p>
-                  {needsCreditPurchase && (
-                    <a
-                      href={KIE_CREDITS_URL}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-flex items-center gap-1 text-xs font-medium underline underline-offset-2"
-                    >
-                      クレジット購入はこちら
-                      <ExternalLink size={12} strokeWidth={2} aria-hidden />
-                    </a>
-                  )}
                 </div>
               )}
 
@@ -944,6 +941,11 @@ export default function App() {
           }}
         />
       }
-    />
+      />
+      <CreditPurchaseSheet
+        open={creditPurchaseSheetOpen}
+        onClose={() => setCreditPurchaseSheetOpen(false)}
+      />
+    </>
   )
 }
