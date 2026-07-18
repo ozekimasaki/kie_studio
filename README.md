@@ -10,6 +10,14 @@ kie.ai の Market API で **IMAGE / VIDEO** モデルを試すローカル Studi
 - プロンプト最適化（Grok CLI）とスニペット
 - `@参照` 挿入・Kling Elements 対応
 
+> エージェント向けの作業ガイドは [AGENTS.md](./AGENTS.md)、UI/デザイン方針は [DESIGN.md](./DESIGN.md) を参照。
+
+## 要件
+
+- Node.js（Vite 8 / React 19 が動作する最近の LTS。目安: 20.19+ または 22.12+）と npm
+- kie.ai の API キー（<https://kie.ai/api-key>）
+- 任意: プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview)（または `XAI_API_KEY`）
+
 ## セットアップ
 
 ```bash
@@ -67,6 +75,10 @@ npm run sync:models -- --force
 | GET | `/api/grok/status` | Grok CLI 利用可否 |
 | GET | `/api/optimize-profile?modelId=` | モデル別最適化プロファイル |
 | POST | `/api/optimize-prompt` | プロンプト最適化 / 生成 |
+| GET | `/api/history` | 履歴一覧（SQLite） |
+| PUT | `/api/history` | 履歴を一括置換 |
+| POST | `/api/history/import` | JSON から履歴をインポート |
+| POST | `/api/history/migrate` | 旧 localStorage 履歴を移行 |
 
 ## 環境変数
 
@@ -83,10 +95,34 @@ npm run sync:models -- --force
 
 | コマンド | 説明 |
 |----------|------|
-| `npm run dev` | API + Web を同時起動 |
-| `npm run build` | 型チェック + 本番ビルド |
+| `npm run dev` | API + Web を同時起動（`dev:server` + `dev:web`） |
+| `npm run dev:server` | Hono API のみ（`tsx watch server/index.ts`） |
+| `npm run dev:web` | Vite 開発サーバーのみ |
+| `npm run build` | 型チェック（`tsc -b`）+ 本番ビルド |
+| `npm run preview` | ビルド成果物をプレビュー |
 | `npm run lint` | oxlint |
 | `npm run sync:models` | カタログ手動同期 |
+
+型チェックのみ実行したい場合は `npx tsc -b`（`npm run build` に含まれる）。
+
+## 構成
+
+```text
+src/            # フロント（Vite + React 19 + Tailwind v4）
+  App.tsx       # 取得・生成・履歴ポーリングのオーケストレーション
+  components/   # 画面 UI（shell/ ・ motion/ を含む）
+  lib/          # API クライアント・履歴・メディア・models（型/OpenAPI 抽出）
+  data/catalog.json  # 同期で再生成されるモデルカタログ
+server/         # Hono API（127.0.0.1:8787）
+  index.ts      # エントリ・CORS・onError・起動時カタログ同期
+  routes/       # upload / generate / task / models / credits / history / ...
+  kie/          # kie.ai Market / Upload クライアント
+  db/           # SQLite（履歴、既定 data/studio.db）
+  grok/         # Grok CLI 連携（プロンプト最適化）
+  catalog/      # docs OpenAPI → catalog.json
+scripts/sync-models.ts  # カタログ同期 CLI
+.indexion/wiki/         # プロジェクト知識ベース（indexion wiki）
+```
 
 ## 注意
 
@@ -94,3 +130,7 @@ npm run sync:models -- --force
 - 生成メディアは約14日で削除（ギャラリーに残日数表示）。必要なら早めにダウンロード
 - Music / Suno / 専用 API（Veo, Runway 等）は対象外
 - エージェント向けの作業メモは [AGENTS.md](./AGENTS.md) を参照
+
+## ライセンス
+
+ライセンスは未指定（`package.json` は `private: true`。公開・配布は想定していないローカル用途のプロジェクト）。

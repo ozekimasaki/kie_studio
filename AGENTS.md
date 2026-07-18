@@ -132,15 +132,31 @@ scripts/sync-models.ts
 
 `commit` だけで終わらせない。ユーザーが push まで依頼しているなら最後まで実行する。依頼が無い場合は「push までやりますか？」と確認する。
 
+## セットアップ
+
+```bash
+cp .env.example .env     # KIE_API_KEY を設定
+npm install
+npm run dev              # Web http://localhost:5173 / API http://127.0.0.1:8787
+```
+
+Node.js は Vite 8 / React 19 が動作する LTS（目安 20.19+ / 22.12+）。
+
 ## よく触るコマンド
 
 ```bash
-npm run dev              # server + web
-npm run lint             # oxlint
-npm run build
+npm run dev              # server + web（dev:server + dev:web）
+npm run dev:server       # Hono API のみ（tsx watch）
+npm run dev:web          # Vite のみ
+npm run lint             # oxlint（設定: .oxlintrc.json）
+npx tsc -b               # 型チェックのみ（build にも含まれる）
+npm run build            # tsc -b + vite build
+npm run preview          # ビルド成果物をプレビュー
 npm run sync:models      # カタログ同期
 npm run sync:models -- --force
 ```
+
+- テストランナーは未導入（`test` スクリプトなし）。検証は `npm run lint` + `npx tsc -b` + `npm run build` を基本とする。
 
 ## 触るときの注意
 
