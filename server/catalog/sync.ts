@@ -22,7 +22,7 @@ const FETCH_TIMEOUT_MS = 15_000
 const DEFAULT_CONCURRENCY = 12
 
 const EXCLUDE_RE =
-  /(suno|elevenlabs|audio|music|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail)/i
+  /(suno|elevenlabs|audio|music|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail|\btts\b|text.to.speech)/i
 
 const VIDEO_HINT_RE =
   /(video|kling|seedance|hailuo|sora|wan\/|infinitalk|omnihuman|happyhorse|grok-imagine\/.*video)/i
@@ -65,9 +65,28 @@ async function fetchText(url: string): Promise<string> {
   return res.text()
 }
 
+async function fetchTextWithRetry(
+  url: string,
+  attempts = 3,
+  delayMs = 500,
+): Promise<string> {
+  let lastError: unknown
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fetchText(url)
+    } catch (err) {
+      lastError = err
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, delayMs))
+      }
+    }
+  }
+  throw lastError
+}
+
 function pickBodySchema(
   doc: Record<string, unknown>,
-): Record<string, unknown> | null {
+): { schema: Record<string, unknown>; example?: unknown } | null {
   const paths = doc.paths as Record<string, Record<string, unknown>> | undefined
   if (!paths) return null
   for (const pathItem of Object.values(paths)) {
@@ -77,10 +96,9 @@ function pickBodySchema(
     const content = body?.content as
       | Record<string, Record<string, unknown>>
       | undefined
-    const schema = content?.['application/json']?.schema as
-      | Record<string, unknown>
-      | undefined
-    if (schema) return schema
+    const json = content?.['application/json']
+    const schema = json?.schema as Record<string, unknown> | undefined
+    if (schema) return { schema, example: json?.example }
   }
   return null
 }
@@ -93,7 +111,7 @@ async function parseModelPage(
   const mdUrl = url.endsWith('.md') ? url : `${url}.md`
   let markdown: string
   try {
-    markdown = await fetchText(mdUrl)
+    markdown = await fetchTextWithRetry(mdUrl)
   } catch {
     try {
       markdown = await fetchText(url)
@@ -117,19 +135,19 @@ async function parseModelPage(
     return null
   }
 
-  const bodySchema = pickBodySchema(doc)
-  if (!bodySchema) {
+  const body = pickBodySchema(doc)
+  if (!body) {
     if (!quiet) console.warn(`  skip (no body): ${url}`)
     return null
   }
 
-  const model = extractModelSlug(bodySchema)
+  const model = extractModelSlug(body.schema, body.example)
   if (!model) {
     if (!quiet) console.warn(`  skip (no model slug): ${url}`)
     return null
   }
 
-  const input = extractInputSchema(bodySchema)
+  const input = extractInputSchema(body.schema)
   const fields = inputSchemaToFields(input)
   const category = VIDEO_HINT_RE.test(`${url} ${title} ${model}`)
     ? 'video'
@@ -296,7 +314,18 @@ export async function syncCatalog(
   const byId = new Map<string, ModelDefinition>()
   for (const m of models) {
     const prev = byId.get(m.id)
-    if (!prev || m.fields.length > prev.fields.length) byId.set(m.id, m)
+    if (!prev) {
+      byId.set(m.id, m)
+      continue
+    }
+    const keep = m.fields.length > prev.fields.length ? m : prev
+    const discard = keep === m ? prev : m
+    if (!quiet) {
+      console.warn(
+        `[catalog] duplicate model id: ${m.id} (${discard.docsUrl} vs ${keep.docsUrl})`,
+      )
+    }
+    byId.set(m.id, keep)
   }
 
   const sorted = [...byId.values()].sort((a, b) => {
@@ -304,17 +333,25 @@ export async function syncCatalog(
     return a.title.localeCompare(b.title)
   })
 
-  // 全ページパース失敗時に既存の有効 catalog を空で潰さない
-  if (sorted.length === 0 && (existing?.models.length ?? 0) > 0) {
+  // パース失敗や部分欠落で既存 catalog を潰さない（0件 or 既存の 70% 未満）
+  const existingCount = existing?.models.length ?? 0
+  if (
+    existing &&
+    existingCount > 0 &&
+    (sorted.length === 0 ||
+      (existingCount >= 10 && sorted.length < existingCount * 0.7))
+  ) {
+    const reason =
+      sorted.length === 0
+        ? 'parsed 0 models; kept existing catalog'
+        : `parsed ${sorted.length} models but existing has ${existingCount}; kept existing catalog`
     if (!quiet) {
-      console.warn(
-        `[catalog] Parsed 0 models; keeping existing catalog (${existing!.models.length} models)`,
-      )
+      console.warn(`[catalog] ${reason}`)
     }
     return {
       skipped: true,
-      reason: 'parsed 0 models; kept existing catalog',
-      catalog: existing!,
+      reason,
+      catalog: existing,
     }
   }
 
