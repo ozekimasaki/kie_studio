@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { ExternalLink } from 'lucide-react'
 import { fetchCredits, fetchHealth } from '../lib/api.ts'
 import { Pressable } from './motion/Pressable.tsx'
+
+const KIE_CREDITS_URL = 'https://kie.ai?ref=dd87d42d5f68654c2f773c290afc7b6e'
 
 export function CreditBadge({
   lastUsed,
@@ -58,27 +61,40 @@ export function CreditBadge({
     : (credits.data?.data.credits ?? null)
 
   return (
-    <div className="flex items-stretch gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2">
-      <div className="min-w-[72px]">
-        <div className="studio-label">残クレジット</div>
-        <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--accent)]">
-          {remaining === null ? '…' : remaining.toLocaleString()}
+    <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2">
+      <div className="flex items-stretch gap-3">
+        <div className="min-w-[72px]">
+          <div className="studio-label">残クレジット</div>
+          <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--accent)]">
+            {remaining === null ? '…' : remaining.toLocaleString()}
+          </div>
+        </div>
+        <div className="w-px self-stretch bg-[var(--border)]" />
+        <div className="min-w-[72px]">
+          <div className="studio-label">直近の使用</div>
+          <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--text)]">
+            {typeof lastUsed === 'number' ? (
+              <>
+                <span className="text-[var(--danger)]">−</span>
+                {lastUsed.toLocaleString()}
+              </>
+            ) : (
+              <span className="text-[var(--text-muted)]">—</span>
+            )}
+          </div>
         </div>
       </div>
-      <div className="w-px self-stretch bg-[var(--border)]" />
-      <div className="min-w-[72px]">
-        <div className="studio-label">直近の使用</div>
-        <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--text)]">
-          {typeof lastUsed === 'number' ? (
-            <>
-              <span className="text-[var(--danger)]">−</span>
-              {lastUsed.toLocaleString()}
-            </>
-          ) : (
-            <span className="text-[var(--text-muted)]">—</span>
-          )}
-        </div>
-      </div>
+      {remaining !== null && remaining <= 0 && (
+        <a
+          href={KIE_CREDITS_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--danger)] underline underline-offset-2"
+        >
+          クレジット購入はこちら
+          <ExternalLink size={12} strokeWidth={2} aria-hidden />
+        </a>
+      )}
     </div>
   )
 }

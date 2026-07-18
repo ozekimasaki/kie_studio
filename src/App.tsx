@@ -100,6 +100,14 @@ function isPendingState(item: HistoryItem): boolean {
 const LS_HISTORY_KEY = 'kie-studio-history'
 const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
 const HISTORY_SAVE_DEBOUNCE_MS = 400
+const KIE_CREDITS_URL = 'https://kie.ai?ref=dd87d42d5f68654c2f773c290afc7b6e'
+
+function isInsufficientCreditsError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /(?:insufficient|not enough|low)\s+(?:credit|balance)|(?:credit|balance).*?(?:insufficient|not enough|low)|クレジット.*(?:不足|足りない|切れ)|(?:不足|足りない).*(?:クレジット|credit)/i.test(
+    message,
+  )
+}
 
 export default function App() {
   const queryClient = useQueryClient()
@@ -428,6 +436,7 @@ export default function App() {
           category: item.category,
           modelId: item.modelId,
           failedCount: 0,
+          insufficientCredits: false,
         }
       }
 
@@ -491,8 +500,12 @@ export default function App() {
             r.status === 'fulfilled',
         )
         .map((r) => r.value.data.taskId)
+      const creditError = settled.find(
+        (r): r is PromiseRejectedResult =>
+          r.status === 'rejected' && isInsufficientCreditsError(r.reason),
+      )
       if (taskIds.length === 0) {
-        const first = settled[0] as PromiseRejectedResult
+        const first = creditError ?? (settled[0] as PromiseRejectedResult)
         throw first.reason instanceof Error
           ? first.reason
           : new Error('生成リクエストに失敗しました')
@@ -504,9 +517,18 @@ export default function App() {
         category: model.category,
         modelId: model.id,
         failedCount: count - taskIds.length,
+        insufficientCredits: Boolean(creditError),
       }
     },
-    onSuccess: ({ taskIds, input, model, category, modelId, failedCount }) => {
+    onSuccess: ({
+      taskIds,
+      input,
+      model,
+      category,
+      modelId,
+      failedCount,
+      insufficientCredits,
+    }) => {
       const now = Date.now()
       setHistory((prev) => {
         let next = prev
@@ -528,7 +550,9 @@ export default function App() {
       if (taskIds.length === 1) setViewerTaskId(taskIds[0])
       if (failedCount > 0) {
         setFormError(
-          `${taskIds.length} 件を送信しました（${failedCount} 件は送信に失敗）`,
+          `${taskIds.length} 件を送信しました（${failedCount} 件は送信に失敗）${
+            insufficientCredits ? '。クレジットが不足している可能性があります' : ''
+          }`,
         )
       }
     },
@@ -539,6 +563,9 @@ export default function App() {
 
   const submitting = generate.isPending
   const generateDisabled = submitting || !hasApiKey || healthQuery.isLoading
+  const needsCreditPurchase = formError
+    ? isInsufficientCreditsError(formError)
+    : false
 
   // 同モデルの直近成功実績からクレジット消費を推定
   const creditEstimate = useMemo(() => {
@@ -785,9 +812,20 @@ export default function App() {
               />
 
               {formError && (
-                <p className="text-sm text-[var(--danger)]" role="alert">
-                  {formError}
-                </p>
+                <div className="text-sm text-[var(--danger)]" role="alert">
+                  <p>{formError}</p>
+                  {needsCreditPurchase && (
+                    <a
+                      href={KIE_CREDITS_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-xs font-medium underline underline-offset-2"
+                    >
+                      クレジット購入はこちら
+                      <ExternalLink size={12} strokeWidth={2} aria-hidden />
+                    </a>
+                  )}
+                </div>
               )}
 
               {formNotice && !formError && (
