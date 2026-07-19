@@ -4,16 +4,16 @@
 
 ## プロジェクト概要
 
-kie.ai Market API の **IMAGE / VIDEO** を試すローカル Studio。
+kie.ai Market API と専用 workflow の **IMAGE / VIDEO / AUDIO** を扱うローカル Studio。
 
 | 層 | 技術・置き場 |
 |----|----------------|
 | Frontend | `src/` — Vite + React 19 + Tailwind CSS v4 + TanStack Query + Motion |
 | Backend | `server/` — Hono（`127.0.0.1:8787`）。Vite が `/api` をプロキシ |
-| Catalog | `src/data/catalog.json` — docs OpenAPI から `npm run sync:models` で再生成 |
+| Catalog | `src/data/catalog.json` の docs OpenAPI と `server/catalog/dedicated.ts` の専用 workflow を統合 |
 | Secrets | `.env` の `KIE_API_KEY` のみサーバー側。フロントに出さない |
 
-スコープ外: Music / Suno / Veo / Runway 等の専用 API、チャット系。
+provider は Market / Suno / Veo / Runway。チャット系 API はスコープ外。
 
 ## indexion（必須）
 
@@ -74,28 +74,30 @@ Wiki ページ一覧（詳細は各 `.indexion/wiki/*.md`）:
 src/
   App.tsx, main.tsx, index.css
   components/          # 画面 UI
+    audio/             # 会話・ナレーション編集、常駐プレイヤー
     shell/             # StudioShell, FloatingChrome
     motion/            # Pressable, Material, SpringSheet, SharedMedia
   lib/
-    api.ts, history.ts, media*.ts, snippets.ts, motion.ts
+    api.ts, history.ts, submissionQueue.ts, workflowValidation.ts, media*.ts
     models/            # types, from-openapi, mentions
   data/catalog.json
 server/
   index.ts             # Hono エントリ・CORS・onError・起動時 sync
-  routes/              # upload, generate, task, models, credits, history, ...
-  db/                  # SQLite（履歴ギャラリー）
-  kie/                 # Market / Upload クライアント
+  routes/              # upload, generate, task, Suno, archive, history, ...
+  db/                  # SQLite（履歴・Persona・音源素材）
+  kie/adapters/        # Market / Suno / Veo / Runway の共通化
   grok/                # Grok CLI 最適化
-  catalog/             # docs → catalog.json
+  catalog/             # docs catalog 同期 + 専用 workflow
 scripts/sync-models.ts
 .indexion/wiki/        # プロジェクト知識ベース
 ```
 
 | パス | 役割 |
 |------|------|
-| `src/App.tsx` | モデル取得・生成・履歴ポーリングのオーケストレーション |
+| `src/App.tsx` | フォーム・キュー・履歴・ポーリング・Quick Action の調停 |
 | `src/components/DynamicForm.tsx` | カタログ駆動フォーム |
-| `src/components/HistoryGallery.tsx` | 履歴・ピン・再試行・入出力 |
+| `src/components/HistoryGallery.tsx` / `HistorySheets.tsx` | 履歴・複数メディア・同期歌詞・再試行・入出力 |
+| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |
 | `src/components/ReferenceUpload.tsx` | 参照メディア upload |
 | `src/components/PromptOptimizePanel.tsx` | プロンプト最適化 UI |
 | `src/components/KlingElementsEditor.tsx` | Kling Elements |
@@ -103,10 +105,12 @@ scripts/sync-models.ts
 | `src/components/motion/` + `src/lib/motion.ts` | インタラクション / モーション |
 | `src/lib/api.ts` | `/api` クライアント（キーは持たない） |
 | `src/lib/history.ts` | 履歴の純粋関数（cap・正規化）。永続化は SQLite via `/api/history` |
+| `src/lib/submissionQueue.ts` | 未送信キュー・再試行・レート制御 |
+| `src/lib/workflowValidation.ts` | provider / operation 別の送信前検証 |
 | `src/lib/models/` | 型・OpenAPI 抽出・メンション |
 | `server/routes/` | HTTP 境界 |
 | `server/db/` | SQLite（`data/studio.db`） |
-| `server/kie/` | kie.ai 呼び出し |
+| `server/kie/adapters/` | Market / Suno / Veo / Runway の生成・状態・エラーを正規化 |
 | `server/grok/` | Grok CLI |
 | `server/catalog/` + `scripts/` | カタログ同期 |
 | `.indexion/wiki/` | indexion 知識ベース |
@@ -149,6 +153,8 @@ npm run dev              # server + web（dev:server + dev:web）
 npm run dev:server       # Hono API のみ（tsx watch）
 npm run dev:web          # Vite のみ
 npm run lint             # oxlint（設定: .oxlintrc.json）
+npm test                 # Vitest を1回実行
+npm run test:watch       # Vitest watch
 npx tsc -b               # 型チェックのみ（build にも含まれる）
 npm run build            # tsc -b + vite build
 npm run preview          # ビルド成果物をプレビュー
@@ -156,14 +162,16 @@ npm run sync:models      # カタログ同期
 npm run sync:models -- --force
 ```
 
-- テストランナーは未導入（`test` スクリプトなし）。検証は `npm run lint` + `npx tsc -b` + `npm run build` を基本とする。
+- 検証は `npm run lint` + `npm test` + `npx tsc -b` + `npm run build` を基本とする。
 
 ## 触るときの注意
 
 - カタログ同期は起動時に古いときだけ走る。毎回フル同期しない設計を壊さない
 - Seedance 等のリファレンスキー名・メンションタグは末尾スペースや表記ゆれに敏感
 - 履歴は SQLite（`data/studio.db`）。ピン上限・インポート正規化・入力復元の安全策を維持する
+- provider / operation 差分は `server/kie/adapters/` で正規化し、共通 task/history 契約を維持する
+- Persona と外部音源メタデータは SQLite に保存する。メディア本体は保存しない
 - 旧 localStorage キーは初回起動時に `POST /api/history/migrate` で移行する
 - プロンプト最適化は Grok CLI 依存。未インストール時は 503 でよい
 - `FieldType` / 特殊 UI を増やすときは `types.ts` → `DynamicForm` → 必要ならカタログ抽出を一連で見る
-- Music / Suno / Veo / Runway 等の専用 API はスコープ外
+- Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` と adapter を一連で見る
