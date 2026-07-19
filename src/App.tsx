@@ -1035,7 +1035,7 @@ export default function App() {
       chromeTrailing={<CreditBadge lastUsed={lastUsedCredits} />}
       form={
         <>
-          <div className="sticky top-0 z-[var(--z-sticky)] -mx-5 -mt-5 shrink-0 border-b border-[var(--border)] bg-[var(--surface-raised)] px-5 pt-5 pb-3">
+          <div className="sticky top-0 z-[var(--z-sticky)] -mx-5 -mt-5 mb-2 shrink-0 border-b border-[var(--border)] bg-[var(--surface-raised)] px-5 pt-5 pb-4">
             <CategoryTabs
               value={category}
               disabled={submitting}

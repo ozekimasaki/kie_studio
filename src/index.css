@@ -366,6 +366,44 @@ textarea {
   background: var(--color-teal-700);
 }
 
+.model-favorite-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 1px 2px oklch(0.2 0.02 250 / 0.04);
+  transition:
+    background-color 0.15s ease-out,
+    color 0.15s ease-out,
+    box-shadow 0.15s ease-out;
+}
+
+.model-favorite-button:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.model-favorite-button.is-active {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.model-favorite-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
 .studio-chip {
   display: inline-flex;
   align-items: center;

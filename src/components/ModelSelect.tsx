@@ -79,6 +79,7 @@ export function ModelSelect({
   }, [favorites, favoritesOnly, models, provider, query, recents, useCase])
 
   const selected = models.find((model) => model.id === value)
+  const selectedIsFavorite = selected ? favorites.includes(selected.id) : false
   const options = selected && !visible.some((model) => model.id === selected.id)
     ? [selected, ...visible]
     : visible
@@ -102,13 +103,14 @@ export function ModelSelect({
         {selected && (
           <Pressable
             type="button"
-            className="studio-btn grid size-8 place-items-center p-0"
+            className={`model-favorite-button ${selectedIsFavorite ? 'is-active' : ''}`}
             onClick={() => toggleFavorite(selected.id)}
-            aria-label={favorites.includes(selected.id) ? 'お気に入りから外す' : 'お気に入りに追加'}
-            aria-pressed={favorites.includes(selected.id)}
+            aria-label={selectedIsFavorite ? 'お気に入りから外す' : 'お気に入りに追加'}
+            aria-pressed={selectedIsFavorite}
             disabled={disabled}
           >
-            <Star size={15} fill={favorites.includes(selected.id) ? 'currentColor' : 'none'} />
+            <Star size={16} fill={selectedIsFavorite ? 'currentColor' : 'none'} aria-hidden />
+            <span>{selectedIsFavorite ? 'お気に入り済み' : 'お気に入りに追加'}</span>
           </Pressable>
         )}
       </div>
