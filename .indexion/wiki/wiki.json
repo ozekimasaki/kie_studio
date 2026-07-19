@@ -12,7 +12,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "getting-started",
@@ -26,7 +26,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "core-concepts",
@@ -41,7 +41,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "architecture",
@@ -59,7 +59,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "frontend",
@@ -71,11 +71,13 @@
         "src/components/shell/",
         "src/components/motion/",
         "src/lib/motion.ts",
-        "src/main.tsx"
+        "src/main.tsx",
+        "src/lib/studioPresentation.ts",
+        "src/index.css"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "client-lib",
@@ -86,7 +88,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "server-api",
@@ -99,7 +101,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "kie-integration",
@@ -110,7 +112,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "catalog-sync",
@@ -123,8 +125,8 @@
         "src/data/catalog.json"
       ],
       "children": [],
-      "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "provenance": "manual",
+      "last_actor": "agent:codex"
     },
     {
       "id": "prompt-optimize",

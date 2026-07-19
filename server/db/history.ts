@@ -5,6 +5,7 @@ import {
   normalizeHistoryItems,
 } from '../../src/lib/history.ts'
 import { getDb } from './open.ts'
+import { mediaKindFromUrl } from '../../src/lib/media.ts'
 
 type HistoryRow = {
   task_id: string
@@ -19,6 +20,15 @@ type HistoryRow = {
   model_id: string | null
   input: string | null
   pinned: number
+  provider: string | null
+  operation: string | null
+  parent_task_id: string | null
+  media: string | null
+  provider_status: string | null
+  partial: number
+  expires_at: number | null
+  raw_param: string | null
+  raw_result: string | null
 }
 
 function parseJsonColumn<T>(raw: string | null): T | undefined {
@@ -40,6 +50,25 @@ function rowToItem(row: HistoryRow): HistoryItem {
   }
   const resultUrls = parseJsonColumn<string[]>(row.result_urls)
   if (resultUrls?.length) item.resultUrls = resultUrls
+  const media = parseJsonColumn<HistoryItem['media']>(row.media)
+  if (media?.length) {
+    item.media = media
+  } else if (resultUrls?.length) {
+    item.media = resultUrls.map((url) => ({
+      kind: mediaKindFromUrl(url, item.category),
+      url,
+    }))
+  }
+  item.provider = (row.provider as HistoryItem['provider']) ?? 'market'
+  item.operation = (row.operation as HistoryItem['operation']) ?? 'generate'
+  if (row.parent_task_id != null) item.parentTaskId = row.parent_task_id
+  if (row.provider_status != null) item.providerStatus = row.provider_status
+  if (row.partial === 1) item.partial = true
+  if (row.expires_at != null) item.expiresAt = row.expires_at
+  const rawParam = parseJsonColumn<unknown>(row.raw_param)
+  if (rawParam !== undefined) item.rawParam = rawParam
+  const rawResult = parseJsonColumn<unknown>(row.raw_result)
+  if (rawResult !== undefined) item.rawResult = rawResult
   if (row.prompt != null) item.prompt = row.prompt
   if (row.credits_consumed != null) item.creditsConsumed = row.credits_consumed
   if (row.fail_msg != null) item.failMsg = row.fail_msg
@@ -55,9 +84,13 @@ function insertStmt() {
     INSERT INTO history_items (
       task_id, model, category, state, created_at,
       result_urls, prompt, credits_consumed, fail_msg, model_id, input, pinned
+      , provider, operation, parent_task_id, media, provider_status, partial,
+      expires_at, raw_param, raw_result
     ) VALUES (
       @task_id, @model, @category, @state, @created_at,
       @result_urls, @prompt, @credits_consumed, @fail_msg, @model_id, @input, @pinned
+      , @provider, @operation, @parent_task_id, @media, @provider_status, @partial,
+      @expires_at, @raw_param, @raw_result
     )
   `)
 }
@@ -76,6 +109,15 @@ function itemToParams(item: HistoryItem) {
     model_id: item.modelId ?? null,
     input: item.input ? JSON.stringify(item.input) : null,
     pinned: item.pinned ? 1 : 0,
+    provider: item.provider ?? 'market',
+    operation: item.operation ?? 'generate',
+    parent_task_id: item.parentTaskId ?? null,
+    media: item.media ? JSON.stringify(item.media) : null,
+    provider_status: item.providerStatus ?? null,
+    partial: item.partial ? 1 : 0,
+    expires_at: item.expiresAt ?? null,
+    raw_param: item.rawParam === undefined ? null : JSON.stringify(item.rawParam),
+    raw_result: item.rawResult === undefined ? null : JSON.stringify(item.rawResult),
   }
 }
 
@@ -100,7 +142,7 @@ export function historyCount(): number {
 /** Replace all rows with capped items. Returns the stored list. */
 export function replaceAllHistory(items: HistoryItem[]): HistoryItem[] {
   const capped = capItems(
-    [...items].sort((a, b) => b.createdAt - a.createdAt),
+    items.toSorted((a, b) => b.createdAt - a.createdAt),
   )
   const db = getDb()
   const insert = insertStmt()

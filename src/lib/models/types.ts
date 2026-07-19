@@ -1,4 +1,20 @@
-export type ModelCategory = 'image' | 'video'
+export type ModelCategory = 'image' | 'video' | 'audio'
+
+export type Provider = 'market' | 'suno' | 'veo' | 'runway'
+
+export type Operation =
+  | 'generate'
+  | 'extend'
+  | 'upload-cover'
+  | 'upload-extend'
+  | 'replace-section'
+  | 'cover-art'
+  | 'lyrics'
+  | 'upscale-1080p'
+  | 'upscale-4k'
+  | 'aleph'
+
+export type MediaKind = 'image' | 'video' | 'audio' | 'text'
 
 export type FieldType =
   | 'string'
@@ -41,6 +57,9 @@ export interface FieldSchema {
   maxItems?: number
   maxLength?: number
   accept?: string
+  maxFileSizeMb?: number
+  maxDurationSec?: number
+  conflictsWith?: string[]
   /** For reference fields: how to insert into prompt */
   mentionStyle?: MentionStyle
   /**
@@ -55,7 +74,11 @@ export interface ModelDefinition {
   model: string
   title: string
   category: ModelCategory
-  provider: 'market'
+  provider: Provider
+  operation?: Operation
+  /** User-facing workflow grouping. Models remain a detail, not the entry point. */
+  useCase?: string
+  tags?: string[]
   docsUrl?: string
   fields: FieldSchema[]
 }
@@ -74,17 +97,56 @@ export type TaskState =
   | 'generating'
   | 'success'
   | 'fail'
+  | 'partial'
+  | 'expired'
   | 'unknown'
+
+export interface AlignedWord {
+  word: string
+  startS: number
+  endS: number
+  success?: boolean
+  palign?: number
+}
+
+export interface MediaAsset {
+  id?: string
+  kind: MediaKind
+  url?: string
+  streamUrl?: string
+  previewUrl?: string
+  title?: string
+  duration?: number
+  mimeType?: string
+  waveform?: number[]
+  alignedWords?: AlignedWord[]
+  expiresAt?: number
+  providerAssetId?: string
+  metadata?: Record<string, unknown>
+}
 
 export interface NormalizedTask {
   taskId: string
   state: TaskState
   model?: string
   resultUrls: string[]
+  provider: Provider
+  operation: Operation
+  media: MediaAsset[]
+  parentTaskId?: string
+  providerStatus?: string
+  progress?: number
+  partial?: boolean
   failMsg?: string
+  failCode?: string
   costTime?: number
   createTime?: number
+  updateTime?: number
+  completeTime?: number
   creditsConsumed?: number
+  expiresAt?: number
+  rawParam?: unknown
+  rawResult?: unknown
 }
 
 export interface HistoryItem {
@@ -93,6 +155,15 @@ export interface HistoryItem {
   category: ModelCategory
   state: TaskState
   createdAt: number
+  provider?: Provider
+  operation?: Operation
+  parentTaskId?: string
+  media?: MediaAsset[]
+  providerStatus?: string
+  partial?: boolean
+  expiresAt?: number
+  rawParam?: unknown
+  rawResult?: unknown
   resultUrls?: string[]
   prompt?: string
   creditsConsumed?: number
@@ -104,3 +175,52 @@ export interface HistoryItem {
   /** ピン留め: 最大30件。押し出し・「すべて削除」の対象外 */
   pinned?: boolean
 }
+
+export type SubmissionQueueState =
+  | 'unsent'
+  | 'accepted'
+  | 'generating'
+  | 'cancelled'
+  | 'failed'
+
+export interface SubmissionQueueItem {
+  id: string
+  state: SubmissionQueueState
+  provider: Provider
+  operation: Operation
+  model: string
+  retryCount: number
+  sendAfter: number
+  createdAt: number
+}
+
+export interface SavedPersona {
+  id: string
+  personaId: string
+  name: string
+  description?: string
+  sourceTaskId: string
+  sourceAudioId: string
+  createdAt: number
+}
+
+export interface SavedAudioAsset {
+  id: string
+  url: string
+  name: string
+  expiresAt?: number
+  createdAt: number
+}
+
+export type QuickAction =
+  | 'suno-extend'
+  | 'suno-replace-section'
+  | 'suno-upload-extend'
+  | 'runway-aleph'
+  | 'runway-extend'
+  | 'veo-extend'
+  | 'veo-1080p'
+  | 'veo-4k'
+  | 'lip-sync'
+  | 'market-upscale'
+  | 'market-edit'

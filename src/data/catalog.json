@@ -1,8 +1,531 @@
 {
-  "syncedAt": "2026-07-18T19:00:31.865Z",
+  "syncedAt": "2026-07-19T08:34:09.551Z",
   "source": "docs.kie.ai/llms.txt",
   "sourceHash": "67668ad0f6cd9afaea437c4d3bcc0f62dce3c58b0ca8a4564ff724346f6cb66a",
   "models": [
+    {
+      "id": "elevenlabs/audio-isolation",
+      "model": "elevenlabs/audio-isolation",
+      "title": "elevenlabs/audio-isolation",
+      "category": "audio",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/elevenlabs/audio-isolation",
+      "fields": [
+        {
+          "name": "audio_url",
+          "type": "reference",
+          "label": "Audio Url",
+          "description": "URL of the audio file to isolate voice from (File URL after upload, not file content; Accepted types: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/mp4, audio/ogg; Max size: 10.0MB)",
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxFileSizeMb": 10,
+          "maxItems": 1,
+          "scalar": true
+        }
+      ]
+    },
+    {
+      "id": "elevenlabs/text-to-dialogue-v3",
+      "model": "elevenlabs/text-to-dialogue-v3",
+      "title": "elevenlabs/text-to-dialogue-v3",
+      "category": "audio",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/elevenlabs/text-to-dialogue-v3",
+      "fields": [
+        {
+          "name": "dialogue",
+          "type": "json",
+          "label": "Dialogue",
+          "description": "Array of dialogue items. Each item contains text and voice. The total character count of all text fields combined must not exceed 5000 characters.",
+          "required": true
+        },
+        {
+          "name": "stability",
+          "type": "number",
+          "label": "Stability",
+          "description": "Voice stability parameter. Must be one of the following values: 0.0, 0.5, or 1.0",
+          "required": false,
+          "default": 0.5,
+          "enum": [],
+          "step": 0.1
+        },
+        {
+          "name": "language_code",
+          "type": "enum",
+          "label": "Language Code",
+          "description": "Language code for the speech. Default is empty string or omit the parameter for automatic language detection.",
+          "required": false,
+          "enum": [
+            "af",
+            "ar",
+            "hy",
+            "as",
+            "az",
+            "be",
+            "bn",
+            "bs",
+            "bg",
+            "ca",
+            "ceb",
+            "ny",
+            "hr",
+            "cs",
+            "da",
+            "nl",
+            "en",
+            "et",
+            "fil",
+            "fi",
+            "fr",
+            "gl",
+            "ka",
+            "de",
+            "el",
+            "gu",
+            "ha",
+            "he",
+            "hi",
+            "hu",
+            "is",
+            "id",
+            "ga",
+            "it",
+            "ja",
+            "jv",
+            "kn",
+            "kk",
+            "ky",
+            "ko",
+            "lv",
+            "ln",
+            "lt",
+            "lb",
+            "mk",
+            "ms",
+            "ml",
+            "zh",
+            "mr",
+            "ne",
+            "no",
+            "ps",
+            "fa",
+            "pl",
+            "pt",
+            "pa",
+            "ro",
+            "ru",
+            "sr",
+            "sd",
+            "sk",
+            "sl",
+            "so",
+            "es",
+            "sw",
+            "sv",
+            "ta",
+            "te",
+            "th",
+            "tr",
+            "uk",
+            "ur",
+            "vi",
+            "cy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elevenlabs/text-to-speech-multilingual-v2",
+      "model": "elevenlabs/text-to-speech-multilingual-v2",
+      "title": "elevenlabs/text-to-speech-multilingual-v2",
+      "category": "audio",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/elevenlabs/text-to-speech-multilingual-v2",
+      "fields": [
+        {
+          "name": "text",
+          "type": "textarea",
+          "label": "Text",
+          "description": "The text to convert to speech (Max length: 5000 characters)",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "voice",
+          "type": "enum",
+          "label": "Voice",
+          "description": "The voice to use for speech generation. Can be a preset voice name (e.g. Rachel, Adam) or a voice ID. You can preview a voice by opening https://static.aiquickdraw.com/elevenlabs/voice/<voice_id>.mp3 in your browser (replace <voice_id> with the actual voice ID). For example: https://static.aiquickdraw.com/elevenlabs/voice/N2lVS1w4EtoT3dr4eOWO.mp3",
+          "required": true,
+          "default": "EkK5I93UQWFDigLMpZcX",
+          "enum": [
+            "EkK5I93UQWFDigLMpZcX",
+            "Z3R5wn05IrDiVCyEkUrK",
+            "NNl6r8mD7vthiJatiJt1",
+            "YOq2y2Up4RgXP2HyXjE5",
+            "B8gJV1IhpuegLxdpXFOE",
+            "2zRM7PkgwBPiau2jvVXc",
+            "1SM7GgM6IMuvQlz2BwM3",
+            "5l5f8iK3YPeGga21rQIX",
+            "scOwDtmlUjD3prqpp97I",
+            "NOpBlnGInO9m6vDvFkFC",
+            "BZgkqPqms7Kj9ulSkVzn",
+            "wo6udizrrtpIxWGp2qJk",
+            "gU0LNdkMOQCOrPrwtbee",
+            "DGzg6RaUqxGRTHSBjfgF",
+            "x70vRnQBMBu4FAYhjJbO",
+            "Sm1seazb4gs7RSlUVw7c",
+            "P1bg08DkjqiVEzOn76yG",
+            "qDuRKMlYmrm8trt5QyBn",
+            "qXpMhyvQqiRxWQs4qSSB",
+            "TX3LPaxmHKxFdv7VOQHJ",
+            "N2lVS1w4EtoT3dr4eOWO",
+            "FGY2WhTYpPnrIDTdsKH5",
+            "kPzsL2i3teMYv0FxEYQ6",
+            "UgBBYS2sOqTuMpoF3BR0",
+            "hpp4J3VqNfWAUOO0d1Us",
+            "nPczCjzI2devNBz1zQrb",
+            "uYXf8XasLslADfZ2MB4u",
+            "gs0tAILXbY5DNrJrsM6F",
+            "DTKMou8ccj1ZaWGBiotd",
+            "vBKc2FfBKJfcZNyEt1n6",
+            "DYkrAHD8iwork3YSUBbs",
+            "56AoDkrOh6qfVPDXZ7Pt",
+            "eR40ATw9ArzDf9h3v7t7",
+            "g6xIsTj2HwM6VR4iXFCw",
+            "lcMyyd2HUfFzxdCaC4Ta",
+            "6aDn1KB0hjpdcocrUkmq",
+            "Sq93GQT4X1lKDXsQcixO",
+            "flHkNRp1BlvT73UL6gyz",
+            "9yzdeviXkFddZ4Oz8Mok",
+            "pPdl9cQBQq4p6mRkZy2Z",
+            "zYcjlYFOd3taleS0gkk3",
+            "nzeAacJi50IvxcyDnMXa",
+            "ruirxsoakN0GWmGNIo04",
+            "TC0Zp7WVFzhA8zpTlRqV",
+            "ljo9gAlSqKOvF6D8sOsX",
+            "PPzYpIqttlTYA83688JI",
+            "8JVbfL6oEdmuxKn5DK2C",
+            "iCrDUkL56s3C8sCRl7wb",
+            "wJqPPQ618aTW29mptyoc",
+            "EiNlNiXeDU1pqqOPrYMO",
+            "4YYIPFl9wE5c4L2eu2Gb",
+            "6F5Zhi321D3Oq7v1oNT4",
+            "YXpFCvM1S3JbWEJhoskW",
+            "LG95yZDEHg6fCZdQjLqj",
+            "CeNX9CMwmxDxUF5Q2Inm",
+            "aD6riP1btT197c6dACmy",
+            "mtrellq69YZsNwzUSyXh",
+            "dHd5gvgSOzSfduK4CvEg",
+            "eVItLK1UvXctxuaRV2Oq",
+            "esy0r39YPLQjOczyOib8",
+            "Tsns2HvNFKfGiNjllgqo",
+            "1U02n4nD6AdIZ9CjF053",
+            "AeRdCCKzvd23BpJoofzx",
+            "LruHrtVF6PSyGItzMNHS",
+            "1wGbFxmAM3Fgw63G1zZJ",
+            "hqfrgApggtO1785R4Fsn",
+            "MJ0RnG71ty4LH3dvNfSd"
+          ]
+        },
+        {
+          "name": "stability",
+          "type": "number",
+          "label": "Stability",
+          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 0.5,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "name": "similarity_boost",
+          "type": "number",
+          "label": "Similarity Boost",
+          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 0.75,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "name": "style",
+          "type": "number",
+          "label": "Style",
+          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 0,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "name": "speed",
+          "type": "number",
+          "label": "Speed",
+          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 1,
+          "min": 0.7,
+          "max": 1.2,
+          "step": 0.1
+        },
+        {
+          "name": "timestamps",
+          "type": "boolean",
+          "label": "Timestamps",
+          "description": "Whether to return timestamps for each word in the generated speech (Boolean value (true/false))",
+          "required": false
+        },
+        {
+          "name": "previous_text",
+          "type": "textarea",
+          "label": "Previous Text",
+          "description": "The text that came before the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
+          "required": false,
+          "maxLength": 5000
+        },
+        {
+          "name": "next_text",
+          "type": "textarea",
+          "label": "Next Text",
+          "description": "The text that comes after the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
+          "required": false,
+          "maxLength": 5000
+        },
+        {
+          "name": "language_code",
+          "type": "string",
+          "label": "Language Code",
+          "description": "Language code (ISO 639-1) used to enforce a language for the model. Currently only Turbo v2.5 and Flash v2.5 support language enforcement. For other models, an error will be returned if language code is provided. (Max length: 500 characters)",
+          "required": false,
+          "maxLength": 500
+        }
+      ]
+    },
+    {
+      "id": "elevenlabs/text-to-speech-turbo-2-5",
+      "model": "elevenlabs/text-to-speech-turbo-2-5",
+      "title": "elevenlabs/text-to-speech-turbo-2-5",
+      "category": "audio",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/elevenlabs/text-to-speech-turbo-2-5",
+      "fields": [
+        {
+          "name": "text",
+          "type": "textarea",
+          "label": "Text",
+          "description": "The text to convert to speech (Max length: 5000 characters)",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "voice",
+          "type": "enum",
+          "label": "Voice",
+          "description": "The voice to use for speech generation. Can be a preset voice name (e.g. Rachel, Adam) or a voice ID. You can preview a voice by opening https://static.aiquickdraw.com/elevenlabs/voice/<voice_id>.mp3 in your browser (replace <voice_id> with the actual voice ID). For example: https://static.aiquickdraw.com/elevenlabs/voice/N2lVS1w4EtoT3dr4eOWO.mp3",
+          "required": false,
+          "default": "EkK5I93UQWFDigLMpZcX",
+          "enum": [
+            "EkK5I93UQWFDigLMpZcX",
+            "Z3R5wn05IrDiVCyEkUrK",
+            "NNl6r8mD7vthiJatiJt1",
+            "YOq2y2Up4RgXP2HyXjE5",
+            "B8gJV1IhpuegLxdpXFOE",
+            "2zRM7PkgwBPiau2jvVXc",
+            "1SM7GgM6IMuvQlz2BwM3",
+            "5l5f8iK3YPeGga21rQIX",
+            "scOwDtmlUjD3prqpp97I",
+            "NOpBlnGInO9m6vDvFkFC",
+            "BZgkqPqms7Kj9ulSkVzn",
+            "wo6udizrrtpIxWGp2qJk",
+            "gU0LNdkMOQCOrPrwtbee",
+            "DGzg6RaUqxGRTHSBjfgF",
+            "x70vRnQBMBu4FAYhjJbO",
+            "Sm1seazb4gs7RSlUVw7c",
+            "P1bg08DkjqiVEzOn76yG",
+            "qDuRKMlYmrm8trt5QyBn",
+            "qXpMhyvQqiRxWQs4qSSB",
+            "TX3LPaxmHKxFdv7VOQHJ",
+            "N2lVS1w4EtoT3dr4eOWO",
+            "FGY2WhTYpPnrIDTdsKH5",
+            "kPzsL2i3teMYv0FxEYQ6",
+            "UgBBYS2sOqTuMpoF3BR0",
+            "hpp4J3VqNfWAUOO0d1Us",
+            "nPczCjzI2devNBz1zQrb",
+            "uYXf8XasLslADfZ2MB4u",
+            "gs0tAILXbY5DNrJrsM6F",
+            "DTKMou8ccj1ZaWGBiotd",
+            "vBKc2FfBKJfcZNyEt1n6",
+            "DYkrAHD8iwork3YSUBbs",
+            "56AoDkrOh6qfVPDXZ7Pt",
+            "eR40ATw9ArzDf9h3v7t7",
+            "g6xIsTj2HwM6VR4iXFCw",
+            "lcMyyd2HUfFzxdCaC4Ta",
+            "6aDn1KB0hjpdcocrUkmq",
+            "Sq93GQT4X1lKDXsQcixO",
+            "flHkNRp1BlvT73UL6gyz",
+            "9yzdeviXkFddZ4Oz8Mok",
+            "pPdl9cQBQq4p6mRkZy2Z",
+            "zYcjlYFOd3taleS0gkk3",
+            "nzeAacJi50IvxcyDnMXa",
+            "ruirxsoakN0GWmGNIo04",
+            "TC0Zp7WVFzhA8zpTlRqV",
+            "ljo9gAlSqKOvF6D8sOsX",
+            "PPzYpIqttlTYA83688JI",
+            "8JVbfL6oEdmuxKn5DK2C",
+            "iCrDUkL56s3C8sCRl7wb",
+            "wJqPPQ618aTW29mptyoc",
+            "EiNlNiXeDU1pqqOPrYMO",
+            "4YYIPFl9wE5c4L2eu2Gb",
+            "6F5Zhi321D3Oq7v1oNT4",
+            "YXpFCvM1S3JbWEJhoskW",
+            "LG95yZDEHg6fCZdQjLqj",
+            "CeNX9CMwmxDxUF5Q2Inm",
+            "aD6riP1btT197c6dACmy",
+            "mtrellq69YZsNwzUSyXh",
+            "dHd5gvgSOzSfduK4CvEg",
+            "eVItLK1UvXctxuaRV2Oq",
+            "esy0r39YPLQjOczyOib8",
+            "Tsns2HvNFKfGiNjllgqo",
+            "1U02n4nD6AdIZ9CjF053",
+            "AeRdCCKzvd23BpJoofzx",
+            "LruHrtVF6PSyGItzMNHS",
+            "1wGbFxmAM3Fgw63G1zZJ",
+            "hqfrgApggtO1785R4Fsn",
+            "MJ0RnG71ty4LH3dvNfSd"
+          ]
+        },
+        {
+          "name": "stability",
+          "type": "number",
+          "label": "Stability",
+          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 0.5,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "name": "similarity_boost",
+          "type": "number",
+          "label": "Similarity Boost",
+          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 0.75,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "name": "style",
+          "type": "number",
+          "label": "Style",
+          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 0,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "name": "speed",
+          "type": "number",
+          "label": "Speed",
+          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01) (step: 0.01)",
+          "required": false,
+          "default": 1,
+          "min": 0.7,
+          "max": 1.2,
+          "step": 0.1
+        },
+        {
+          "name": "timestamps",
+          "type": "boolean",
+          "label": "Timestamps",
+          "description": "Whether to return timestamps for each word in the generated speech (Boolean value (true/false))",
+          "required": false
+        },
+        {
+          "name": "previous_text",
+          "type": "textarea",
+          "label": "Previous Text",
+          "description": "The text that came before the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
+          "required": false,
+          "maxLength": 5000
+        },
+        {
+          "name": "next_text",
+          "type": "textarea",
+          "label": "Next Text",
+          "description": "The text that comes after the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
+          "required": false,
+          "maxLength": 5000
+        },
+        {
+          "name": "language_code",
+          "type": "string",
+          "label": "Language Code",
+          "description": "Language code (ISO 639-1) used to enforce a language for the model. Currently only Turbo v2.5 and Flash v2.5 support language enforcement. For other models, an error will be returned if language code is provided. (Max length: 500 characters)",
+          "required": false,
+          "maxLength": 500
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-3-1-flash-tts",
+      "model": "google/gemini-3-1-flash-tts",
+      "title": "Gemini 3.1 Flash Text to speech",
+      "category": "audio",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/google/gemini-3-1-flash-tts",
+      "fields": [
+        {
+          "name": "temperature",
+          "type": "number",
+          "label": "Temperature",
+          "description": "Sampling temperature, e.g., 1",
+          "required": false,
+          "default": 1,
+          "min": 0,
+          "max": 2,
+          "step": 0.1
+        },
+        {
+          "name": "scene",
+          "type": "string",
+          "label": "Scene",
+          "description": "Scene description, e.g., \"A quiet, warm room with a fireplace crackling softly.\"",
+          "required": false,
+          "default": ""
+        },
+        {
+          "name": "sample_context",
+          "type": "textarea",
+          "label": "Sample Context",
+          "description": "Sample context/overall tone, e.g., \"Audiobook style narration. Tone is gentle and inviting.\"",
+          "required": false,
+          "default": ""
+        },
+        {
+          "name": "speakers",
+          "type": "json",
+          "label": "Speakers",
+          "description": "List of speaker configurations",
+          "required": true
+        },
+        {
+          "name": "dialogue_turns",
+          "type": "json",
+          "label": "Dialogue Turns",
+          "description": "List of dialogue turns, output in sequential order",
+          "required": true
+        }
+      ]
+    },
     {
       "id": "flux-2/flex-image-to-image",
       "model": "flux-2/flex-image-to-image",
@@ -19,7 +542,8 @@
           "required": true,
           "maxItems": 8,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "prompt",
@@ -84,7 +608,8 @@
           "required": true,
           "maxItems": 8,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "prompt",
@@ -494,7 +1019,8 @@
           "required": false,
           "maxItems": 14,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 30
         },
         {
           "name": "aspect_ratio",
@@ -626,7 +1152,8 @@
           "required": true,
           "maxItems": 10,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "output_format",
@@ -708,7 +1235,8 @@
           "required": false,
           "maxItems": 8,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 30
         },
         {
           "name": "aspect_ratio",
@@ -838,7 +1366,8 @@
           "required": true,
           "maxItems": 16,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "prompt",
@@ -995,7 +1524,8 @@
           "required": true,
           "maxItems": 5,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "nsfw_checker",
@@ -1075,6 +1605,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 8
         },
         {
@@ -1182,6 +1713,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -1193,6 +1725,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -1204,6 +1737,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 8
         },
         {
@@ -1287,6 +1821,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -1298,6 +1833,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 8
         },
         {
@@ -1398,6 +1934,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 8
         },
         {
@@ -1408,6 +1945,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         }
@@ -1702,6 +2240,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -1844,6 +2383,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -2072,6 +2612,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -2198,6 +2739,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         }
@@ -2219,6 +2761,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 5,
           "maxItems": 1,
           "scalar": true
         }
@@ -2301,7 +2844,8 @@
           "required": true,
           "maxItems": 10,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "image_size",
@@ -2463,7 +3007,8 @@
           "required": true,
           "maxItems": 14,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "aspect_ratio",
@@ -2583,7 +3128,8 @@
           "required": true,
           "maxItems": 14,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "aspect_ratio",
@@ -2727,7 +3273,8 @@
           "required": true,
           "maxItems": 10,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "aspect_ratio",
@@ -2863,6 +3410,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -2946,6 +3494,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -3007,6 +3556,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -3299,7 +3849,7 @@
           "type": "textarea",
           "label": "Prompt",
           "description": "The text prompt used to generate the video. Required field. (Min length: 3, Max length: 20000 characters)",
-          "required": false,
+          "required": true,
           "maxLength": 20000
         },
         {
@@ -3387,7 +3937,7 @@
           "type": "enum",
           "label": "Aspect Ratio",
           "description": "Video aspect ratio configuration. Required field.",
-          "required": false,
+          "required": true,
           "default": "16:9",
           "enum": [
             "1:1",
@@ -3406,7 +3956,9 @@
           "description": "Video duration in 4-15 seconds.",
           "required": false,
           "default": 5,
-          "step": 1
+          "step": 1,
+          "min": 4,
+          "max": 15
         },
         {
           "name": "web_search",
@@ -3437,7 +3989,7 @@
           "type": "textarea",
           "label": "Prompt",
           "description": "The text prompt used to generate the video. Required field. (Min length: 3, Max length: 20000 characters)",
-          "required": false,
+          "required": true,
           "maxLength": 20000
         },
         {
@@ -3517,7 +4069,7 @@
           "type": "enum",
           "label": "Aspect Ratio",
           "description": "Video aspect ratio configuration. Required field.",
-          "required": false,
+          "required": true,
           "default": "16:9",
           "enum": [
             "1:1",
@@ -3536,7 +4088,9 @@
           "description": "Video duration in 4-15 seconds.",
           "required": false,
           "default": 5,
-          "step": 1
+          "step": 1,
+          "min": 4,
+          "max": 15
         },
         {
           "name": "web_search",
@@ -3578,6 +4132,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -3604,6 +4159,13 @@
             "5",
             "10"
           ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
+          "required": false
         }
       ]
     },
@@ -3631,6 +4193,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -3706,7 +4269,7 @@
           "type": "textarea",
           "label": "Prompt",
           "description": "The text prompt used to generate the video. Required field. (Min length: 3, Max length: 20000 characters)",
-          "required": false,
+          "required": true,
           "maxLength": 20000
         },
         {
@@ -3796,7 +4359,7 @@
           "type": "enum",
           "label": "Aspect Ratio",
           "description": "Video aspect ratio configuration. Required field.",
-          "required": false,
+          "required": true,
           "default": "16:9",
           "enum": [
             "1:1",
@@ -3815,7 +4378,9 @@
           "description": "Video duration in 4-15 seconds.",
           "required": false,
           "default": 5,
-          "step": 1
+          "step": 1,
+          "min": 4,
+          "max": 15
         },
         {
           "name": "web_search",
@@ -4084,6 +4649,13 @@
             "16:9",
             "9:16"
           ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
+          "required": false
         }
       ]
     },
@@ -4257,6 +4829,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -4317,6 +4890,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -4343,6 +4917,13 @@
             "768P",
             "1080P"
           ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
+          "required": false
         }
       ]
     },
@@ -4370,6 +4951,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -4381,6 +4963,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -4456,6 +5039,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -4467,6 +5051,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -5023,6 +5608,68 @@
       ]
     },
     {
+      "id": "infinitalk/from-audio",
+      "model": "infinitalk/from-audio",
+      "title": "Infinitalk - From Audio",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/infinitalk/from-audio",
+      "fields": [
+        {
+          "name": "image_url",
+          "type": "reference",
+          "label": "Image Url",
+          "description": "URL of the input image. If the input image does not match the chosen aspect ratio, it is resized and center cropped. (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 10.0MB)",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "audio_url",
+          "type": "reference",
+          "label": "Audio Url",
+          "description": "The URL of the audio file. (File URL after upload, not file content; Accepted types: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/mp4, audio/ogg; Max size: 10.0MB)",
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxFileSizeMb": 10,
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "The text prompt to guide video generation. (Max length: 5000 characters)",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Resolution of the video to generate. Must be either 480p or 720p.",
+          "required": false,
+          "default": "480p",
+          "enum": [
+            "480p",
+            "720p"
+          ]
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed for reproducibility. Valid range is 10000 to 1000000.",
+          "required": false,
+          "step": 0.1
+        }
+      ]
+    },
+    {
       "id": "kling/v2-5-turbo-image-to-video-pro",
       "model": "kling/v2-5-turbo-image-to-video-pro",
       "title": "Kling - V2.5 Turbo Image to Video Pro",
@@ -5046,6 +5693,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -5057,6 +5705,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -5179,6 +5828,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 8
         },
         {
@@ -5325,7 +5975,8 @@
           "required": true,
           "maxItems": 1,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "video_urls",
@@ -5335,7 +5986,8 @@
           "required": true,
           "maxItems": 1,
           "accept": "video/*,image/*",
-          "mentionStyle": "at-video"
+          "mentionStyle": "at-video",
+          "maxFileSizeMb": 100
         },
         {
           "name": "character_orientation",
@@ -5429,15 +6081,20 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
         {
           "name": "audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Audio Url",
           "description": "The URL of the audio file (must be the URL of the uploaded file, not the file content; supported formats: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/mp4, audio/ogg; audio size is limited to 100M, and the duration cannot exceed 5 minutes)",
-          "required": true
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "prompt",
@@ -5465,15 +6122,20 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
         {
           "name": "audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Audio Url",
           "description": "The URL of the audio file (must be the URL of the uploaded file, not the file content; supported formats: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/mp4, audio/ogg; audio size is limited to 100M, and the duration cannot exceed 5 minutes)",
-          "required": true
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "prompt",
@@ -5509,6 +6171,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -5631,6 +6294,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -5673,6 +6337,7 @@
           "required": false,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         }
@@ -5702,6 +6367,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -5827,10 +6493,14 @@
         },
         {
           "name": "audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Audio Url",
           "description": "Audio URL. Duration must be less than 60 seconds (recommended 15 seconds or less; exceeding this will cause quality degradation). Accepted file types: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/ogg, audio/mp4. Max file size: 10MB.",
-          "required": true
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "prompt",
@@ -5929,6 +6599,7 @@
           "required": true,
           "accept": "video/*,image/*",
           "mentionStyle": "at-video",
+          "maxFileSizeMb": 50,
           "maxItems": 1,
           "scalar": true
         },
@@ -5979,10 +6650,14 @@
         },
         {
           "name": "audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Audio Url",
           "description": "Target pure vocal audio URL; used to drive video lip movements. Accepted file types: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/mp4, audio/ogg. Max file size: 10MB.",
-          "required": true
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "separate_vocal",
@@ -6051,7 +6726,8 @@
           "required": true,
           "maxItems": 3,
           "accept": "video/*,image/*",
-          "mentionStyle": "at-video"
+          "mentionStyle": "at-video",
+          "maxFileSizeMb": 10
         },
         {
           "name": "duration",
@@ -6124,15 +6800,21 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
         {
           "name": "audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Audio Url",
           "description": "The URL of the audio file (File URL after upload, not file content; Accepted types: audio/mp3, audio/wav, audio/ogg, audio/m4a, audio/flac, audio/aac, audio/x-ms-wma, audio/mpeg; Max size: 10.0MB)",
-          "required": true
+          "required": true,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxFileSizeMb": 10,
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "num_frames",
@@ -6251,7 +6933,8 @@
           "required": true,
           "maxItems": 1,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "duration",
@@ -6317,6 +7000,7 @@
           "required": true,
           "accept": "video/*,image/*",
           "mentionStyle": "at-video",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -6328,6 +7012,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -6343,6 +7028,13 @@
             "580p",
             "720p"
           ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
+          "required": false
         }
       ]
     },
@@ -6362,6 +7054,7 @@
           "required": true,
           "accept": "video/*,image/*",
           "mentionStyle": "at-video",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -6373,6 +7066,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -6414,6 +7108,7 @@
           "required": true,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image",
+          "maxFileSizeMb": 10,
           "maxItems": 1,
           "scalar": true
         },
@@ -6742,7 +7437,8 @@
           "required": true,
           "maxItems": 1,
           "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image"
+          "mentionStyle": "at-image",
+          "maxFileSizeMb": 10
         },
         {
           "name": "duration",
@@ -6852,7 +7548,8 @@
           "required": true,
           "maxItems": 3,
           "accept": "video/*,image/*",
-          "mentionStyle": "at-video"
+          "mentionStyle": "at-video",
+          "maxFileSizeMb": 10
         },
         {
           "name": "duration",
@@ -6877,6 +7574,13 @@
             "720p",
             "1080p"
           ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
+          "required": false
         }
       ]
     },
@@ -6935,10 +7639,14 @@
         },
         {
           "name": "driving_audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Driving Audio Url",
           "description": "Driving audio URL.",
-          "required": false
+          "required": false,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",
@@ -7159,10 +7867,14 @@
         },
         {
           "name": "audio_url",
-          "type": "string",
+          "type": "reference",
           "label": "Audio Url",
           "description": "Optional custom audio URL.",
-          "required": false
+          "required": false,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
         },
         {
           "name": "resolution",

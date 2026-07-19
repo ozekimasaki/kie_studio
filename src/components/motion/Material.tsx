@@ -1,4 +1,3 @@
-import { motion } from 'motion/react'
 import type { ReactNode, CSSProperties } from 'react'
 
 export type MaterialWeight = 'chrome' | 'panel' | 'sheet'
@@ -26,19 +25,17 @@ export function Material({
   weight = 'panel',
   className = '',
   style,
-  initial = false,
   role,
   'aria-label': ariaLabel,
 }: MaterialProps) {
   return (
-    <motion.div
+    <div
       role={role}
       aria-label={ariaLabel}
       className={`${weightClass[weight]} ${className}`.trim()}
       style={style}
-      initial={initial}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }

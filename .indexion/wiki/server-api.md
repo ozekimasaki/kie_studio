@@ -1,51 +1,37 @@
 # Server API
 
-Hono エントリ: `server/index.ts`。ホスト `127.0.0.1`、既定ポート `8787`。
+Hono エントリは `server/index.ts`。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。
 
-CORS は Vite 開発オリジン（`localhost:5173` / `127.0.0.1:5173`）のみ許可。
+## 主要ルート
 
-## ルート一覧
+| Method | Path | 説明 |
+|--------|------|------|
+| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |
+| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |
+| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |
+| POST | `/api/generate` | provider / operation adapter で作成。Market は既定 |
+| GET | `/api/task` | provider / operation ごとの状態を正規化 |
+| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |
+| POST | `/api/suno/style` | music style 補助 |
+| POST | `/api/suno/persona` | Persona 作成と保存 |
+| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |
+| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |
+| GET/PUT | `/api/history` | SQLite 履歴一覧 / 全置換 |
+| POST | `/api/history/import` | JSON merge |
+| POST | `/api/history/migrate` | 旧 localStorage 移行 |
+| GET | `/api/credits` | 残高 |
+| POST | `/api/download-url` | 一時 download URL |
 
-| Method | Path | 実装 | 説明 |
-|--------|------|------|------|
-| GET | `/api/health` | `index.ts` | ヘルス・API キー有無 |
-| GET | `/api/models` | `routes/models.ts` | カタログ（`?category=`） |
-| POST | `/api/upload` | `routes/upload.ts` | File Upload API へ転送 |
-| POST | `/api/generate` | `routes/generate.ts` | Market `createTask` |
-| GET | `/api/task` | `routes/task.ts` | `recordInfo` |
-| GET | `/api/credits` | `routes/credits.ts` | 残クレジット |
-| POST | `/api/download-url` | `routes/download-url.ts` | 一時 DL URL |
-| GET | `/api/history` | `routes/history.ts` | ギャラリー履歴一覧（SQLite） |
-| PUT | `/api/history` | `routes/history.ts` | 履歴全置換（サーバーで cap） |
-| POST | `/api/history/import` | `routes/history.ts` | JSON インポート merge |
-| POST | `/api/history/migrate` | `routes/history.ts` | localStorage からの初回移行 |
-| * | optimize / grok status | `routes/optimize-prompt.ts` | プロンプト最適化 |
+## DB
 
-## 履歴 DB
+`data/studio.db` に `history_items`、`saved_personas`、`saved_audio_assets` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。
 
-- ファイル: `data/studio.db`（gitignore）
-- 実装: `server/db/open.ts` + `server/db/history.ts`（`better-sqlite3`）
-- スキーマ: `history_items`（メタデータ＋URL JSON。メディア本体は保存しない）
-- cap / normalize は `src/lib/history.ts` をサーバーから共有
+## エラー
 
-## 起動時カタログ同期
-
-`serve` コールバック内で非同期に `syncCatalog` を実行する。
-
-- 既定: カタログが新しければスキップ
-- `SYNC_MODELS_ON_START=0` で無効
-- `SYNC_MODELS_FORCE=1` で強制
-
-失敗しても既存 `catalog.json` で起動を継続する。起動時に SQLite も開く。
-
-## エラー処理
-
-`KieApiError` を検知して適切な HTTP ステータスと `{ error, code }` を返す。それ以外は 500。
+`KieApiError` は `{ error, code }` と適切な status に変換する。Malformed JSON は 400。polling 側の upstream error はフロント履歴にも診断として残す。
 
 ## See Also
 
 - [Architecture](wiki://architecture)
-- [Core Concepts](wiki://core-concepts)
 - [Kie Integration](wiki://kie-integration)
 - [Catalog Sync](wiki://catalog-sync)
-- [Prompt Optimize](wiki://prompt-optimize)

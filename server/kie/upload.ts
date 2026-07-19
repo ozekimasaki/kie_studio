@@ -69,7 +69,9 @@ export async function uploadFileStream(
 export async function uploadFromUrl(
   fileUrl: string,
   options: { uploadPath?: string; fileName?: string } = {},
-): Promise<{ fileUrl: string }> {
+): Promise<{ fileUrl: string; fileName: string }> {
+  const sourceName = new URL(fileUrl).pathname.split('/').pop() || 'upload.bin'
+  const fileName = uniqueFileName(options.fileName || sourceName)
   const res = await kieFetch<UploadResponse>(
     '/api/file-url-upload',
     {
@@ -77,9 +79,7 @@ export async function uploadFromUrl(
       body: JSON.stringify({
         fileUrl,
         uploadPath: options.uploadPath ?? 'kie-studio',
-        fileName: options.fileName
-          ? uniqueFileName(options.fileName)
-          : undefined,
+        fileName,
       }),
     },
     'upload',
@@ -87,5 +87,5 @@ export async function uploadFromUrl(
 
   const url = pickFileUrl(res.data)
   if (!url) throw new Error(res.msg || 'URL upload failed')
-  return { fileUrl: url }
+  return { fileUrl: url, fileName: res.data?.fileName ?? fileName }
 }

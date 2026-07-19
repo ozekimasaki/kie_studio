@@ -1,8 +1,8 @@
 /**
- * Sync Market IMAGE/VIDEO models from docs.kie.ai into src/data/catalog.json
+ * Sync Market IMAGE/VIDEO/AUDIO models from docs.kie.ai into src/data/catalog.json
  */
 import { createHash } from 'node:crypto'
-import { writeFile, mkdir, readFile } from 'node:fs/promises'
+import { writeFile, mkdir, readFile, stat } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parse as parseYaml } from 'yaml'
@@ -20,12 +20,18 @@ export const CATALOG_PATH = resolve(__dirname, '../../src/data/catalog.json')
 const LLMS_TXT = 'https://docs.kie.ai/llms.txt'
 const FETCH_TIMEOUT_MS = 15_000
 const DEFAULT_CONCURRENCY = 12
+const FETCH_ATTEMPTS = 3
+const FETCH_RETRY_DELAY_MS = 500
+const MIN_CATALOG_RETENTION_RATIO = 0.7
 
 const EXCLUDE_RE =
-  /(suno|elevenlabs|audio|music|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail|\btts\b|text.to.speech)/i
+  /(suno|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail)/i
 
 const VIDEO_HINT_RE =
   /(video|kling|seedance|hailuo|sora|wan\/|infinitalk|omnihuman|happyhorse|grok-imagine\/.*video)/i
+
+const AUDIO_HINT_RE =
+  /(audio|speech|voice|dialogue|tts|elevenlabs|music|sound|vocal|noise|stem)/i
 
 function parseLlmsLinks(text: string): { title: string; url: string }[] {
   const links: { title: string; url: string }[] = []
@@ -65,19 +71,21 @@ async function fetchText(url: string): Promise<string> {
   return res.text()
 }
 
-async function fetchTextWithRetry(
+export async function fetchTextWithRetry(
   url: string,
-  attempts = 3,
-  delayMs = 500,
+  attempts = FETCH_ATTEMPTS,
+  delayMs = FETCH_RETRY_DELAY_MS,
 ): Promise<string> {
   let lastError: unknown
-  for (let i = 0; i < attempts; i++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       return await fetchText(url)
-    } catch (err) {
-      lastError = err
-      if (i < attempts - 1) {
-        await new Promise((r) => setTimeout(r, delayMs))
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts - 1) {
+        await new Promise((resolvePromise) =>
+          setTimeout(resolvePromise, delayMs),
+        )
       }
     }
   }
@@ -149,9 +157,12 @@ async function parseModelPage(
 
   const input = extractInputSchema(body.schema)
   const fields = inputSchemaToFields(input)
-  const category = VIDEO_HINT_RE.test(`${url} ${title} ${model}`)
+  const hints = `${url} ${title} ${model}`
+  const category = VIDEO_HINT_RE.test(hints)
     ? 'video'
-    : detectCategory(`${url} ${title}`, model)
+    : AUDIO_HINT_RE.test(hints)
+      ? 'audio'
+      : detectCategory(`${url} ${title}`, model)
 
   return {
     id: model,
@@ -191,20 +202,27 @@ async function mapPool<T, R>(
 
 /** In-memory catalog cache — avoids readFile+JSON.parse on every /api/models. */
 let cachedCatalog: Catalog | null | undefined
+let cachedCatalogMtimeMs: number | undefined
 
 function setCachedCatalog(catalog: Catalog | null): void {
   cachedCatalog = catalog
 }
 
 export async function readCatalog(): Promise<Catalog | null> {
-  if (cachedCatalog !== undefined) return cachedCatalog
   try {
+    const info = await stat(CATALOG_PATH)
+    if (
+      cachedCatalog !== undefined &&
+      cachedCatalogMtimeMs === info.mtimeMs
+    ) return cachedCatalog
     const raw = await readFile(CATALOG_PATH, 'utf8')
     const catalog = JSON.parse(raw) as Catalog
     setCachedCatalog(catalog)
+    cachedCatalogMtimeMs = info.mtimeMs
     return catalog
   } catch {
     setCachedCatalog(null)
+    cachedCatalogMtimeMs = undefined
     return null
   }
 }
@@ -333,25 +351,22 @@ export async function syncCatalog(
     return a.title.localeCompare(b.title)
   })
 
-  // パース失敗や部分欠落で既存 catalog を潰さない（0件 or 既存の 70% 未満）
   const existingCount = existing?.models.length ?? 0
   if (
-    existing &&
-    existingCount > 0 &&
-    (sorted.length === 0 ||
-      (existingCount >= 10 && sorted.length < existingCount * 0.7))
+    shouldKeepExistingCatalog(
+      existingCount,
+      sorted.length,
+      options.force ?? false,
+    )
   ) {
-    const reason =
-      sorted.length === 0
-        ? 'parsed 0 models; kept existing catalog'
-        : `parsed ${sorted.length} models but existing has ${existingCount}; kept existing catalog`
+    const reason = `parsed ${sorted.length} models but existing has ${existingCount}; kept existing catalog`
     if (!quiet) {
       console.warn(`[catalog] ${reason}`)
     }
     return {
       skipped: true,
       reason,
-      catalog: existing,
+      catalog: existing!,
     }
   }
 
@@ -368,9 +383,18 @@ export async function syncCatalog(
 
   if (!quiet) {
     console.log(
-      `[catalog] Wrote ${sorted.length} models (${sorted.filter((m) => m.category === 'image').length} image, ${sorted.filter((m) => m.category === 'video').length} video)`,
+      `[catalog] Wrote ${sorted.length} models (${sorted.filter((m) => m.category === 'image').length} image, ${sorted.filter((m) => m.category === 'video').length} video, ${sorted.filter((m) => m.category === 'audio').length} audio)`,
     )
   }
 
   return { skipped: false, catalog }
+}
+
+export function shouldKeepExistingCatalog(
+  existingCount: number,
+  nextCount: number,
+  force: boolean,
+): boolean {
+  if (force || existingCount === 0) return false
+  return nextCount < existingCount * MIN_CATALOG_RETENTION_RATIO
 }

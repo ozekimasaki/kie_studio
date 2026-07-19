@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'motion/react'
+import { m, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { fadeQuick, springUi } from '../../lib/motion.ts'
 
@@ -21,14 +21,14 @@ export function SharedMedia({
   }
 
   return (
-    <motion.div
+    <m.div
       layoutId={layoutId}
       className={className}
       transition={springUi}
       style={{ borderRadius: 'inherit' }}
     >
       {children}
-    </motion.div>
+    </m.div>
   )
 }
 
@@ -39,13 +39,13 @@ export function SharedPresence({
 }) {
   const reduce = useReducedMotion()
   return (
-    <motion.div
+    <m.div
       initial={reduce ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={reduce ? fadeQuick : springUi}
     >
       {children}
-    </motion.div>
+    </m.div>
   )
 }

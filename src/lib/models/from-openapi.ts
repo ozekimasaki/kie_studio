@@ -1,7 +1,7 @@
 import type { FieldSchema, FieldType, ModelCategory } from './types.ts'
 
 const REFERENCE_NAME_RE =
-  /(image_?urls?|image_?input|input_?urls?|reference_?urls?|reference_?mask|mask_?urls?|video_?urls?|end_?image|start_?image|first_?frame|last_?frame|^image$|^mask$|^video$|^audio$)/i
+  /(image_?urls?|image_?input|audio_?urls?|audio_?input|input_?urls?|reference_?urls?|reference_?mask|mask_?urls?|video_?urls?|end_?image|start_?image|first_?frame|last_?frame|^image$|^mask$|^video$|^audio$)/i
 
 const TEXTAREA_NAME_RE = /(prompt|negative|description|caption|text)/i
 
@@ -78,7 +78,7 @@ export function propertyToField(
     type,
     label: humanize(name),
     description,
-    required: required.includes(name),
+    required: required.includes(name) || /\bRequired field\b/i.test(description ?? ''),
   }
 
   if (prop.default !== undefined) field.default = prop.default
@@ -88,13 +88,29 @@ export function propertyToField(
   if (typeof prop.minimum === 'number') field.min = prop.minimum
   if (typeof prop.maximum === 'number') field.max = prop.maximum
   if (typeof prop.maxLength === 'number') field.maxLength = prop.maxLength
+  if (field.maxLength === undefined) {
+    const maxLength = description?.match(/Max(?:imum)?\s+length:\s*([\d,]+)\s*characters?/i)
+    if (maxLength?.[1]) field.maxLength = Number(maxLength[1].replace(/,/g, ''))
+  }
   if (typeof prop.maxItems === 'number') field.maxItems = prop.maxItems
   if (type === 'number') {
     field.step = prop.type === 'integer' ? 1 : 0.1
+    const durationRange = description?.match(/([\d.]+)\s*[-–]\s*([\d.]+)\s*seconds?/i)
+    if (durationRange?.[1] && durationRange[2]) {
+      field.min ??= Number(durationRange[1])
+      field.max ??= Number(durationRange[2])
+    }
   }
   if (type === 'reference') {
     field.accept = acceptForField(name)
     field.mentionStyle = detectMentionStyle(name, description)
+    const maxSize = description?.match(/Max(?:imum)?\s+size:\s*([\d.]+)\s*MB/i)
+    if (maxSize?.[1]) field.maxFileSizeMb = Number(maxSize[1])
+    const maxDuration = description?.match(/(?:Max(?:imum)?\s+duration|up to)[:\s]+([\d.]+)\s*(?:seconds?|s\b|minutes?|mins?)/i)
+    if (maxDuration?.[1]) {
+      const amount = Number(maxDuration[1])
+      field.maxDurationSec = /minutes?|mins?/i.test(maxDuration[0]) ? amount * 60 : amount
+    }
     if (prop.type === 'string') {
       field.maxItems = 1
       field.scalar = true
@@ -128,10 +144,11 @@ export function inputSchemaToFields(
   ])
     ? ((input as { 'x-apidog-orders': string[] })['x-apidog-orders'] ?? [])
     : Object.keys(properties)
+  const orderedNames = new Set(order)
 
   const names = [
     ...order.filter((n) => n in properties),
-    ...Object.keys(properties).filter((n) => !order.includes(n)),
+    ...Object.keys(properties).filter((n) => !orderedNames.has(n)),
   ]
 
   // OpenAPI keys sometimes include trailing spaces (e.g. Seedance docs).
@@ -145,6 +162,21 @@ export function detectCategory(
   modelSlug: string,
 ): ModelCategory {
   const hay = `${pathOrTitle} ${modelSlug}`.toLowerCase()
+  if (
+    !hay.includes('video') &&
+    !hay.includes('infinitalk') &&
+    !hay.includes('omnihuman') &&
+    (hay.includes('audio') ||
+      hay.includes('speech') ||
+      hay.includes('voice') ||
+      hay.includes('dialogue') ||
+      hay.includes('tts') ||
+      hay.includes('elevenlabs') ||
+      hay.includes('music') ||
+      hay.includes('sound'))
+  ) {
+    return 'audio'
+  }
   if (
     hay.includes('video') ||
     hay.includes('kling') ||

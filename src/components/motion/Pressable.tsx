@@ -1,47 +1,38 @@
 import {
-  motion,
-  useReducedMotion,
-  type HTMLMotionProps,
-} from 'motion/react'
-import { forwardRef, type ReactNode } from 'react'
-import { springSnappy } from '../../lib/motion.ts'
+  forwardRef,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type HTMLAttributes,
+} from 'react'
 
-type PressableProps = Omit<HTMLMotionProps<'button'>, 'children'> & {
-  children?: ReactNode
+type PressStyle = CSSProperties & { '--press-scale'?: number }
+
+type PressableProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   scaleTo?: number
 }
 
 /** Instant press feedback on pointer-down; spring settle on release. */
 export const Pressable = forwardRef<HTMLButtonElement, PressableProps>(
   function Pressable(
-    { children, scaleTo = 0.96, disabled, className, style, ...rest },
+    { children, scaleTo = 0.96, disabled, className = '', style, ...rest },
     ref,
   ) {
-    const reduce = useReducedMotion()
-
     return (
-      <motion.button
+      <button
         ref={ref}
         type="button"
         disabled={disabled}
-        className={className}
-        style={{ touchAction: 'manipulation', ...style }}
-        whileTap={
-          disabled || reduce
-            ? undefined
-            : { scale: scaleTo, transition: { duration: 0.06 } }
-        }
-        transition={reduce ? { duration: 0 } : springSnappy}
+        className={`studio-pressable ${className}`.trim()}
+        style={{ '--press-scale': scaleTo, ...style } as PressStyle}
         {...rest}
       >
         {children}
-      </motion.button>
+      </button>
     )
   },
 )
 
-type PressableDivProps = Omit<HTMLMotionProps<'div'>, 'children'> & {
-  children?: ReactNode
+type PressableDivProps = HTMLAttributes<HTMLDivElement> & {
   scaleTo?: number
 }
 
@@ -52,19 +43,13 @@ export function PressableDiv({
   style,
   ...rest
 }: PressableDivProps) {
-  const reduce = useReducedMotion()
-
   return (
-    <motion.div
-      className={className}
-      style={{ touchAction: 'manipulation', ...style }}
-      whileTap={
-        reduce ? undefined : { scale: scaleTo, transition: { duration: 0.06 } }
-      }
-      transition={reduce ? { duration: 0 } : springSnappy}
+    <div
+      className={`studio-pressable ${className ?? ''}`.trim()}
+      style={{ '--press-scale': scaleTo, ...style } as PressStyle}
       {...rest}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }

@@ -33,7 +33,8 @@ export function assertKieOk(
   fallback: string,
 ): void {
   if (code !== 200) {
-    throw new KieApiError(msg || fallback, 502, code)
+    const status = code && code >= 400 && code < 600 ? code : 502
+    throw new KieApiError(msg || fallback, status, code)
   }
 }
 

@@ -2,35 +2,28 @@
 
 フロント共有ロジック（`src/lib/`）。
 
-## モジュール
-
 | ファイル | 役割 |
-|----------|------|
-| `api.ts` | `/api` クライアント（models / generate / task / upload / credits / optimize / history） |
-| `history.ts` | 履歴の純粋関数（cap・ピン・マージ・JSON 入出力・正規化）。永続化は持たない |
-| `media.ts` / `mediaExpiry.ts` | URL 種別判定・期限まわり |
-| `snippets.ts` | プロンプトスニペット（localStorage） |
-| `motion.ts` | モーション設定 |
-| `models/types.ts` | Catalog / FieldSchema / HistoryItem 等の型 |
-| `models/from-openapi.ts` | docs OpenAPI → フィールド抽出（同期でも共有） |
-| `models/mentions.ts` | メンション挿入ヘルパ |
+|------|------|
+| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |
+| `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |
+| `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |
+| `taskRelations.ts` | 編集・Aleph の parent task 決定 |
+| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化 |
+| `form.ts` | default、dirty、schema 制約検証、先頭 error focus |
+| `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |
+| `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |
+| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |
 
-## API クライアント規約
+## 規約
 
-- すべて相対パス `/api/...`（Vite プロキシ前提）
-- 失敗時はレスポンス JSON の `error` を `Error` メッセージに載せる
-- 型は `models/types.ts` から再エクスポート
-
-## 履歴の注意点
-
-- 永続化は `fetchHistory` / `putHistory` / `importHistoryApi` / `migrateHistory`（`api.ts`）
-- ピン上限・非ピン上限を維持すること（`MAX_PINNED` / `MAX_ITEMS`）
-- インポート正規化と入力復元の安全策を壊さないこと
-- タイムスタンプは秒/ミリ秒の両方を許容（`normalizeTimestamp`）
+- API は相対 `/api`。失敗は status / code を持つ `ApiClientError`
+- フィールド switch は `default` で `never` を検査
+- `reference + scalar` は UI の配列から API の単一 URL へ変換
+- 未知の履歴 input key は復元時に破棄する
+- exact `expiresAt` がなければ推測日時を出さず、早めの保存だけ促す
 
 ## See Also
 
 - [Frontend](wiki://frontend)
 - [Core Concepts](wiki://core-concepts)
-- [Server API](wiki://server-api)
 - [Catalog Sync](wiki://catalog-sync)

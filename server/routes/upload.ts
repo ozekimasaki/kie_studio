@@ -6,8 +6,30 @@ import {
   sanitizeUploadPath,
 } from '../kie/safe.ts'
 import { KieApiError } from '../kie/client.ts'
+import { listAudioAssets, removeAudioAsset, saveAudioAsset } from '../db/audio-assets.ts'
 
 export const uploadRoutes = new Hono()
+
+function expiryTimestamp(value?: string): number | undefined {
+  if (!value) return undefined
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function looksLikeAudio(name: string): boolean {
+  return /\.(?:mp3|wav|m4a|aac|ogg|flac|opus)(?:$|\?)/i.test(name)
+}
+
+uploadRoutes.get('/audio-assets', (c) =>
+  c.json({ data: { items: listAudioAssets() } }),
+)
+
+uploadRoutes.delete('/audio-assets/:id', (c) => {
+  const removed = removeAudioAsset(c.req.param('id'))
+  return removed
+    ? c.json({ data: { removed: true } })
+    : c.json({ error: 'Audio asset not found' }, 404)
+})
 
 uploadRoutes.post('/upload', async (c) => {
   const contentType = c.req.header('content-type') || ''
@@ -36,7 +58,19 @@ uploadRoutes.post('/upload', async (c) => {
         uploadPath,
         fileName,
       })
-      return c.json({ data: result })
+      const originalFileName = body.fileName ?? new URL(body.fileUrl).pathname.split('/').pop()
+      if (originalFileName && looksLikeAudio(originalFileName)) {
+        saveAudioAsset({
+          url: result.fileUrl,
+          name: originalFileName,
+        })
+      }
+      return c.json({
+        data: {
+          ...result,
+          originalFileName,
+        },
+      })
     } catch (e) {
       if (e instanceof KieApiError && e.status === 400) {
         return c.json({ error: e.message }, 400)
@@ -60,7 +94,14 @@ uploadRoutes.post('/upload', async (c) => {
       file.name || 'upload.bin',
     )
     const result = await uploadFileStream(file, { uploadPath, fileName })
-    return c.json({ data: result })
+    if (file.type.startsWith('audio/') || looksLikeAudio(file.name)) {
+      saveAudioAsset({
+        url: result.fileUrl,
+        name: file.name,
+        expiresAt: expiryTimestamp(result.expiresAt),
+      })
+    }
+    return c.json({ data: { ...result, originalFileName: file.name } })
   } catch (e) {
     if (e instanceof KieApiError && e.status === 400) {
       return c.json({ error: e.message }, 400)
