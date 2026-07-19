@@ -65,7 +65,7 @@
     "catalog-sync": {
       "page_hash": "cded40d6e6af41da7e0cd50a57cc1976",
       "source_hashes": {
-        "server/catalog/sync.ts": "754a00f52da24e6954ff7e44cd1d92c1",
+        "server/catalog/sync.ts": "58ebf270aef0de287809832c9a1c6478",
         "scripts/sync-models.ts": "33b691cf2c2cba5d58e450ff14561532",
         "src/lib/models/from-openapi.ts": "a42e4555bc2574f395c0d2dc9679e39a",
         "src/data/catalog.json": "370abb320fb595b42bcd6025e4257f00"

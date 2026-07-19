@@ -44,13 +44,13 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: catalog-sync
 - ingest: overview
 - ingest: getting-started
 - ingest: core-concepts
 - ingest: architecture
 - ingest: frontend
 - ingest: server-api
-- ingest: catalog-sync
 - pages update: kie-integration
 - pages update: client-lib
 
