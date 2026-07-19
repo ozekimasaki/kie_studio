@@ -28,6 +28,53 @@ function migrate(database: Database.Database): void {
       ON history_items(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_history_pinned
       ON history_items(pinned);
+    CREATE TABLE IF NOT EXISTS saved_personas (
+      id TEXT PRIMARY KEY NOT NULL,
+      persona_id TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      description TEXT,
+      source_task_id TEXT NOT NULL,
+      source_audio_id TEXT NOT NULL UNIQUE,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_personas_created
+      ON saved_personas(created_at DESC);
+    CREATE TABLE IF NOT EXISTS saved_audio_assets (
+      id TEXT PRIMARY KEY NOT NULL,
+      url TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      expires_at INTEGER,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_audio_assets_created
+      ON saved_audio_assets(created_at DESC);
+  `)
+
+  const columns = new Set(
+    (database.pragma('table_info(history_items)') as { name: string }[]).map(
+      (column) => column.name,
+    ),
+  )
+  const additiveColumns: Record<string, string> = {
+    provider: "TEXT NOT NULL DEFAULT 'market'",
+    operation: "TEXT NOT NULL DEFAULT 'generate'",
+    parent_task_id: 'TEXT',
+    media: 'TEXT',
+    provider_status: 'TEXT',
+    partial: 'INTEGER NOT NULL DEFAULT 0',
+    expires_at: 'INTEGER',
+    raw_param: 'TEXT',
+    raw_result: 'TEXT',
+  }
+  for (const [name, definition] of Object.entries(additiveColumns)) {
+    if (!columns.has(name)) {
+      database.exec(`ALTER TABLE history_items ADD COLUMN ${name} ${definition}`)
+    }
+  }
+
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_history_parent_task
+      ON history_items(parent_task_id);
   `)
 }
 

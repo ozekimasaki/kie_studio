@@ -1,8 +1,8 @@
 /**
- * Sync Market IMAGE/VIDEO models from docs.kie.ai into src/data/catalog.json
+ * Sync Market IMAGE/VIDEO/AUDIO models from docs.kie.ai into src/data/catalog.json
  */
 import { createHash } from 'node:crypto'
-import { writeFile, mkdir, readFile } from 'node:fs/promises'
+import { writeFile, mkdir, readFile, stat } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parse as parseYaml } from 'yaml'
@@ -22,10 +22,13 @@ const FETCH_TIMEOUT_MS = 15_000
 const DEFAULT_CONCURRENCY = 12
 
 const EXCLUDE_RE =
-  /(suno|elevenlabs|audio|music|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail)/i
+  /(suno|chat|claude|common-api|file-upload|webhook|quickstart|callback|cn\/|gpt-codex|\/gemini\/|\/grok\/grok-4|get-task-detail)/i
 
 const VIDEO_HINT_RE =
   /(video|kling|seedance|hailuo|sora|wan\/|infinitalk|omnihuman|happyhorse|grok-imagine\/.*video)/i
+
+const AUDIO_HINT_RE =
+  /(audio|speech|voice|dialogue|tts|elevenlabs|music|sound|vocal|noise|stem)/i
 
 function parseLlmsLinks(text: string): { title: string; url: string }[] {
   const links: { title: string; url: string }[] = []
@@ -131,9 +134,12 @@ async function parseModelPage(
 
   const input = extractInputSchema(bodySchema)
   const fields = inputSchemaToFields(input)
-  const category = VIDEO_HINT_RE.test(`${url} ${title} ${model}`)
+  const hints = `${url} ${title} ${model}`
+  const category = VIDEO_HINT_RE.test(hints)
     ? 'video'
-    : detectCategory(`${url} ${title}`, model)
+    : AUDIO_HINT_RE.test(hints)
+      ? 'audio'
+      : detectCategory(`${url} ${title}`, model)
 
   return {
     id: model,
@@ -173,20 +179,27 @@ async function mapPool<T, R>(
 
 /** In-memory catalog cache — avoids readFile+JSON.parse on every /api/models. */
 let cachedCatalog: Catalog | null | undefined
+let cachedCatalogMtimeMs: number | undefined
 
 function setCachedCatalog(catalog: Catalog | null): void {
   cachedCatalog = catalog
 }
 
 export async function readCatalog(): Promise<Catalog | null> {
-  if (cachedCatalog !== undefined) return cachedCatalog
   try {
+    const info = await stat(CATALOG_PATH)
+    if (
+      cachedCatalog !== undefined &&
+      cachedCatalogMtimeMs === info.mtimeMs
+    ) return cachedCatalog
     const raw = await readFile(CATALOG_PATH, 'utf8')
     const catalog = JSON.parse(raw) as Catalog
     setCachedCatalog(catalog)
+    cachedCatalogMtimeMs = info.mtimeMs
     return catalog
   } catch {
     setCachedCatalog(null)
+    cachedCatalogMtimeMs = undefined
     return null
   }
 }
@@ -331,7 +344,7 @@ export async function syncCatalog(
 
   if (!quiet) {
     console.log(
-      `[catalog] Wrote ${sorted.length} models (${sorted.filter((m) => m.category === 'image').length} image, ${sorted.filter((m) => m.category === 'video').length} video)`,
+      `[catalog] Wrote ${sorted.length} models (${sorted.filter((m) => m.category === 'image').length} image, ${sorted.filter((m) => m.category === 'video').length} video, ${sorted.filter((m) => m.category === 'audio').length} audio)`,
     )
   }
 

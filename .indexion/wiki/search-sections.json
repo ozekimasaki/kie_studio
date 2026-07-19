@@ -3,238 +3,8 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "89",
+  "next_vid": "231",
   "entries": [
-    {
-      "section": {
-        "id": "overview",
-        "title": "Overview",
-        "content": "\nkie.ai Market API の **IMAGE / VIDEO** 生成を試すローカル Studio。\n\nAPI キーはサーバー側（`.env` の `KIE_API_KEY`）にのみ置き、フロントには出さない。\n\nエージェント向けの作業手順・indexion 必須ルールはリポジトリ直下の `AGENTS.md` を正とする。詳細な設計知識はこの wiki（入口: `index.md`）を読む。\n\n",
-        "page_id": "overview",
-        "level": 1
-      },
-      "vid": "1"
-    },
-    {
-      "section": {
-        "id": "overview#-2",
-        "title": "何ができるか",
-        "content": "\n- カタログ駆動の動的フォーム（OpenAPI スキーマ → フィールド）\n- Reference アップロード（画像 / 動画 / 音声）と `@参照` メンション挿入\n- 生成タスクの作成・ポーリング・履歴（localStorage）\n- プロンプト最適化（Grok CLI）とスニペット挿入\n- クレジット残高表示・一時ダウンロード URL\n\n",
-        "page_id": "overview",
-        "level": 2
-      },
-      "vid": "2"
-    },
-    {
-      "section": {
-        "id": "overview#-3",
-        "title": "スコープ外",
-        "content": "\nMusic / Suno / Veo / Runway など専用 API、およびチャット系エンドポイントは対象外。\n\n",
-        "page_id": "overview",
-        "level": 2
-      },
-      "vid": "3"
-    },
-    {
-      "section": {
-        "id": "overview#-4",
-        "title": "技術スタック",
-        "content": "\n| 層 | 技術 |\n|----|------|\n| Frontend | Vite + React 19 + Tailwind CSS v4 + TanStack Query + Motion |\n| Backend | Hono（`127.0.0.1:8787`） |\n| Catalog | `src/data/catalog.json`（docs OpenAPI から同期） |\n| Proxy | Vite が `/api` → API サーバーへ転送 |\n| Knowledge | indexion wiki（`.indexion/wiki/`） |\n\n",
-        "page_id": "overview",
-        "level": 2
-      },
-      "vid": "4"
-    },
-    {
-      "section": {
-        "id": "overview#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Getting Started](wiki://getting-started)\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n",
-        "page_id": "overview",
-        "level": 2
-      },
-      "vid": "5"
-    },
-    {
-      "section": {
-        "id": "getting-started",
-        "title": "Getting Started",
-        "content": "\n",
-        "page_id": "getting-started",
-        "level": 1
-      },
-      "vid": "6"
-    },
-    {
-      "section": {
-        "id": "getting-started#-2",
-        "title": "セットアップ",
-        "content": "\n```bash\ncp .env.example .env\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "7"
-    },
-    {
-      "section": {
-        "id": "getting-started#env--httpskieaiapi-key--3",
-        "title": ".env に https://kie.ai/api-key で取得したキーを設定",
-        "content": "npm install\nnpm run dev\n```\n\n- Web: http://localhost:5173\n- API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）\n\nプロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview) を入れ、`grok login` するか `.env` に `XAI_API_KEY` を設定する。\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "8"
-    },
-    {
-      "section": {
-        "id": "getting-started#-4",
-        "title": "環境変数",
-        "content": "\n| 変数 | 説明 |\n|------|------|\n| `KIE_API_KEY` | 必須。kie.ai API キー |\n| `PORT` | API ポート（既定 `8787`） |\n| `XAI_API_KEY` | 任意。Grok CLI 未ログイン時の認証 |\n| `SYNC_MODELS_ON_START` | `0` で起動時同期オフ |\n| `SYNC_MODELS_FORCE` | `1` で起動時に強制フル同期 |\n| `SYNC_CONCURRENCY` | モデルページ取得の並列数（既定 `12`、最大 32） |\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "9"
-    },
-    {
-      "section": {
-        "id": "getting-started#-5",
-        "title": "よく使うコマンド",
-        "content": "\n```bash\nnpm run dev              # server + web\nnpm run lint\nnpm run build\nnpm run sync:models      # カタログ同期\nnpm run sync:models -- --force\n```\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "10"
-    },
-    {
-      "section": {
-        "id": "getting-started#-6",
-        "title": "カタログ同期の挙動",
-        "content": "\n`npm run dev` 起動時、カタログが古い場合（目安: 12 時間以上）だけ docs から自動同期する。\n\n- 新鮮ならスキップ（`tsx watch` の再起動でも無駄なフル同期は走らない）\n- 強制更新: `SYNC_MODELS_FORCE=1 npm run dev` または `npm run sync:models -- --force`\n- 起動時同期オフ: `SYNC_MODELS_ON_START=0`\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "11"
-    },
-    {
-      "section": {
-        "id": "getting-started#see-also-7",
-        "title": "See Also",
-        "content": "\n- [Overview](wiki://overview)\n- [Architecture](wiki://architecture)\n- [Catalog Sync](wiki://catalog-sync)\n- [Prompt Optimize](wiki://prompt-optimize)\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "12"
-    },
-    {
-      "section": {
-        "id": "kie-integration",
-        "title": "Kie Integration",
-        "content": "\nkie.ai Market / Upload へのサーバー側クライアント（`server/kie/`）。\n\n",
-        "page_id": "kie-integration",
-        "level": 1
-      },
-      "vid": "42"
-    },
-    {
-      "section": {
-        "id": "kie-integration#-2",
-        "title": "モジュール",
-        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `client.ts` | `kieFetch`・`KieApiError`・`assertKieOk` |\n| `market.ts` | `createTask` / `recordInfo`（正規化タスク） |\n| `upload.ts` | File Upload API |\n| `common.ts` | 共通ヘルパ |\n| `safe.ts` | 安全なパース・検証 |\n| `types.ts` | サーバー側タスク型（フロント型と対応） |\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "43"
-    },
-    {
-      "section": {
-        "id": "kie-integration#-3",
-        "title": "認証",
-        "content": "\n`KIE_API_KEY` を Authorization ヘッダ等で付与（フロントには渡さない）。\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "44"
-    },
-    {
-      "section": {
-        "id": "kie-integration#market--4",
-        "title": "Market フロー",
-        "content": "\n1. `createTask({ model, input })` → `taskId`\n2. `recordInfo(taskId)` → `NormalizedTask`（state / resultJson / fail / credits）\n\n結果 JSON や状態文字列のゆれは `market.ts` / `safe.ts` 側で正規化する。\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "45"
-    },
-    {
-      "section": {
-        "id": "kie-integration#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Server API](wiki://server-api)\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "46"
-    },
-    {
-      "section": {
-        "id": "catalog-sync",
-        "title": "Catalog Sync",
-        "content": "\ndocs.kie.ai の Market IMAGE/VIDEO ページから OpenAPI を抽出し、`src/data/catalog.json` を再生成する。\n\n",
-        "page_id": "catalog-sync",
-        "level": 1
-      },
-      "vid": "47"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-2",
-        "title": "入口",
-        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | 同期本体（サーバー起動時も利用） |\n| `scripts/sync-models.ts` | `npm run sync:models` CLI |\n| `src/lib/models/from-openapi.ts` | Markdown/OpenAPI → `FieldSchema` |\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "48"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-3",
-        "title": "処理概要",
-        "content": "\n1. `https://docs.kie.ai/llms.txt` からリンク一覧を取得\n2. `/market/` かつ除外パターン外のページを対象にする\n3. 各ページから OpenAPI を抽出 → モデル slug / category / fields\n4. `src/data/catalog.json` に書き出し\n\n除外例: suno / music / chat / file-upload / webhook など（`EXCLUDE_RE`）。\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "49"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-4",
-        "title": "スキップ条件",
-        "content": "\nカタログが十分新しい場合はフル同期しない。起動時の無駄な再取得を避ける設計なので、毎回フル同期する変更は入れない。\n\n環境変数:\n\n- `SYNC_MODELS_ON_START=0` — 起動同期オフ\n- `SYNC_MODELS_FORCE=1` — 強制同期\n- `SYNC_CONCURRENCY` — ページ取得並列（既定 12、最大 32）\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "50"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-5",
-        "title": "出力",
-        "content": "\n`Catalog`（`syncedAt` / `source` / `models: ModelDefinition[]`）。\n\nフロントの `GET /api/models` と UI の DynamicForm がこれを読む。\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "51"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#see-also-6",
-        "title": "See Also",
-        "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "52"
-    },
     {
       "section": {
         "id": "prompt-optimize",
@@ -287,183 +57,413 @@
     },
     {
       "section": {
+        "id": "overview",
+        "title": "Overview",
+        "content": "\nkie.ai の **IMAGE / VIDEO / AUDIO** を、モデル名ではなく「やりたいこと」から試すローカル Studio。\n\nAPI キーはサーバー側（`.env` の `KIE_API_KEY`）だけに置き、フロントへは渡さない。エージェント向け手順は `AGENTS.md`、設計知識はこの wiki を正とする。\n\n",
+        "page_id": "overview",
+        "level": 1
+      },
+      "vid": "133"
+    },
+    {
+      "section": {
+        "id": "overview#-2",
+        "title": "何ができるか",
+        "content": "\n- Market / Suno / Veo / Runway を共通タスクとして生成・ポーリング\n- 用途・提供元・お気に入り・最近使用で絞れるモデルピッカー\n- 画像・動画・音声のアップロード、送信前制約チェック、参照メンション\n- AUDIO: 楽曲、会話、ナレーション、音声処理、同期歌詞、波形、Persona、区間編集\n- VIDEO: Aleph、延長、高画質化、リップシンクの Quick Action\n- SQLite 履歴、親子タスク、複数メディア、部分成功、元レスポンス診断\n- ローカル送信キュー、期限表示、生成グループの ZIP 保存\n\nチャット系エンドポイントと、DAW 寄りの stem / MIDI / Music Video は対象外。\n\n",
+        "page_id": "overview",
+        "level": 2
+      },
+      "vid": "134"
+    },
+    {
+      "section": {
+        "id": "overview#-3",
+        "title": "技術スタック",
+        "content": "\n| 層 | 技術 |\n|----|------|\n| Frontend | Vite + React 19 + Tailwind CSS v4 + TanStack Query + Motion |\n| Backend | Hono（`127.0.0.1:8787`） |\n| Storage | SQLite（履歴・Persona・外部音源メタデータ） |\n| Catalog | docs OpenAPI + 専用 API workflow 定義 |\n\n",
+        "page_id": "overview",
+        "level": 2
+      },
+      "vid": "135"
+    },
+    {
+      "section": {
+        "id": "overview#see-also-4",
+        "title": "See Also",
+        "content": "\n- [Getting Started](wiki://getting-started)\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n",
+        "page_id": "overview",
+        "level": 2
+      },
+      "vid": "136"
+    },
+    {
+      "section": {
+        "id": "getting-started",
+        "title": "Getting Started",
+        "content": "\n",
+        "page_id": "getting-started",
+        "level": 1
+      },
+      "vid": "137"
+    },
+    {
+      "section": {
+        "id": "getting-started#-2",
+        "title": "セットアップ",
+        "content": "\n```bash\ncp .env.example .env\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "138"
+    },
+    {
+      "section": {
+        "id": "getting-started#env--kieapikey--3",
+        "title": ".env に KIE_API_KEY を設定",
+        "content": "npm install\nnpm run dev\n```\n\n- Web: http://localhost:5173\n- API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）\n- DB: `data/studio.db`（自動作成、gitignore）\n\nプロンプト最適化を使う場合は Grok CLI を用意するか `.env` に `XAI_API_KEY` を設定する。\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "139"
+    },
+    {
+      "section": {
+        "id": "getting-started#-4",
+        "title": "環境変数",
+        "content": "\n| 変数 | 説明 |\n|------|------|\n| `KIE_API_KEY` | 必須。kie.ai API キー |\n| `PORT` | API ポート（既定 `8787`） |\n| `XAI_API_KEY` | 任意。Grok CLI 用 |\n| `SYNC_MODELS_ON_START` | `0` で起動時同期を無効化 |\n| `SYNC_MODELS_FORCE` | `1` で強制同期 |\n| `SYNC_CONCURRENCY` | 同期並列数（既定 12、最大 32） |\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "140"
+    },
+    {
+      "section": {
+        "id": "getting-started#-5",
+        "title": "よく使うコマンド",
+        "content": "\n```bash\nnpm run dev\nnpm test\nnpm run lint\nnpm run build\nnpm run sync:models\nnpm run sync:models -- --force\n```\n\n起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "141"
+    },
+    {
+      "section": {
+        "id": "getting-started#see-also-6",
+        "title": "See Also",
+        "content": "\n- [Overview](wiki://overview)\n- [Architecture](wiki://architecture)\n- [Catalog Sync](wiki://catalog-sync)\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "142"
+    },
+    {
+      "section": {
+        "id": "client-lib",
+        "title": "Client Lib",
+        "content": "\nフロント共有ロジック（`src/lib/`）。\n\n| ファイル | 役割 |\n|------|------|\n| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |\n| `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |\n| `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |\n| `taskRelations.ts` | 編集・Aleph の parent task 決定 |\n| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化 |\n| `form.ts` | default、dirty、schema 制約検証、先頭 error focus |\n| `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |\n| `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |\n| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |\n\n",
+        "page_id": "client-lib",
+        "level": 1
+      },
+      "vid": "160"
+    },
+    {
+      "section": {
+        "id": "client-lib#-2",
+        "title": "規約",
+        "content": "\n- API は相対 `/api`。失敗は status / code を持つ `ApiClientError`\n- フィールド switch は `default` で `never` を検査\n- `reference + scalar` は UI の配列から API の単一 URL へ変換\n- 未知の履歴 input key は復元時に破棄する\n- exact `expiresAt` がなければ推測日時を出さず、早めの保存だけ促す\n\n",
+        "page_id": "client-lib",
+        "level": 2
+      },
+      "vid": "161"
+    },
+    {
+      "section": {
+        "id": "client-lib#see-also-3",
+        "title": "See Also",
+        "content": "\n- [Frontend](wiki://frontend)\n- [Core Concepts](wiki://core-concepts)\n- [Catalog Sync](wiki://catalog-sync)\n",
+        "page_id": "client-lib",
+        "level": 2
+      },
+      "vid": "162"
+    },
+    {
+      "section": {
+        "id": "server-api",
+        "title": "Server API",
+        "content": "\nHono エントリは `server/index.ts`。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。\n\n",
+        "page_id": "server-api",
+        "level": 1
+      },
+      "vid": "163"
+    },
+    {
+      "section": {
+        "id": "server-api#-2",
+        "title": "主要ルート",
+        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化 |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET/PUT | `/api/history` | SQLite 履歴一覧 / 全置換 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "164"
+    },
+    {
+      "section": {
+        "id": "server-api#db-3",
+        "title": "DB",
+        "content": "\n`data/studio.db` に `history_items`、`saved_personas`、`saved_audio_assets` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "165"
+    },
+    {
+      "section": {
+        "id": "server-api#-4",
+        "title": "エラー",
+        "content": "\n`KieApiError` は `{ error, code }` と適切な status に変換する。Malformed JSON は 400。polling 側の upstream error はフロント履歴にも診断として残す。\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "166"
+    },
+    {
+      "section": {
+        "id": "server-api#see-also-5",
+        "title": "See Also",
+        "content": "\n- [Architecture](wiki://architecture)\n- [Kie Integration](wiki://kie-integration)\n- [Catalog Sync](wiki://catalog-sync)\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "167"
+    },
+    {
+      "section": {
+        "id": "kie-integration",
+        "title": "Kie Integration",
+        "content": "\n`server/kie/` が認証、Market、Upload、provider adapter を担当する。\n\n",
+        "page_id": "kie-integration",
+        "level": 1
+      },
+      "vid": "168"
+    },
+    {
+      "section": {
+        "id": "kie-integration#adapter-2",
+        "title": "Adapter",
+        "content": "\n| 実装 | 主な operation |\n|------|----------------|\n| `adapters/market.ts` | Market create / record detail |\n| `adapters/suno.ts` | generate、extend、upload cover/extend、replace、lyrics |\n| `adapters/veo.ts` | generate、extend、1080p、4K |\n| `adapters/runway.ts` | generate、extend、Aleph |\n\n`adapters/index.ts` の registry から `ProviderAdapter` を取得する。作成結果は `taskId` と、即時完了時だけ normalized task を返す。status、複数 media、partial、期限、provider asset ID、raw payload は `NormalizedTask` へ揃える。\n\n",
+        "page_id": "kie-integration",
+        "level": 2
+      },
+      "vid": "169"
+    },
+    {
+      "section": {
+        "id": "kie-integration#market-3",
+        "title": "Market",
+        "content": "\n`market.ts` は result JSON を再帰的に走査して URL を抽出し、モデル名と URL から media kind を判定する。fail でも結果がある場合は `partial`。provider / operation を省略した既存リクエストは Market generate として扱う。\n\n",
+        "page_id": "kie-integration",
+        "level": 2
+      },
+      "vid": "170"
+    },
+    {
+      "section": {
+        "id": "kie-integration#suno--4",
+        "title": "Suno 補助",
+        "content": "\ntimestamped lyrics、waveform、style boost、Persona は adapter の補助関数を専用 route から呼ぶ。Persona は対応モデル・成功音源・一回制限を UI と DB の両方で守る。\n\n",
+        "page_id": "kie-integration",
+        "level": 2
+      },
+      "vid": "171"
+    },
+    {
+      "section": {
+        "id": "kie-integration#upload--archive-5",
+        "title": "Upload / archive",
+        "content": "\nUpload 名は timestamp を付けて一意化し、元名は表示 metadata として返す。archive は temporary download URL を都度取得し、失敗 media ごとに `.error.txt` を入れる。cached lyrics は media download の成否に関係なく ZIP へ入れる。\n\n",
+        "page_id": "kie-integration",
+        "level": 2
+      },
+      "vid": "172"
+    },
+    {
+      "section": {
+        "id": "kie-integration#see-also-6",
+        "title": "See Also",
+        "content": "\n- [Server API](wiki://server-api)\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n",
+        "page_id": "kie-integration",
+        "level": 2
+      },
+      "vid": "173"
+    },
+    {
+      "section": {
+        "id": "catalog-sync",
+        "title": "Catalog Sync",
+        "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
+        "page_id": "catalog-sync",
+        "level": 1
+      },
+      "vid": "174"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-2",
+        "title": "入口",
+        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache |\n| `scripts/sync-models.ts` | `npm run sync:models` |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "175"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-3",
+        "title": "抽出",
+        "content": "\n- category は image / video / audio\n- URL 型は image / video / audio の reference と scalar/array を識別\n- required、enum、min/max、文字数、参照数、容量、duration を抽出\n- OpenAPI に制約がなくても `Required field`、`Max length`、`4-15 seconds` のような説明文を補助的に読む\n- trailing-space key は trim して API key の表記揺れを抑える\n\nMarket の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の schema を正として id、title、useCase 等の UI metadata だけ上書きする。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "176"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-4",
+        "title": "同期ポリシー",
+        "content": "\n起動時は古い場合だけ同期する。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。失敗時は既存 catalog を使う。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "177"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#see-also-5",
+        "title": "See Also",
+        "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "178"
+    },
+    {
+      "section": {
+        "id": "frontend",
+        "title": "Frontend",
+        "content": "\nReact UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO を同じ Studio shell で扱う。\n\n",
+        "page_id": "frontend",
+        "level": 1
+      },
+      "vid": "214"
+    },
+    {
+      "section": {
+        "id": "frontend#-ux-2",
+        "title": "主な UX",
+        "content": "\n- 最初に用途、次にモデル。独自モデルセレクター内で検索・お気に入り・最近使用・提供元フィルターを統合する\n- デスクトップは左の作成フォームと右のギャラリーを同時表示し、モバイルは `作成 / 履歴` を全高で切り替える\n- モバイルは送信成功後に履歴へ移動し、履歴の再利用・素材化では作成へ戻る\n- OpenAPI 制約（必須、文字数、数値、参照数、容量、尺、相互排他）を送信前に表示する。主要項目を先に出し、任意の調整項目は詳細設定へまとめる\n- 生成 CTA は選択モデル、同時生成数、実績ベースの推定クレジット、不足項目を表示し、不足表示から最初の対象へ移動できる\n- Quick Action は入力を復元するだけで、自動送信・自動課金しない\n- 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能\n- 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "215"
+    },
+    {
+      "section": {
+        "id": "frontend#audio-3",
+        "title": "AUDIO",
+        "content": "\n| コンポーネント | 役割 |\n|------|------|\n| `components/audio/AudioEditors.tsx` | 会話の話者行、ナレーションのセグメント編集 |\n| `components/audio/AudioPlayer.tsx` | 画面移動で切れない単一ミニプレイヤー、Media Session |\n| `SunoStyleAssist` | 原文と改善案の比較・適用・取り消し |\n| `HistorySheets` | 波形、同期歌詞、区間選択、Persona、Suno編集 |\n\n自動再生と操作効果音は使わない。複数候補は同一生成グループのトラックとして扱う。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "216"
+    },
+    {
+      "section": {
+        "id": "frontend#video--history-4",
+        "title": "VIDEO / history",
+        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\nギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "217"
+    },
+    {
+      "section": {
+        "id": "frontend#-5",
+        "title": "軽量化",
+        "content": "\n履歴段階描画、動画 Intersection Observer、遅延ロード、経過時間別 polling、terminal 時中心の SQLite 永続化を維持する。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "218"
+    },
+    {
+      "section": {
+        "id": "frontend#see-also-6",
+        "title": "See Also",
+        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Architecture](wiki://architecture)\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "219"
+    },
+    {
+      "section": {
         "id": "core-concepts",
         "title": "Core Concepts",
         "content": "\n",
         "page_id": "core-concepts",
         "level": 1
       },
-      "vid": "58"
+      "vid": "220"
     },
     {
       "section": {
-        "id": "core-concepts#-2",
-        "title": "データフロー（生成）",
-        "content": "\n```text\nUI (DynamicForm)\n  → POST /api/generate\n  → server/kie createTask\n  → taskId を履歴に保存（SQLite）\n    → GET /api/task でポーリング\n  → resultJson / 失敗情報を HistoryGallery に反映\n```\n\nReference がある場合は先に `POST /api/upload` → 返却 URL をフォーム値・プロンプトメンションに載せる。\n\n",
+        "id": "core-concepts#provider--2",
+        "title": "Provider 共通タスク",
+        "content": "\n```text\n用途 / workflow 選択\n  → SubmissionQueue（未送信）\n  → POST /api/generate { provider, operation, model, input }\n  → API受付済みの HistoryItem を SQLite へ保存\n  → GET /api/task?provider=&operation=&taskId= でポーリング\n  → generating / partial / success / fail / expired を反映\n```\n\n`MarketAdapter` / `SunoAdapter` / `VeoAdapter` / `RunwayAdapter` は、作成・状態・エラー・メディアを `NormalizedTask` へ揃える。Market は provider / operation 省略時の既定。\n\n",
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "59"
+      "vid": "221"
     },
     {
       "section": {
-        "id": "core-concepts#catalog--modeldefinition-3",
-        "title": "Catalog / ModelDefinition",
-        "content": "\n`src/data/catalog.json` がモデル一覧と各モデルの `fields`（動的フォーム定義）のソース。\n\n主要型（`src/lib/models/types.ts`）:\n\n- `ModelCategory`: `image` | `video`\n- `FieldSchema`: フィールド型・enum・reference・kling_elements など\n- `MentionStyle`: プロンプトへの参照挿入方式（`at-image` 等）\n- `HistoryItem` / `NormalizedTask`: ローカル履歴と API タスク状態\n\n",
+        "id": "core-concepts#-3",
+        "title": "主要型",
+        "content": "\n- `ModelCategory`: `image | video | audio`\n- `Provider`: `market | suno | veo | runway`\n- `TaskState`: waiting / queuing / generating / partial / success / fail / expired / unknown\n- `MediaAsset`: URL、stream、preview、duration、waveform、alignedWords、expiresAt、providerAssetId\n- `HistoryItem`: provider、operation、parentTaskId、media、rawParam、rawResult\n- `SubmissionQueueItem`: 未送信、再試行回数、送信可能時刻\n\n",
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "60"
+      "vid": "222"
     },
     {
       "section": {
-        "id": "core-concepts#dynamic-form-4",
-        "title": "Dynamic Form",
-        "content": "\nカタログの OpenAPI 由来スキーマから UI を生成する。\n\n- `reference` + `scalar`: UI は配列、API には先頭 URL 文字列\n- Seedance / Kling 系はメンションタグ・キー名の表記ゆれに敏感（末尾スペース含む）\n\n",
+        "id": "core-concepts#audio-workflow-4",
+        "title": "AUDIO workflow",
+        "content": "\n- 楽曲: Suno 生成、延長、アップロード延長、カバー、歌詞、区間置換\n- ナレーション: 空行ごとに分割し `previous_text` / `next_text` を自動接続\n- 会話: 話者行の追加・並べ替え・ブラウザ試聴\n- 音声処理: Market の isolation / TTS\n- 同期歌詞は初回表示時に取得して履歴へキャッシュ。再生位置へ追従しクリックでシーク\n- Persona と外部音源メタデータは素材棚として SQLite に保存\n\n",
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "61"
+      "vid": "223"
     },
     {
       "section": {
-        "id": "core-concepts#historysqlite-5",
-        "title": "History（SQLite）",
-        "content": "\n永続化は Hono 側の `data/studio.db`（`server/db/`）。フロントは `/api/history` 経由。\n\n- 非ピン上限 200・ピン上限 30。ピンは非ピン予算を消費しない\n- メタデータと URL のみ（生成メディア本体は保存しない）\n- 初回起動時に旧 `localStorage`（`kie-studio-history`）を `POST /api/history/migrate` で移行\n- インポート時は正規化（タイムスタンプ秒/ミリ秒、不正データ除去、非 terminal → unknown）\n- 再試行・入力復元は未知キーを破棄して安全にマージ\n- cap / normalize の純粋関数は `src/lib/history.ts`（サーバーも共有）\n\n",
+        "id": "core-concepts#history--media-5",
+        "title": "History / media",
+        "content": "\n履歴は `data/studio.db`。旧 `resultUrls` は additive migration で `media[]` へ変換する。メディア本体は永続保存せず、ZIP も一時 download URL からストリーミングする。親子関係は Suno 編集と Aleph Before/After に使う。\n\nポーリング失敗も `POLL_ERROR` と元エラーを `rawResult` に残し、詳細画面からコピーできる。\n\n",
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "62"
+      "vid": "224"
     },
     {
       "section": {
-        "id": "core-concepts#mentions--kling-elements-6",
-        "title": "Mentions / Kling Elements",
-        "content": "\n- プロンプト内の `@参照` 挿入（モデル別 `mentionStyle`）\n- Kling Elements 専用エディタ（名前・説明・入力 URL・音声・時間範囲）\n\n",
-        "page_id": "core-concepts",
-        "level": 2
-      },
-      "vid": "63"
-    },
-    {
-      "section": {
-        "id": "core-concepts#see-also-7",
+        "id": "core-concepts#see-also-6",
         "title": "See Also",
-        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n- [Catalog Sync](wiki://catalog-sync)\n",
+        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "64"
-    },
-    {
-      "section": {
-        "id": "client-lib",
-        "title": "Client Lib",
-        "content": "\nフロント共有ロジック（`src/lib/`）。\n\n",
-        "page_id": "client-lib",
-        "level": 1
-      },
-      "vid": "65"
-    },
-    {
-      "section": {
-        "id": "client-lib#-2",
-        "title": "モジュール",
-        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `api.ts` | `/api` クライアント（models / generate / task / upload / credits / optimize / history） |\n| `history.ts` | 履歴の純粋関数（cap・ピン・マージ・JSON 入出力・正規化）。永続化は持たない |\n| `media.ts` / `mediaExpiry.ts` | URL 種別判定・期限まわり |\n| `snippets.ts` | プロンプトスニペット（localStorage） |\n| `motion.ts` | モーション設定 |\n| `models/types.ts` | Catalog / FieldSchema / HistoryItem 等の型 |\n| `models/from-openapi.ts` | docs OpenAPI → フィールド抽出（同期でも共有） |\n| `models/mentions.ts` | メンション挿入ヘルパ |\n\n",
-        "page_id": "client-lib",
-        "level": 2
-      },
-      "vid": "66"
-    },
-    {
-      "section": {
-        "id": "client-lib#api--3",
-        "title": "API クライアント規約",
-        "content": "\n- すべて相対パス `/api/...`（Vite プロキシ前提）\n- 失敗時はレスポンス JSON の `error` を `Error` メッセージに載せる\n- 型は `models/types.ts` から再エクスポート\n\n",
-        "page_id": "client-lib",
-        "level": 2
-      },
-      "vid": "67"
-    },
-    {
-      "section": {
-        "id": "client-lib#-4",
-        "title": "履歴の注意点",
-        "content": "\n- 永続化は `fetchHistory` / `putHistory` / `importHistoryApi` / `migrateHistory`（`api.ts`）\n- ピン上限・非ピン上限を維持すること（`MAX_PINNED` / `MAX_ITEMS`）\n- インポート正規化と入力復元の安全策を壊さないこと\n- タイムスタンプは秒/ミリ秒の両方を許容（`normalizeTimestamp`）\n\n",
-        "page_id": "client-lib",
-        "level": 2
-      },
-      "vid": "68"
-    },
-    {
-      "section": {
-        "id": "client-lib#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Frontend](wiki://frontend)\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Catalog Sync](wiki://catalog-sync)\n",
-        "page_id": "client-lib",
-        "level": 2
-      },
-      "vid": "69"
-    },
-    {
-      "section": {
-        "id": "server-api",
-        "title": "Server API",
-        "content": "\nHono エントリ: `server/index.ts`。ホスト `127.0.0.1`、既定ポート `8787`。\n\nCORS は Vite 開発オリジン（`localhost:5173` / `127.0.0.1:5173`）のみ許可。\n\n",
-        "page_id": "server-api",
-        "level": 1
-      },
-      "vid": "70"
-    },
-    {
-      "section": {
-        "id": "server-api#-2",
-        "title": "ルート一覧",
-        "content": "\n| Method | Path | 実装 | 説明 |\n|--------|------|------|------|\n| GET | `/api/health` | `index.ts` | ヘルス・API キー有無 |\n| GET | `/api/models` | `routes/models.ts` | カタログ（`?category=`） |\n| POST | `/api/upload` | `routes/upload.ts` | File Upload API へ転送 |\n| POST | `/api/generate` | `routes/generate.ts` | Market `createTask` |\n| GET | `/api/task` | `routes/task.ts` | `recordInfo` |\n| GET | `/api/credits` | `routes/credits.ts` | 残クレジット |\n| POST | `/api/download-url` | `routes/download-url.ts` | 一時 DL URL |\n| GET | `/api/history` | `routes/history.ts` | ギャラリー履歴一覧（SQLite） |\n| PUT | `/api/history` | `routes/history.ts` | 履歴全置換（サーバーで cap） |\n| POST | `/api/history/import` | `routes/history.ts` | JSON インポート merge |\n| POST | `/api/history/migrate` | `routes/history.ts` | localStorage からの初回移行 |\n| * | optimize / grok status | `routes/optimize-prompt.ts` | プロンプト最適化 |\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "71"
-    },
-    {
-      "section": {
-        "id": "server-api#-db-3",
-        "title": "履歴 DB",
-        "content": "\n- ファイル: `data/studio.db`（gitignore）\n- 実装: `server/db/open.ts` + `server/db/history.ts`（`better-sqlite3`）\n- スキーマ: `history_items`（メタデータ＋URL JSON。メディア本体は保存しない）\n- cap / normalize は `src/lib/history.ts` をサーバーから共有\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "72"
-    },
-    {
-      "section": {
-        "id": "server-api#-4",
-        "title": "起動時カタログ同期",
-        "content": "\n`serve` コールバック内で非同期に `syncCatalog` を実行する。\n\n- 既定: カタログが新しければスキップ\n- `SYNC_MODELS_ON_START=0` で無効\n- `SYNC_MODELS_FORCE=1` で強制\n\n失敗しても既存 `catalog.json` で起動を継続する。起動時に SQLite も開く。\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "73"
-    },
-    {
-      "section": {
-        "id": "server-api#-5",
-        "title": "エラー処理",
-        "content": "\n`KieApiError` を検知して適切な HTTP ステータスと `{ error, code }` を返す。それ以外は 500。\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "74"
-    },
-    {
-      "section": {
-        "id": "server-api#see-also-6",
-        "title": "See Also",
-        "content": "\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n- [Kie Integration](wiki://kie-integration)\n- [Catalog Sync](wiki://catalog-sync)\n- [Prompt Optimize](wiki://prompt-optimize)\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "75"
+      "vid": "225"
     },
     {
       "section": {
@@ -473,127 +473,47 @@
         "page_id": "architecture",
         "level": 1
       },
-      "vid": "76"
+      "vid": "226"
     },
     {
       "section": {
         "id": "architecture#-2",
         "title": "レイヤ構成",
-        "content": "\n```text\nBrowser (Vite :5173)\n  src/App.tsx + components (+ shell/motion) + lib\n        │  fetch('/api/...')\n        ▼\nVite proxy  /api  ──►  Hono server (:8787)\n                         │\n                         ├─ routes/*   HTTP 境界\n                         ├─ db/*       SQLite（履歴ギャラリー）\n                         ├─ kie/*      kie.ai Market / Upload\n                         ├─ grok/*     Grok CLI プロンプト最適化\n                         └─ catalog/*  docs → catalog.json 同期\n```\n\n秘密情報（`KIE_API_KEY`）は Hono 側のみ。フロントの `src/lib/api.ts` は相対パス `/api` のみ呼ぶ。\n\n作業前のオリエンテーションは `AGENTS.md` の indexion 手順（wiki → `agent orient`）に従う。\n\n",
+        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...')\n             │\n             ▼\nHono (:8787)\n  ├─ routes/*          HTTP boundary\n  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization\n  ├─ db/*              history / personas / audio assets\n  ├─ catalog/*         docs + dedicated workflows\n  └─ grok/*            prompt optimization\n```\n\n`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "77"
+      "vid": "227"
     },
     {
       "section": {
         "id": "architecture#-3",
         "title": "パッケージ責務",
-        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | 生成・履歴ポーリングのオーケストレーション |\n| `src/components/` | UI（フォーム・履歴・最適化） |\n| `src/components/shell/` | StudioShell / FloatingChrome |\n| `src/components/motion/` + `src/lib/motion.ts` | インタラクション / モーション |\n| `src/lib/` | API・履歴純粋関数・モデル型・メンション |\n| `src/data/catalog.json` | 同期済みモデルカタログ |\n| `server/routes/` | Hono ルート |\n| `server/db/` | SQLite（`data/studio.db`・履歴） |\n| `server/kie/` | kie.ai クライアント |\n| `server/grok/` | プロンプト最適化 |\n| `server/catalog/` | カタログ同期 |\n| `scripts/` | CLI（`sync-models`） |\n| `.indexion/wiki/` | プロジェクト知識ベース |\n\n",
+        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "78"
+      "vid": "228"
     },
     {
       "section": {
         "id": "architecture#-4",
         "title": "拡張ポイント",
-        "content": "\n- **新モデル対応**: カタログ同期が OpenAPI からフィールドを抽出。特殊 UI が必要なら `FieldType` / `DynamicForm` を拡張\n- **新 API ルート**: `server/routes/` に追加し `server/index.ts` で `app.route`\n- **最適化プロファイル**: `server/grok/optimize-profiles.ts` にモデル別ルール\n\n",
+        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "79"
+      "vid": "229"
     },
     {
       "section": {
-        "id": "architecture#-5",
-        "title": "エラー境界",
-        "content": "\n`KieApiError` は `server/index.ts` の `onError` で HTTP ステータスにマップして JSON `{ error, code }` を返す。\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "80"
-    },
-    {
-      "section": {
-        "id": "architecture#see-also-6",
+        "id": "architecture#see-also-5",
         "title": "See Also",
-        "content": "\n- [Overview](wiki://overview)\n- [Getting Started](wiki://getting-started)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
+        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "81"
-    },
-    {
-      "section": {
-        "id": "frontend",
-        "title": "Frontend",
-        "content": "\nReact UI。エントリは `src/main.tsx` → `src/App.tsx`。\n\n",
-        "page_id": "frontend",
-        "level": 1
-      },
-      "vid": "82"
-    },
-    {
-      "section": {
-        "id": "frontend#visual-system-2",
-        "title": "Visual system",
-        "content": "\n**Precision Light**（`DESIGN.md`）— 明るい編集室。ソリッド面 + teal-ink アクセント（OKLCH）。Apple 風ガラス / radial 背景は廃止。\n\n- トークン: `src/index.css`（primitive → semantic → `studio-*`）\n- シェル: `h-dvh` 2ペイン（左フォーム ~380–440px / 右ギャラリー）。モバイルは `45dvh` / `1fr` で独立スクロール\n- マテリアル: ソリッドのみ。blur は sticky CTA 等の限定用途\n- モーション: 高頻度 UI は無/極短。シート・SharedMedia のみ intentional（bounce 0）。SpringSheet は focus trap + フォーカス復帰\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "83"
-    },
-    {
-      "section": {
-        "id": "frontend#ux-2026-07--3",
-        "title": "UX ガード（2026-07 更新）",
-        "content": "\n- 検証失敗時は先頭エラーへ scroll/focus\n- `formError` / 通知は `role=\"alert\"` / `aria-live`\n- モデル・カテゴリ切替は dirty 確認。生成中は CategoryTabs 無効\n- 履歴 reuse はフォーム側に status 通知\n- 成功シートの自動オープンは単発送信時のみ（ポーリングでは開かない）\n- ReferenceUpload のラベルは hidden file input に紐づく\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "84"
-    },
-    {
-      "section": {
-        "id": "frontend#-4",
-        "title": "主要コンポーネント",
-        "content": "\n| コンポーネント | 役割 |\n|----------------|------|\n| `CategoryTabs` | image / video 切替（セグメント・矢印キー・layout spring） |\n| `ModelSelect` | カタログからモデル選択 |\n| `DynamicForm` | スキーマ駆動フォーム・バリデーション・デフォルト値（`studio-label` / divide-y） |\n| `ReferenceUpload` | 参照メディアアップロード |\n| `PromptSnippets` | よく使うフレーズ挿入（折りたたみ） |\n| `PromptOptimizePanel` | Grok 最適化 UI（折りたたみ既定） |\n| `HistoryGallery` | 履歴・ピン・再試行・エクスポート（メディアファースト tile・二次操作はメニュー） |\n| `CreditBadge` | 残高表示 |\n| `KlingElementsEditor` | Kling Elements 専用入力（divide-y、送信前バリデーション） |\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "85"
-    },
-    {
-      "section": {
-        "id": "frontend#---5",
-        "title": "シェル / モーション",
-        "content": "\n| パス | 役割 |\n|------|------|\n| `components/shell/StudioShell` | レイアウト枠（IA: 左作成 · 右ギャラリー） |\n| `components/shell/FloatingChrome` | ヘッダー |\n| `components/motion/*` | Pressable / Material / SpringSheet / SharedMedia |\n| `lib/motion.ts` | モーション定数 |\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "86"
-    },
-    {
-      "section": {
-        "id": "frontend#app--6",
-        "title": "App の責務",
-        "content": "\n- モデル取得（TanStack Query）\n- フォーム状態・生成 mutation\n- 履歴の load / save / merge / pin\n- ペンディングタスクのポーリング（`UNKNOWN_STALE_MS` / `PENDING_STALE_MS`）\n- 履歴からの入力復元（未知キー破棄）\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "87"
-    },
-    {
-      "section": {
-        "id": "frontend#see-also-7",
-        "title": "See Also",
-        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Prompt Optimize](wiki://prompt-optimize)\n- [Architecture](wiki://architecture)\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "88"
+      "vid": "230"
     }
   ]
 }

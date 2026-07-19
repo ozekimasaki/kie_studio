@@ -4,54 +4,45 @@
 
 ```text
 Browser (Vite :5173)
-  src/App.tsx + components (+ shell/motion) + lib
-        │  fetch('/api/...')
-        ▼
-Vite proxy  /api  ──►  Hono server (:8787)
-                         │
-                         ├─ routes/*   HTTP 境界
-                         ├─ db/*       SQLite（履歴ギャラリー）
-                         ├─ kie/*      kie.ai Market / Upload
-                         ├─ grok/*     Grok CLI プロンプト最適化
-                         └─ catalog/*  docs → catalog.json 同期
+  App / components / lib
+    ├─ SubmissionQueue (20 requests / 10 seconds)
+    ├─ AudioPlayerProvider (single persistent player)
+    └─ fetch('/api/...')
+             │
+             ▼
+Hono (:8787)
+  ├─ routes/*          HTTP boundary
+  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization
+  ├─ db/*              history / personas / audio assets
+  ├─ catalog/*         docs + dedicated workflows
+  └─ grok/*            prompt optimization
 ```
 
-秘密情報（`KIE_API_KEY`）は Hono 側のみ。フロントの `src/lib/api.ts` は相対パス `/api` のみ呼ぶ。
-
-作業前のオリエンテーションは `AGENTS.md` の indexion 手順（wiki → `agent orient`）に従う。
+`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。
 
 ## パッケージ責務
 
 | パス | 役割 |
 |------|------|
-| `src/App.tsx` | 生成・履歴ポーリングのオーケストレーション |
-| `src/components/` | UI（フォーム・履歴・最適化） |
-| `src/components/shell/` | StudioShell / FloatingChrome |
-| `src/components/motion/` + `src/lib/motion.ts` | インタラクション / モーション |
-| `src/lib/` | API・履歴純粋関数・モデル型・メンション |
-| `src/data/catalog.json` | 同期済みモデルカタログ |
-| `server/routes/` | Hono ルート |
-| `server/db/` | SQLite（`data/studio.db`・履歴） |
-| `server/kie/` | kie.ai クライアント |
-| `server/grok/` | プロンプト最適化 |
-| `server/catalog/` | カタログ同期 |
-| `scripts/` | CLI（`sync-models`） |
-| `.indexion/wiki/` | プロジェクト知識ベース |
+| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |
+| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |
+| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |
+| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |
+| `server/kie/adapters/` | provider 差分の正規化 |
+| `server/db/` | 加算マイグレーションを行う SQLite |
+| `server/catalog/` | Market カタログと専用 workflow の統合 |
+| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |
 
 ## 拡張ポイント
 
-- **新モデル対応**: カタログ同期が OpenAPI からフィールドを抽出。特殊 UI が必要なら `FieldType` / `DynamicForm` を拡張
-- **新 API ルート**: `server/routes/` に追加し `server/index.ts` で `app.route`
-- **最適化プロファイル**: `server/grok/optimize-profiles.ts` にモデル別ルール
-
-## エラー境界
-
-`KieApiError` は `server/index.ts` の `onError` で HTTP ステータスにマップして JSON `{ error, code }` を返す。
+- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録
+- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き
+- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新
+- DB 変更: `server/db/open.ts` の加算マイグレーションを使う
 
 ## See Also
 
-- [Overview](wiki://overview)
-- [Getting Started](wiki://getting-started)
+- [Core Concepts](wiki://core-concepts)
 - [Server API](wiki://server-api)
 - [Kie Integration](wiki://kie-integration)
 - [Frontend](wiki://frontend)

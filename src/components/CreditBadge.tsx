@@ -14,9 +14,11 @@ export function CreditBadge({
       href={KIE_CREDITS_URL}
       target="_blank"
       rel="noreferrer"
-      className="studio-btn shrink-0 self-stretch text-xs text-[var(--accent)]"
+      className="studio-btn shrink-0 self-stretch px-2.5 text-xs text-[var(--accent)] sm:px-3"
+      aria-label="クレジット購入"
     >
-      クレジット購入
+      <span className="sm:hidden">購入</span>
+      <span className="hidden sm:inline">クレジット購入</span>
       <ExternalLink size={12} strokeWidth={2} aria-hidden />
     </a>
   )
@@ -81,17 +83,17 @@ export function CreditBadge({
     : (credits.data?.data.credits ?? null)
 
   return (
-    <div className="flex items-stretch gap-2">
-      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2">
+    <div className="flex items-stretch gap-1.5 sm:gap-2">
+      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-2.5 py-2 sm:px-3">
         <div className="flex items-stretch gap-3">
-        <div className="min-w-[72px]">
+        <div className="min-w-[64px] sm:min-w-[72px]">
           <div className="studio-label">残クレジット</div>
           <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--accent)]">
             {remaining === null ? '…' : remaining.toLocaleString()}
           </div>
         </div>
-        <div className="w-px self-stretch bg-[var(--border)]" />
-        <div className="min-w-[72px]">
+        <div className="hidden w-px self-stretch bg-[var(--border)] sm:block" />
+        <div className="hidden min-w-[72px] sm:block">
           <div className="studio-label">直近の使用</div>
           <div className="mt-0.5 text-lg font-bold leading-none tabular-nums text-[var(--text)]">
             {typeof lastUsed === 'number' ? (

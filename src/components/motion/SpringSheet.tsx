@@ -1,6 +1,6 @@
 import {
   AnimatePresence,
-  motion,
+  m,
   useReducedMotion,
   type PanInfo,
 } from 'motion/react'
@@ -43,10 +43,13 @@ export function SpringSheet({
 }: SpringSheetProps) {
   const reduce = useReducedMotion()
   const closeRef = useRef(onClose)
-  closeRef.current = onClose
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
   const titleId = useId()
+
+  useEffect(() => {
+    closeRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!open) return
@@ -125,7 +128,7 @@ export function SpringSheet({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[var(--z-sheet)] flex items-end justify-center p-0 sm:items-center sm:p-4">
-          <motion.button
+          <m.button
             type="button"
             className="absolute inset-0 z-[var(--z-sheet-backdrop)] cursor-default border-0 bg-[var(--overlay)] p-0"
             initial={{ opacity: 0 }}
@@ -136,7 +139,7 @@ export function SpringSheet({
             aria-label="閉じる"
             tabIndex={-1}
           />
-          <motion.div
+          <m.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -173,7 +176,7 @@ export function SpringSheet({
               aria-hidden
             />
             {children}
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>

@@ -34,6 +34,22 @@ export function mediaExpiry(
   return { expiresAt, remainingMs, daysLeft, status }
 }
 
+/** Calculate from an API-provided deadline. Prefer this over inferred retention. */
+export function mediaExpiryAt(
+  expiresAt: number,
+  now: number = Date.now(),
+): MediaExpiry {
+  const normalized = expiresAt < 1e12 ? expiresAt * 1000 : expiresAt
+  const remainingMs = normalized - now
+  const daysLeft = Math.ceil(remainingMs / (24 * 60 * 60 * 1000))
+  return {
+    expiresAt: normalized,
+    remainingMs,
+    daysLeft,
+    status: daysLeft <= 0 ? 'expired' : daysLeft <= SOON_DAYS ? 'soon' : 'ok',
+  }
+}
+
 /** Short label for gallery cards. */
 export function mediaExpiryCardLabel(expiry: MediaExpiry): string {
   switch (expiry.status) {
