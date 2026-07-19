@@ -25,7 +25,10 @@ import {
 import { DynamicForm } from './components/DynamicForm.tsx'
 import { CreditBadge } from './components/CreditBadge.tsx'
 import { HistoryGallery } from './components/HistoryGallery.tsx'
-import { StudioShell } from './components/shell/StudioShell.tsx'
+import {
+  StudioShell,
+  type MobileStudioView,
+} from './components/shell/StudioShell.tsx'
 import { Pressable } from './components/motion/Pressable.tsx'
 import { AudioPlayerProvider } from './components/audio/AudioPlayer.tsx'
 import { SunoStyleAssist } from './components/SunoStyleAssist.tsx'
@@ -61,6 +64,7 @@ import {
   upsertInList,
 } from './lib/history.ts'
 import { isVideoUrl } from './lib/media.ts'
+import { presentField } from './lib/studioPresentation.ts'
 import { useHistoryPersistence } from './lib/useHistoryPersistence.ts'
 import type {
   FieldSchema,
@@ -155,6 +159,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
   const [batchCount, setBatchCount] = useState(1)
+  const [mobileView, setMobileView] = useState<MobileStudioView>('create')
   const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
     useState(false)
   const [creditSheetRequested, setCreditSheetRequested] = useState(false)
@@ -665,6 +670,7 @@ export default function App() {
       failedCount,
       insufficientCredits,
     }) => {
+      setMobileView('history')
       const now = Date.now()
       setHistory((prev) => {
         let next = prev
@@ -766,12 +772,29 @@ export default function App() {
     return Math.round(samples.reduce((a, b) => a + b, 0) / samples.length)
   }, [history, selected])
 
+  const currentFormErrors = useMemo(() => {
+    if (!selected) return {}
+    return {
+      ...validateFields(selected.fields, values),
+      ...validateWorkflowInput(selected, values),
+    }
+  }, [selected, values])
+
+  const formIssues = useMemo(() => {
+    if (!selected) return []
+    return Object.keys(currentFormErrors).map((name) => {
+      const field = selected.fields.find((candidate) => candidate.name === name)
+      return field ? presentField(field).label : name
+    })
+  }, [currentFormErrors, selected])
+
   function selectHistory(h: HistoryItem) {
     setViewerTaskId(h.taskId)
   }
 
   function reuseHistory(h: HistoryItem) {
     if (!h.input || !h.modelId) return
+    setMobileView('create')
     setViewerTaskId(null)
     if (selected && selected.id === h.modelId && category === h.category) {
       setValues(mergeInputWithDefaults(selected.fields, h.input))
@@ -816,6 +839,7 @@ export default function App() {
     input: Record<string, unknown>,
     notice: string,
   ) {
+    setMobileView('create')
     setViewerTaskId(null)
     pendingRestoreRef.current = { modelId: targetModelId, input }
     setFormError(null)
@@ -947,6 +971,7 @@ export default function App() {
     }
     handleFieldChange(target.name, [...current, url])
     setFormError(null)
+    setMobileView('create')
   }
 
   function togglePin(taskId: string) {
@@ -1012,6 +1037,10 @@ export default function App() {
   return (
     <AudioPlayerProvider>
       <StudioShell
+      mobileView={mobileView}
+      historyCount={history.length}
+      pendingCount={pendingCount}
+      onMobileViewChange={setMobileView}
       chromeTitle={
         <>
           KIE <span className="text-[var(--accent)]">STUDIO</span>
@@ -1082,7 +1111,7 @@ export default function App() {
                   href={selected.docsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 self-start text-xs font-medium text-[var(--accent)]"
+                  className="inline-flex min-h-8 items-center gap-1 self-start py-1 text-xs font-medium text-[var(--accent)]"
                 >
                   ドキュメント
                   <ExternalLink size={12} strokeWidth={2} aria-hidden />
@@ -1090,6 +1119,7 @@ export default function App() {
               )}
 
               <DynamicForm
+                key={selected.id}
                 fields={selected.fields}
                 values={values}
                 onChange={handleFieldChange}
@@ -1198,6 +1228,30 @@ export default function App() {
               )}
 
               <div className="studio-sticky-cta space-y-2">
+                <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
+                  <span className="min-w-0 truncate font-medium text-[var(--text)]">
+                    {selected.title}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {creditEstimate === null
+                      ? 'クレジット推定なし'
+                      : `約${creditEstimate * batchCount} cr`}
+                  </span>
+                </div>
+                {formIssues.length > 0 && (
+                  <button
+                    type="button"
+                    className="block w-full cursor-pointer text-left text-[11px] leading-snug text-[var(--warning)] underline decoration-transparent underline-offset-2 hover:decoration-current"
+                    onClick={() => {
+                      setFieldErrors(currentFormErrors)
+                      requestAnimationFrame(() => focusFirstFieldError(currentFormErrors))
+                    }}
+                  >
+                    要確認: {formIssues.slice(0, 3).join('、')}
+                    {formIssues.length > 3 ? ` ほか${formIssues.length - 3}項目` : ''}
+                    <span className="ml-1">最初の項目へ</span>
+                  </button>
+                )}
                 <div className="flex items-center justify-between gap-2">
                   <div
                     className="flex items-center gap-1"
@@ -1222,15 +1276,6 @@ export default function App() {
                       </Pressable>
                     ))}
                   </div>
-                  {creditEstimate !== null && (
-                    <span
-                      className="text-[11px] text-[var(--text-muted)]"
-                      title="このモデルの直近成功実績からの推定"
-                    >
-                      実績 約{creditEstimate} cr/回
-                      {batchCount > 1 && ` · 計 約${creditEstimate * batchCount}`}
-                    </span>
-                  )}
                 </div>
                 <Pressable
                   disabled={generateDisabled}
@@ -1260,6 +1305,7 @@ export default function App() {
       canvas={
         <HistoryGallery
           items={history}
+          activeCategory={category}
           activeTaskId={viewerTaskId}
           pendingCount={pendingCount}
           onSelect={selectHistory}

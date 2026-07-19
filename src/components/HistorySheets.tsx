@@ -284,7 +284,7 @@ export function HistorySheets({
                     scaleTo={0.96}
                   >
                     <RotateCcw size={14} strokeWidth={2} aria-hidden />
-                    再利用
+                    設定ごと再利用
                   </Pressable>
                 )}
                 <Pressable
@@ -454,7 +454,7 @@ export function HistorySheets({
                         rel="noreferrer"
                         className={smallBtnClass}
                       >
-                        開く
+                        新しいタブ
                       </a>
                       <Pressable
                         disabled={download.isPending}
@@ -462,7 +462,7 @@ export function HistorySheets({
                         className={smallBtnClass}
                         scaleTo={0.96}
                       >
-                        {download.isPending ? '取得中…' : 'API でダウンロード'}
+                        {download.isPending ? '保存準備中…' : '保存'}
                       </Pressable>
                       <Pressable
                         onClick={() => onSendToInput(url)}
@@ -470,7 +470,11 @@ export function HistorySheets({
                         scaleTo={0.96}
                       >
                         <ArrowRight size={14} strokeWidth={2} aria-hidden />
-                        入力に使う
+                        {video
+                          ? 'この動画を素材にする'
+                          : audio
+                            ? 'この音声を素材にする'
+                            : 'この画像を素材にする'}
                       </Pressable>
                       {typeof active.creditsConsumed === 'number' && (
                         <span className="ml-auto self-center text-xs text-[var(--text-muted)]">

@@ -1,8 +1,15 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { LayoutGroup, m, useReducedMotion } from 'motion/react'
 import type { FieldSchema, KlingElement, MentionStyle } from '../lib/models/types.ts'
 import { insertMentionToken } from '../lib/models/mentions.ts'
 import { fadeQuick, springUi } from '../lib/motion.ts'
+import {
+  conciseFieldDescription,
+  fieldConstraintHint,
+  isAdvancedField,
+  presentField,
+  shouldShowTechnicalDescription,
+} from '../lib/studioPresentation.ts'
 import { ReferenceUpload } from './ReferenceUpload.tsx'
 import { KlingElementsEditor } from './KlingElementsEditor.tsx'
 import { PromptOptimizePanel } from './PromptOptimizePanel.tsx'
@@ -22,6 +29,27 @@ function acceptHint(accept?: string): string | null {
   return null
 }
 
+function FieldDescription({ field }: { field: FieldSchema }) {
+  const description = conciseFieldDescription(field)
+  return (
+    <>
+      {description && (
+        <p className="mt-1 text-[11px] leading-snug text-[var(--text-muted)]">
+          {description}
+        </p>
+      )}
+      {shouldShowTechnicalDescription(field) && (
+        <details className="mt-1 text-[11px] text-[var(--text-muted)]">
+          <summary className="min-h-6 cursor-pointer py-1 font-medium text-[var(--accent)]">
+            仕様を見る
+          </summary>
+          <p className="pb-1 leading-snug">{field.description}</p>
+        </details>
+      )}
+    </>
+  )
+}
+
 function FieldLabel({
   field,
   htmlFor,
@@ -31,22 +59,19 @@ function FieldLabel({
   htmlFor?: string
   hint?: string | null
 }) {
+  const constraint = fieldConstraintHint(field)
   return (
     <div className="mb-2">
       <label htmlFor={htmlFor} className="studio-label text-[var(--text)]">
         {field.label}
         {field.required && <span className="ml-1 text-[var(--danger)]">*</span>}
-        {hint && (
+        {(hint || constraint) && (
           <span className="ml-2 text-[11px] font-normal text-[var(--text-muted)]">
-            {hint}
+            {[hint, constraint].filter(Boolean).join(' · ')}
           </span>
         )}
       </label>
-      {field.description && (
-        <p className="mt-1 text-[11px] leading-snug text-[var(--text-muted)]">
-          {field.description}
-        </p>
-      )}
+      <FieldDescription field={field} />
     </div>
   )
 }
@@ -90,11 +115,7 @@ function BooleanToggle({
               <span className="ml-1 text-[var(--danger)]">*</span>
             )}
           </div>
-          {field.description && (
-            <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-muted)]">
-              {field.description}
-            </p>
-          )}
+          <FieldDescription field={field} />
         </div>
         <span
           className={`rounded-[var(--radius-md)] px-2 py-0.5 font-mono text-[11px] font-bold tabular-nums ${
@@ -221,6 +242,7 @@ export function DynamicForm({
   modelId?: string | null
 }) {
   const promptRef = useRef<HTMLTextAreaElement | null>(null)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const orderedFields = useMemo(
     () => sortFieldsForDisplay(fields).filter((field) => {
       if (field.name.startsWith('_')) return false
@@ -271,15 +293,15 @@ export function DynamicForm({
     onChange(name, value)
   }
 
-  return (
-    <div className="divide-y divide-[var(--border)]">
-      {orderedFields.map((schemaField) => {
-        const conditionalSuno = modelId?.startsWith('suno/') && fields.some(
-          (candidate) => candidate.name === 'customMode',
-        )
-        const modelName = typeof values.model === 'string' ? values.model : 'V5'
-        const field = conditionalSuno
-          ? {
+  const conditionalSuno = modelId?.startsWith('suno/') && fields.some(
+    (candidate) => candidate.name === 'customMode',
+  )
+  const modelName = typeof values.model === 'string' ? values.model : 'V5'
+
+  function prepareField(schemaField: FieldSchema): FieldSchema {
+    return presentField(
+      conditionalSuno
+        ? {
               ...schemaField,
               required:
                 schemaField.name === 'prompt'
@@ -300,13 +322,23 @@ export function DynamicForm({
                       : 1000
                     : schemaField.maxLength,
             }
-          : schemaField
-        const value = values[field.name]
-        const error = fieldErrors?.[field.name]
-        const id = fieldId(field.name)
-        const wrap = 'py-4 first:pt-0'
+        : schemaField,
+    )
+  }
 
-        switch (field.type) {
+  const displayedFields = orderedFields.map(prepareField)
+  const basicFields = displayedFields.filter((field) => !isAdvancedField(field))
+  const advancedFields = displayedFields.filter(isAdvancedField)
+  const advancedHasError = advancedFields.some((field) => fieldErrors?.[field.name])
+  const showAdvanced = advancedOpen || advancedHasError
+
+  function renderField(field: FieldSchema) {
+    const value = values[field.name]
+    const error = fieldErrors?.[field.name]
+    const id = fieldId(field.name)
+    const wrap = 'py-4 first:pt-0'
+
+    switch (field.type) {
           case 'textarea':
             if (modelId === 'market/elevenlabs-tts' && field.name === 'text') {
               return (
@@ -567,12 +599,38 @@ export function DynamicForm({
                 <FieldError message={error} id={`${id}-error`} />
               </div>
             )
-          default: {
-            const _exhaustive: never = field.type
-            return _exhaustive
-          }
-        }
-      })}
+      default: {
+        const _exhaustive: never = field.type
+        return _exhaustive
+      }
+    }
+  }
+
+  return (
+    <div>
+      <div className="divide-y divide-[var(--border)]">
+        {basicFields.map(renderField)}
+      </div>
+      {advancedFields.length > 0 && (
+        <div className="border-t border-[var(--border)] pt-3">
+          <button
+            type="button"
+            className="studio-btn w-full justify-between"
+            aria-expanded={showAdvanced}
+            onClick={() => setAdvancedOpen((current) => !current)}
+          >
+            <span>詳細設定</span>
+            <span className="text-[11px] font-normal text-[var(--text-muted)]">
+              {advancedFields.length}項目 · {showAdvanced ? '閉じる' : '表示'}
+            </span>
+          </button>
+          {showAdvanced && (
+            <div className="mt-2 divide-y divide-[var(--border)]">
+              {advancedFields.map(renderField)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

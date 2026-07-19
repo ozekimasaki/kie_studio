@@ -15,16 +15,16 @@ export function FloatingChrome({
   return (
     <Material
       weight="chrome"
-      className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[var(--radius-xl)] px-4 py-3 md:px-5"
+      className="flex shrink-0 items-center justify-between gap-2 rounded-[var(--radius-xl)] px-3 py-2.5 sm:px-4 sm:py-3 md:px-5"
       initial={false}
       role="banner"
     >
-      <div className="min-w-0 space-y-0.5">
+      <div className="min-w-0 shrink-0 space-y-0.5">
         <h1 className="studio-display">{title}</h1>
-        {subtitle && <p className="studio-subtitle">{subtitle}</p>}
-        {meta}
+        {subtitle && <p className="studio-subtitle hidden sm:block">{subtitle}</p>}
+        {meta && <div className="hidden sm:block">{meta}</div>}
       </div>
-      {trailing}
+      <div className="ml-auto min-w-0">{trailing}</div>
     </Material>
   )
 }

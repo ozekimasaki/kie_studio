@@ -44,7 +44,7 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
-- pages update: frontend
+- ingest: frontend
 - pages update: architecture
 - pages update: core-concepts
 - pages update: catalog-sync
@@ -53,5 +53,4 @@ Most-linked pages that serve as knowledge hubs:
 - pages update: client-lib
 - pages update: getting-started
 - pages update: overview
-- ingest: prompt-optimize
 

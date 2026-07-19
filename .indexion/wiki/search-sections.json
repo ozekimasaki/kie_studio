@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "208",
+  "next_vid": "231",
   "entries": [
     {
       "section": {
@@ -347,133 +347,23 @@
     },
     {
       "section": {
-        "id": "core-concepts",
-        "title": "Core Concepts",
-        "content": "\n",
-        "page_id": "core-concepts",
-        "level": 1
-      },
-      "vid": "191"
-    },
-    {
-      "section": {
-        "id": "core-concepts#provider--2",
-        "title": "Provider 共通タスク",
-        "content": "\n```text\n用途 / workflow 選択\n  → SubmissionQueue（未送信）\n  → POST /api/generate { provider, operation, model, input }\n  → API受付済みの HistoryItem を SQLite へ保存\n  → GET /api/task?provider=&operation=&taskId= でポーリング\n  → generating / partial / success / fail / expired を反映\n```\n\n`MarketAdapter` / `SunoAdapter` / `VeoAdapter` / `RunwayAdapter` は、作成・状態・エラー・メディアを `NormalizedTask` へ揃える。Market は provider / operation 省略時の既定。\n\n",
-        "page_id": "core-concepts",
-        "level": 2
-      },
-      "vid": "192"
-    },
-    {
-      "section": {
-        "id": "core-concepts#-3",
-        "title": "主要型",
-        "content": "\n- `ModelCategory`: `image | video | audio`\n- `Provider`: `market | suno | veo | runway`\n- `TaskState`: waiting / queuing / generating / partial / success / fail / expired / unknown\n- `MediaAsset`: URL、stream、preview、duration、waveform、alignedWords、expiresAt、providerAssetId\n- `HistoryItem`: provider、operation、parentTaskId、media、rawParam、rawResult\n- `SubmissionQueueItem`: 未送信、再試行回数、送信可能時刻\n\n",
-        "page_id": "core-concepts",
-        "level": 2
-      },
-      "vid": "193"
-    },
-    {
-      "section": {
-        "id": "core-concepts#audio-workflow-4",
-        "title": "AUDIO workflow",
-        "content": "\n- 楽曲: Suno 生成、延長、アップロード延長、カバー、歌詞、区間置換\n- ナレーション: 空行ごとに分割し `previous_text` / `next_text` を自動接続\n- 会話: 話者行の追加・並べ替え・ブラウザ試聴\n- 音声処理: Market の isolation / TTS\n- 同期歌詞は初回表示時に取得して履歴へキャッシュ。再生位置へ追従しクリックでシーク\n- Persona と外部音源メタデータは素材棚として SQLite に保存\n\n",
-        "page_id": "core-concepts",
-        "level": 2
-      },
-      "vid": "194"
-    },
-    {
-      "section": {
-        "id": "core-concepts#history--media-5",
-        "title": "History / media",
-        "content": "\n履歴は `data/studio.db`。旧 `resultUrls` は additive migration で `media[]` へ変換する。メディア本体は永続保存せず、ZIP も一時 download URL からストリーミングする。親子関係は Suno 編集と Aleph Before/After に使う。\n\nポーリング失敗も `POLL_ERROR` と元エラーを `rawResult` に残し、詳細画面からコピーできる。\n\n",
-        "page_id": "core-concepts",
-        "level": 2
-      },
-      "vid": "195"
-    },
-    {
-      "section": {
-        "id": "core-concepts#see-also-6",
-        "title": "See Also",
-        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
-        "page_id": "core-concepts",
-        "level": 2
-      },
-      "vid": "196"
-    },
-    {
-      "section": {
-        "id": "architecture",
-        "title": "Architecture",
-        "content": "\n",
-        "page_id": "architecture",
-        "level": 1
-      },
-      "vid": "197"
-    },
-    {
-      "section": {
-        "id": "architecture#-2",
-        "title": "レイヤ構成",
-        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...')\n             │\n             ▼\nHono (:8787)\n  ├─ routes/*          HTTP boundary\n  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization\n  ├─ db/*              history / personas / audio assets\n  ├─ catalog/*         docs + dedicated workflows\n  └─ grok/*            prompt optimization\n```\n\n`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "198"
-    },
-    {
-      "section": {
-        "id": "architecture#-3",
-        "title": "パッケージ責務",
-        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "199"
-    },
-    {
-      "section": {
-        "id": "architecture#-4",
-        "title": "拡張ポイント",
-        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "200"
-    },
-    {
-      "section": {
-        "id": "architecture#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "201"
-    },
-    {
-      "section": {
         "id": "frontend",
         "title": "Frontend",
         "content": "\nReact UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO を同じ Studio shell で扱う。\n\n",
         "page_id": "frontend",
         "level": 1
       },
-      "vid": "202"
+      "vid": "214"
     },
     {
       "section": {
         "id": "frontend#-ux-2",
         "title": "主な UX",
-        "content": "\n- 最初に用途、次にモデル。検索・お気に入り・最近使用・提供元フィルターを持つ\n- OpenAPI 制約（必須、文字数、数値、参照数、容量、尺、相互排他）を送信前に表示\n- Quick Action は入力を復元するだけで、自動送信・自動課金しない\n- 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能\n- 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類\n\n",
+        "content": "\n- 最初に用途、次にモデル。独自モデルセレクター内で検索・お気に入り・最近使用・提供元フィルターを統合する\n- デスクトップは左の作成フォームと右のギャラリーを同時表示し、モバイルは `作成 / 履歴` を全高で切り替える\n- モバイルは送信成功後に履歴へ移動し、履歴の再利用・素材化では作成へ戻る\n- OpenAPI 制約（必須、文字数、数値、参照数、容量、尺、相互排他）を送信前に表示する。主要項目を先に出し、任意の調整項目は詳細設定へまとめる\n- 生成 CTA は選択モデル、同時生成数、実績ベースの推定クレジット、不足項目を表示し、不足表示から最初の対象へ移動できる\n- Quick Action は入力を復元するだけで、自動送信・自動課金しない\n- 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能\n- 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類\n\n",
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "203"
+      "vid": "215"
     },
     {
       "section": {
@@ -483,17 +373,17 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "204"
+      "vid": "216"
     },
     {
       "section": {
         "id": "frontend#video--history-4",
         "title": "VIDEO / history",
-        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\n",
+        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\nギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。\n\n",
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "205"
+      "vid": "217"
     },
     {
       "section": {
@@ -503,7 +393,7 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "206"
+      "vid": "218"
     },
     {
       "section": {
@@ -513,7 +403,117 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "207"
+      "vid": "219"
+    },
+    {
+      "section": {
+        "id": "core-concepts",
+        "title": "Core Concepts",
+        "content": "\n",
+        "page_id": "core-concepts",
+        "level": 1
+      },
+      "vid": "220"
+    },
+    {
+      "section": {
+        "id": "core-concepts#provider--2",
+        "title": "Provider 共通タスク",
+        "content": "\n```text\n用途 / workflow 選択\n  → SubmissionQueue（未送信）\n  → POST /api/generate { provider, operation, model, input }\n  → API受付済みの HistoryItem を SQLite へ保存\n  → GET /api/task?provider=&operation=&taskId= でポーリング\n  → generating / partial / success / fail / expired を反映\n```\n\n`MarketAdapter` / `SunoAdapter` / `VeoAdapter` / `RunwayAdapter` は、作成・状態・エラー・メディアを `NormalizedTask` へ揃える。Market は provider / operation 省略時の既定。\n\n",
+        "page_id": "core-concepts",
+        "level": 2
+      },
+      "vid": "221"
+    },
+    {
+      "section": {
+        "id": "core-concepts#-3",
+        "title": "主要型",
+        "content": "\n- `ModelCategory`: `image | video | audio`\n- `Provider`: `market | suno | veo | runway`\n- `TaskState`: waiting / queuing / generating / partial / success / fail / expired / unknown\n- `MediaAsset`: URL、stream、preview、duration、waveform、alignedWords、expiresAt、providerAssetId\n- `HistoryItem`: provider、operation、parentTaskId、media、rawParam、rawResult\n- `SubmissionQueueItem`: 未送信、再試行回数、送信可能時刻\n\n",
+        "page_id": "core-concepts",
+        "level": 2
+      },
+      "vid": "222"
+    },
+    {
+      "section": {
+        "id": "core-concepts#audio-workflow-4",
+        "title": "AUDIO workflow",
+        "content": "\n- 楽曲: Suno 生成、延長、アップロード延長、カバー、歌詞、区間置換\n- ナレーション: 空行ごとに分割し `previous_text` / `next_text` を自動接続\n- 会話: 話者行の追加・並べ替え・ブラウザ試聴\n- 音声処理: Market の isolation / TTS\n- 同期歌詞は初回表示時に取得して履歴へキャッシュ。再生位置へ追従しクリックでシーク\n- Persona と外部音源メタデータは素材棚として SQLite に保存\n\n",
+        "page_id": "core-concepts",
+        "level": 2
+      },
+      "vid": "223"
+    },
+    {
+      "section": {
+        "id": "core-concepts#history--media-5",
+        "title": "History / media",
+        "content": "\n履歴は `data/studio.db`。旧 `resultUrls` は additive migration で `media[]` へ変換する。メディア本体は永続保存せず、ZIP も一時 download URL からストリーミングする。親子関係は Suno 編集と Aleph Before/After に使う。\n\nポーリング失敗も `POLL_ERROR` と元エラーを `rawResult` に残し、詳細画面からコピーできる。\n\n",
+        "page_id": "core-concepts",
+        "level": 2
+      },
+      "vid": "224"
+    },
+    {
+      "section": {
+        "id": "core-concepts#see-also-6",
+        "title": "See Also",
+        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
+        "page_id": "core-concepts",
+        "level": 2
+      },
+      "vid": "225"
+    },
+    {
+      "section": {
+        "id": "architecture",
+        "title": "Architecture",
+        "content": "\n",
+        "page_id": "architecture",
+        "level": 1
+      },
+      "vid": "226"
+    },
+    {
+      "section": {
+        "id": "architecture#-2",
+        "title": "レイヤ構成",
+        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...')\n             │\n             ▼\nHono (:8787)\n  ├─ routes/*          HTTP boundary\n  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization\n  ├─ db/*              history / personas / audio assets\n  ├─ catalog/*         docs + dedicated workflows\n  └─ grok/*            prompt optimization\n```\n\n`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "227"
+    },
+    {
+      "section": {
+        "id": "architecture#-3",
+        "title": "パッケージ責務",
+        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "228"
+    },
+    {
+      "section": {
+        "id": "architecture#-4",
+        "title": "拡張ポイント",
+        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "229"
+    },
+    {
+      "section": {
+        "id": "architecture#see-also-5",
+        "title": "See Also",
+        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "230"
     }
   ]
 }

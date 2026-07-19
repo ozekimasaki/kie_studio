@@ -71,7 +71,9 @@
         "src/components/shell/",
         "src/components/motion/",
         "src/lib/motion.ts",
-        "src/main.tsx"
+        "src/main.tsx",
+        "src/lib/studioPresentation.ts",
+        "src/index.css"
       ],
       "children": [],
       "provenance": "synthesized",

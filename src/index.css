@@ -479,7 +479,16 @@ textarea {
 }
 
 .studio-segment-item[aria-selected='true'] {
+  background: var(--accent);
   color: var(--on-accent);
+}
+
+@media (max-width: 1023px) {
+  .studio-sticky-cta {
+    border-top: 1px solid var(--border);
+    background: var(--surface-raised);
+    box-shadow: 0 -8px 18px oklch(0.2 0.02 250 / 0.08);
+  }
 }
 
 .studio-tile {

@@ -24,7 +24,7 @@
         "src/lib/models/types.ts": "612799aa5089005d461ce378a24b4ede",
         "src/lib/history.ts": "d972700a742f1ce07fb5b2fee18784fd",
         "src/lib/models/mentions.ts": "af7fe9767d994b47815012839284a8c2",
-        "src/components/DynamicForm.tsx": "c47a68f982b4f239f706b24b0eeb3ccf",
+        "src/components/DynamicForm.tsx": "743910da20898d4b34b5cc4ef704adad",
         "server/db/history.ts": "e015bc2c178ce142bca09b52dbf7d49f"
       }
     },
@@ -34,16 +34,18 @@
         "AGENTS.md": "cf5b2d3a9733d1ddcd57f7ab1c5c861e",
         "server/index.ts": "8f815ee662415748ded6543a2d68aed1",
         "vite.config.ts": "2451699b10ce685296adcaedc3d6a27a",
-        "src/App.tsx": "93be3f4428802ac96fd2d41dd8b6f177",
+        "src/App.tsx": "5133592e6aff81288e655d0cec2f27df",
         "src/lib/motion.ts": "070b7d31bdf0f995ee2c715bc50a1296"
       }
     },
     "frontend": {
-      "page_hash": "d786b0b0c216d5d4234d790fb57656eb",
+      "page_hash": "f54ff990c0785f18936aee265c9cfb76",
       "source_hashes": {
-        "src/App.tsx": "93be3f4428802ac96fd2d41dd8b6f177",
+        "src/App.tsx": "5133592e6aff81288e655d0cec2f27df",
         "src/lib/motion.ts": "070b7d31bdf0f995ee2c715bc50a1296",
-        "src/main.tsx": "7f9e79419f43c13c03ce07c30e509061"
+        "src/main.tsx": "7f9e79419f43c13c03ce07c30e509061",
+        "src/lib/studioPresentation.ts": "fcbc61b784e116cb0d54ed673a006fd7",
+        "src/index.css": "98213dd81bc8f291788cad7e89b0e700"
       }
     },
     "client-lib": {

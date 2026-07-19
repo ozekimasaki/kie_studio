@@ -827,10 +827,136 @@
     "affected_pages": []
   },
   {
-    "timestamp": "1784400880755",
+    "timestamp": "0",
     "operation": "index build",
     "actor": "indexion",
     "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "3 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "core-concepts",
+      "architecture",
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: core-concepts",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: architecture",
+    "details": {},
+    "affected_pages": [
+      "architecture"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1784445938553",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
     "details": {},
     "affected_pages": []
   }

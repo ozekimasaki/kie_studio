@@ -12,6 +12,7 @@ import {
   Plus,
   Play,
   RotateCcw,
+  Video,
   X,
 } from 'lucide-react'
 import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
@@ -107,7 +108,7 @@ function canReuse(item: HistoryItem): boolean {
 }
 
 type StateFilter = 'all' | 'success' | 'fail' | 'busy'
-type CategoryFilter = 'all' | 'image' | 'video' | 'audio'
+type CategoryFilter = 'context' | 'all' | 'image' | 'video' | 'audio'
 
 const MAX_COMPARE = 4
 const HISTORY_PAGE_SIZE = 48
@@ -117,13 +118,19 @@ const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
 
 function DeferredVideo({
   src,
+  poster,
+  fallbackLabel,
   className,
 }: {
   src: string
+  poster?: string
+  fallbackLabel: string
   className: string
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [nearViewport, setNearViewport] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     const video = videoRef.current
@@ -144,19 +151,42 @@ function DeferredVideo({
     return () => observer.disconnect()
   }, [nearViewport])
 
+  const mediaVisible = Boolean(poster) || loaded
+
   return (
-    <video
-      ref={videoRef}
-      src={nearViewport ? src : undefined}
-      muted
-      preload={nearViewport ? 'metadata' : 'none'}
-      className={className}
-    />
+    <div className={`${className} relative`}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[var(--accent-soft)] p-3 text-center text-[var(--text-muted)]">
+        <Video size={20} aria-hidden />
+        <span className="line-clamp-2 text-[10px] font-medium">
+          {failed ? 'プレビューを表示できません' : fallbackLabel}
+        </span>
+      </div>
+      <video
+        ref={videoRef}
+        src={nearViewport ? src : undefined}
+        poster={poster}
+        muted
+        playsInline
+        preload={nearViewport ? 'metadata' : 'none'}
+        aria-label={fallbackLabel}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-150 ${mediaVisible && !failed ? 'opacity-100' : 'opacity-0'}`}
+        onLoadedMetadata={(event) => {
+          const video = event.currentTarget
+          if (Number.isFinite(video.duration) && video.duration > 0.1) {
+            video.currentTime = 0.1
+          }
+        }}
+        onLoadedData={() => setLoaded(true)}
+        onSeeked={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+    </div>
   )
 }
 
 export function HistoryGallery({
   items,
+  activeCategory,
   activeTaskId,
   pendingCount = 0,
   retryDisabled,
@@ -174,6 +204,7 @@ export function HistoryGallery({
   onQuickAction,
 }: {
   items: HistoryItem[]
+  activeCategory: 'image' | 'video' | 'audio'
   activeTaskId?: string | null
   pendingCount?: number
   retryDisabled?: boolean
@@ -198,7 +229,7 @@ export function HistoryGallery({
   const audioPlayer = useAudioPlayer()
   const importInputRef = useRef<HTMLInputElement>(null)
   const [stateFilter, setStateFilter] = useState<StateFilter>('all')
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('context')
   const [modelFilter, setModelFilter] = useState<string>('all')
   const [compareMode, setCompareMode] = useState(false)
   const [compareIds, setCompareIds] = useState<string[]>([])
@@ -206,10 +237,19 @@ export function HistoryGallery({
   const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE)
   const [sheetsRequested, setSheetsRequested] = useState(false)
 
+  const effectiveCategory = categoryFilter === 'context'
+    ? activeCategory
+    : categoryFilter
+
   const modelOptions = useMemo(
-    () => [...new Set(items.map((h) => h.model))],
-    [items],
+    () => [...new Set(items
+      .filter((item) => effectiveCategory === 'all' || item.category === effectiveCategory)
+      .map((item) => item.model))],
+    [effectiveCategory, items],
   )
+  const effectiveModelFilter = modelOptions.includes(modelFilter)
+    ? modelFilter
+    : 'all'
 
   const itemById = useMemo(
     () => new Map(items.map((item) => [item.taskId, item])),
@@ -227,10 +267,10 @@ export function HistoryGallery({
 
   const filtered = useMemo(() => {
     const list = items.filter((h) => {
-      if (categoryFilter !== 'all' && h.category !== categoryFilter) {
+      if (effectiveCategory !== 'all' && h.category !== effectiveCategory) {
         return false
       }
-      if (modelFilter !== 'all' && h.model !== modelFilter) return false
+      if (effectiveModelFilter !== 'all' && h.model !== effectiveModelFilter) return false
       switch (stateFilter) {
         case 'success':
           return h.state === 'success' || h.state === 'partial'
@@ -252,7 +292,7 @@ export function HistoryGallery({
       if (pinDiff !== 0) return pinDiff
       return (b.createdAt ?? 0) - (a.createdAt ?? 0)
     })
-  }, [items, categoryFilter, modelFilter, stateFilter])
+  }, [effectiveCategory, effectiveModelFilter, items, stateFilter])
 
   const validCompareIds = useMemo(
     () => compareIds.filter((id) => itemById.has(id)),
@@ -402,6 +442,9 @@ export function HistoryGallery({
             aria-label="カテゴリで絞り込み"
             className={filterSelectClass}
           >
+            <option value="context">
+              作業中: {activeCategory === 'image' ? '画像' : activeCategory === 'video' ? '動画' : '音声'}
+            </option>
             <option value="all">全カテゴリ</option>
             <option value="image">画像</option>
             <option value="video">動画</option>
@@ -422,7 +465,7 @@ export function HistoryGallery({
             <option value="busy">生成中</option>
           </select>
           <select
-            value={modelFilter}
+            value={effectiveModelFilter}
             onChange={(e) => {
               setModelFilter(e.target.value)
               setVisibleCount(HISTORY_PAGE_SIZE)
@@ -524,9 +567,13 @@ export function HistoryGallery({
                         className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]"
                       >
                         {thumb && !isAudio ? (
+                          primaryMedia?.kind === 'video' ||
+                          h.category === 'video' ||
                           isVideoUrl(mediaUrl ?? thumb) ? (
                             <DeferredVideo
                               src={mediaUrl ?? thumb}
+                              poster={primaryMedia?.previewUrl && !isVideoUrl(primaryMedia.previewUrl) ? primaryMedia.previewUrl : undefined}
+                              fallbackLabel={h.prompt || shortModel(h.model)}
                               className="h-full w-full object-cover"
                             />
                           ) : (
