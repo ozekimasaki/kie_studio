@@ -216,7 +216,7 @@ export function KlingElementsEditor({
                 aria-label={`要素 ${index + 1} の画像を選択`}
                 accept="image/jpeg,image/png,image/webp,image/*"
                 multiple
-                className="sr-only"
+                className="hidden"
                 tabIndex={-1}
                 onChange={(e) => {
                   void addImages(index, e.target.files)

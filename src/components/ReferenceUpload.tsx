@@ -180,7 +180,7 @@ export function ReferenceUpload({
         aria-label="参照ファイルを選択"
         accept={accept}
         multiple={maxItems > 1}
-        className="sr-only"
+        className="hidden"
         tabIndex={-1}
         disabled={disabled || uploading}
         onChange={(e) => void handleFiles(e.target.files)}
