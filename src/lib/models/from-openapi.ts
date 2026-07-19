@@ -198,12 +198,21 @@ export function extractOpenApiFromMarkdown(markdown: string): string | null {
 
 export function extractModelSlug(
   schema: Record<string, unknown>,
+  example?: unknown,
 ): string | null {
+  if (example && typeof example === 'object' && !Array.isArray(example)) {
+    const model = (example as Record<string, unknown>).model
+    if (typeof model === 'string' && model.length > 0) return model
+  }
   const props = schema.properties as
     | Record<string, Record<string, unknown>>
     | undefined
   const modelProp = props?.model
   if (!modelProp) return null
+  if (typeof modelProp.description === 'string') {
+    const match = modelProp.description.match(/Must be `([^`]+)`/)
+    if (match?.[1]) return match[1]
+  }
   if (Array.isArray(modelProp.enum) && typeof modelProp.enum[0] === 'string') {
     return modelProp.enum[0]
   }

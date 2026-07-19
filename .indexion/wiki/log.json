@@ -953,10 +953,112 @@
     "affected_pages": []
   },
   {
-    "timestamp": "1784445938553",
+    "timestamp": "0",
     "operation": "ingest",
     "actor": "indexion",
     "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "7 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "overview",
+      "getting-started",
+      "core-concepts",
+      "architecture",
+      "frontend",
+      "server-api",
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1784450263082",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
     "details": {},
     "affected_pages": []
   }

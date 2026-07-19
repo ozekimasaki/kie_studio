@@ -125,7 +125,7 @@
         "src/data/catalog.json"
       ],
       "children": [],
-      "provenance": "synthesized",
+      "provenance": "manual",
       "last_actor": "agent:codex"
     },
     {
