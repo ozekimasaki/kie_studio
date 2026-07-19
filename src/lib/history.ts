@@ -1,4 +1,11 @@
-import type { HistoryItem, TaskState } from './models/types.ts'
+import type {
+  HistoryItem,
+  MediaAsset,
+  Operation,
+  Provider,
+  TaskState,
+} from './models/types.ts'
+import { mediaKindFromUrl } from './media.ts'
 
 /** Non-pinned budget (SQLite; was 30 under localStorage quota pressure). */
 export const MAX_ITEMS = 200
@@ -128,6 +135,83 @@ function asInput(value: unknown): Record<string, unknown> | undefined {
   return value as Record<string, unknown>
 }
 
+const PROVIDERS = new Set<Provider>(['market', 'suno', 'veo', 'runway'])
+const OPERATIONS = new Set<Operation>([
+  'generate',
+  'extend',
+  'upload-cover',
+  'upload-extend',
+  'replace-section',
+  'cover-art',
+  'lyrics',
+  'upscale-1080p',
+  'upscale-4k',
+  'aleph',
+])
+
+function asProvider(value: unknown): Provider | undefined {
+  return typeof value === 'string' && PROVIDERS.has(value as Provider)
+    ? (value as Provider)
+    : undefined
+}
+
+function asOperation(value: unknown): Operation | undefined {
+  return typeof value === 'string' && OPERATIONS.has(value as Operation)
+    ? (value as Operation)
+    : undefined
+}
+
+function asMedia(value: unknown): MediaAsset[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const media = value.flatMap((entry): MediaAsset[] => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return []
+    const raw = entry as Record<string, unknown>
+    if (
+      raw.kind !== 'image' &&
+      raw.kind !== 'video' &&
+      raw.kind !== 'audio' &&
+      raw.kind !== 'text'
+    ) {
+      return []
+    }
+    const asset: MediaAsset = { kind: raw.kind }
+    for (const key of ['id', 'url', 'streamUrl', 'previewUrl', 'title', 'mimeType', 'providerAssetId'] as const) {
+      const parsed = asString(raw[key])
+      if (parsed !== undefined) asset[key] = parsed
+    }
+    for (const key of ['duration', 'expiresAt'] as const) {
+      const parsed = asFiniteNumber(raw[key])
+      if (parsed !== undefined) asset[key] = parsed
+    }
+    if (Array.isArray(raw.waveform)) {
+      asset.waveform = raw.waveform.filter(
+        (sample): sample is number => typeof sample === 'number' && Number.isFinite(sample),
+      )
+    }
+    if (Array.isArray(raw.alignedWords)) {
+      asset.alignedWords = raw.alignedWords.flatMap((word): NonNullable<MediaAsset['alignedWords']> => {
+        if (!word || typeof word !== 'object' || Array.isArray(word)) return []
+        const w = word as Record<string, unknown>
+        if (typeof w.word !== 'string') return []
+        const startS = asFiniteNumber(w.startS)
+        const endS = asFiniteNumber(w.endS)
+        if (startS === undefined || endS === undefined) return []
+        return [{
+          word: w.word,
+          startS,
+          endS,
+          success: typeof w.success === 'boolean' ? w.success : undefined,
+          palign: asFiniteNumber(w.palign),
+        }]
+      })
+    }
+    const metadata = asInput(raw.metadata)
+    if (metadata) asset.metadata = metadata
+    return [asset]
+  })
+  return media.length ? media : undefined
+}
+
 type NormalizeMode = 'local' | 'import'
 
 /**
@@ -149,9 +233,17 @@ export function normalizeHistoryItems(
     if (typeof item.taskId !== 'string' || typeof item.model !== 'string') {
       return []
     }
-    if (item.category !== 'image' && item.category !== 'video') return []
+    if (
+      item.category !== 'image' &&
+      item.category !== 'video' &&
+      item.category !== 'audio'
+    ) return []
 
-    const isTerminal = item.state === 'success' || item.state === 'fail'
+    const isTerminal =
+      item.state === 'success' ||
+      item.state === 'fail' ||
+      item.state === 'partial' ||
+      item.state === 'expired'
     const rawCreatedAt = asFiniteNumber(item.createdAt) ?? now
     const parsedCreatedAt = normalizeTimestamp(rawCreatedAt, now)
 
@@ -159,7 +251,7 @@ export function normalizeHistoryItems(
     let createdAt: number
 
     if (isTerminal) {
-      state = item.state as 'success' | 'fail'
+      state = item.state as 'success' | 'fail' | 'partial' | 'expired'
       createdAt = parsedCreatedAt
     } else if (mode === 'import') {
       // 別環境のタスクをポーリングしない
@@ -192,6 +284,36 @@ export function normalizeHistoryItems(
 
     const resultUrls = asStringArray(item.resultUrls)
     if (resultUrls) normalized.resultUrls = resultUrls
+
+    const media = asMedia(item.media)
+    if (media) {
+      normalized.media = media
+    } else if (resultUrls) {
+      normalized.media = resultUrls.map((url) => ({
+        kind: mediaKindFromUrl(url, normalized.category),
+        url,
+      }))
+    }
+
+    const provider = asProvider(item.provider)
+    normalized.provider = provider ?? 'market'
+    normalized.operation = asOperation(item.operation) ?? 'generate'
+
+    const parentTaskId = asString(item.parentTaskId)
+    if (parentTaskId) normalized.parentTaskId = parentTaskId
+
+    const providerStatus = asString(item.providerStatus)
+    if (providerStatus) normalized.providerStatus = providerStatus
+
+    if (item.partial === true) normalized.partial = true
+
+    const expiresAt = asFiniteNumber(item.expiresAt)
+    if (expiresAt !== undefined) {
+      normalized.expiresAt = normalizeTimestamp(expiresAt, expiresAt)
+    }
+
+    if ('rawParam' in item) normalized.rawParam = item.rawParam
+    if ('rawResult' in item) normalized.rawResult = item.rawResult
 
     const prompt = asString(item.prompt)
     if (prompt !== undefined) normalized.prompt = prompt

@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { LayoutGroup, motion, useReducedMotion } from 'motion/react'
+import { LayoutGroup, m, useReducedMotion } from 'motion/react'
 import type { FieldSchema, KlingElement, MentionStyle } from '../lib/models/types.ts'
 import { insertMentionToken } from '../lib/models/mentions.ts'
 import { fadeQuick, springUi } from '../lib/motion.ts'
@@ -8,11 +8,11 @@ import { KlingElementsEditor } from './KlingElementsEditor.tsx'
 import { PromptOptimizePanel } from './PromptOptimizePanel.tsx'
 import { PromptSnippets } from './PromptSnippets.tsx'
 import { Pressable } from './motion/Pressable.tsx'
+import { DialogueEditor, NarrationEditor } from './audio/AudioEditors.tsx'
 
 function fieldId(name: string): string {
   return `field-${name}`
 }
-
 function acceptHint(accept?: string): string | null {
   if (!accept) return null
   if (/video/i.test(accept) && /image/i.test(accept)) return '画像・動画'
@@ -128,7 +128,7 @@ function BooleanToggle({
             }`}
           >
             {!on && (
-              <motion.span
+              <m.span
                 layoutId={`bool-pill-${field.name}`}
                 className="absolute inset-0 z-0 bg-[var(--text)]"
                 transition={reduce ? fadeQuick : springUi}
@@ -148,7 +148,7 @@ function BooleanToggle({
             }`}
           >
             {on && (
-              <motion.span
+              <m.span
                 layoutId={`bool-pill-${field.name}`}
                 className="absolute inset-0 z-0 bg-[var(--accent)]"
                 transition={reduce ? fadeQuick : springUi}
@@ -178,13 +178,16 @@ function resolveMentionStyle(field: FieldSchema): MentionStyle {
 }
 
 /** Display order: media refs → prompt → rest (payload keys unchanged). */
-export function sortFieldsForDisplay(fields: FieldSchema[]): FieldSchema[] {
+function sortFieldsForDisplay(fields: FieldSchema[]): FieldSchema[] {
+  const modes: FieldSchema[] = []
   const media: FieldSchema[] = []
   const prompts: FieldSchema[] = []
   const rest: FieldSchema[] = []
 
   for (const field of fields) {
-    if (field.type === 'reference' || field.type === 'kling_elements') {
+    if (field.name === 'customMode' || field.name === 'instrumental') {
+      modes.push(field)
+    } else if (field.type === 'reference' || field.type === 'kling_elements') {
       media.push(field)
     } else if (field.type === 'textarea') {
       prompts.push(field)
@@ -199,7 +202,7 @@ export function sortFieldsForDisplay(fields: FieldSchema[]): FieldSchema[] {
     return 0
   })
 
-  return [...media, ...prompts, ...rest]
+  return [...modes, ...media, ...prompts, ...rest]
 }
 
 export function DynamicForm({
@@ -218,7 +221,26 @@ export function DynamicForm({
   modelId?: string | null
 }) {
   const promptRef = useRef<HTMLTextAreaElement | null>(null)
-  const orderedFields = useMemo(() => sortFieldsForDisplay(fields), [fields])
+  const orderedFields = useMemo(
+    () => sortFieldsForDisplay(fields).filter((field) => {
+      if (field.name.startsWith('_')) return false
+      if (
+        modelId === 'market/elevenlabs-tts' &&
+        (field.name === 'previous_text' || field.name === 'next_text')
+      ) return false
+      if (modelId?.startsWith('suno/')) {
+        if (field.name === 'personaId') return false
+        if (
+          values.customMode === false &&
+          ['style', 'title', 'negativeTags'].includes(field.name)
+        ) {
+          return false
+        }
+      }
+      return true
+    }),
+    [fields, modelId, values.customMode],
+  )
   const promptFieldName =
     fields.find((f) => f.name === 'prompt' && f.type === 'textarea')?.name ??
     fields.find((f) => f.type === 'textarea')?.name ??
@@ -251,7 +273,34 @@ export function DynamicForm({
 
   return (
     <div className="divide-y divide-[var(--border)]">
-      {orderedFields.map((field) => {
+      {orderedFields.map((schemaField) => {
+        const conditionalSuno = modelId?.startsWith('suno/') && fields.some(
+          (candidate) => candidate.name === 'customMode',
+        )
+        const modelName = typeof values.model === 'string' ? values.model : 'V5'
+        const field = conditionalSuno
+          ? {
+              ...schemaField,
+              required:
+                schemaField.name === 'prompt'
+                  ? values.customMode === false || values.instrumental !== true
+                  : schemaField.name === 'style' || schemaField.name === 'title'
+                    ? values.customMode !== false
+                    : schemaField.required,
+              maxLength:
+                schemaField.name === 'prompt'
+                  ? values.customMode === false
+                    ? 500
+                    : modelName === 'V4'
+                      ? 3000
+                      : 5000
+                  : schemaField.name === 'style'
+                    ? modelName === 'V4'
+                      ? 200
+                      : 1000
+                    : schemaField.maxLength,
+            }
+          : schemaField
         const value = values[field.name]
         const error = fieldErrors?.[field.name]
         const id = fieldId(field.name)
@@ -259,6 +308,19 @@ export function DynamicForm({
 
         switch (field.type) {
           case 'textarea':
+            if (modelId === 'market/elevenlabs-tts' && field.name === 'text') {
+              return (
+                <div key={field.name} className={wrap}>
+                  <FieldLabel field={field} />
+                  <NarrationEditor
+                    value={typeof value === 'string' ? value : ''}
+                    disabled={disabled}
+                    onChange={(next) => clearErrorOnChange(field.name, next)}
+                  />
+                  <FieldError message={error} id={`${id}-error`} />
+                </div>
+              )
+            }
             return (
               <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
@@ -309,6 +371,7 @@ export function DynamicForm({
                 <input
                   id={id}
                   type="text"
+                  aria-label={field.label}
                   className={inputClass}
                   value={typeof value === 'string' ? value : ''}
                   maxLength={field.maxLength}
@@ -347,6 +410,7 @@ export function DynamicForm({
                   <input
                     id={id}
                     type="number"
+                    aria-label={field.label}
                     className={`${inputClass} w-24`}
                     min={field.min}
                     max={field.max}
@@ -388,6 +452,7 @@ export function DynamicForm({
                 <FieldLabel field={field} htmlFor={id} />
                 <select
                   id={id}
+                  aria-label={field.label}
                   className="studio-select w-full"
                   value={
                     typeof value === 'string'
@@ -423,6 +488,8 @@ export function DynamicForm({
                   onChange={(urls) => clearErrorOnChange(field.name, urls)}
                   maxItems={max}
                   accept={field.accept}
+                  maxFileSizeMb={field.maxFileSizeMb}
+                  maxDurationSec={field.maxDurationSec}
                   disabled={disabled}
                   mentionStyle={resolveMentionStyle(field)}
                   onInsertMention={
@@ -458,6 +525,19 @@ export function DynamicForm({
               </div>
             )
           case 'json':
+            if (modelId === 'market/elevenlabs-dialogue' && field.name === 'dialogue') {
+              return (
+                <div key={field.name} className={wrap} id={id} tabIndex={-1}>
+                  <FieldLabel field={field} />
+                  <DialogueEditor
+                    value={value}
+                    disabled={disabled}
+                    onChange={(next) => clearErrorOnChange(field.name, next)}
+                  />
+                  <FieldError message={error} id={`${id}-error`} />
+                </div>
+              )
+            }
             return (
               <div key={field.name} className={wrap}>
                 <FieldLabel field={field} htmlFor={id} />
@@ -495,137 +575,4 @@ export function DynamicForm({
       })}
     </div>
   )
-}
-
-export function buildDefaultValues(
-  fields: FieldSchema[],
-): Record<string, unknown> {
-  const values: Record<string, unknown> = {}
-  for (const field of fields) {
-    if (field.default !== undefined) {
-      values[field.name] = field.default
-      continue
-    }
-    switch (field.type) {
-      case 'boolean':
-        values[field.name] = false
-        break
-      case 'reference':
-      case 'kling_elements':
-        values[field.name] = []
-        break
-      case 'number':
-        values[field.name] = field.min ?? 0
-        break
-      case 'enum':
-        values[field.name] = field.enum?.[0] ?? ''
-        break
-      default:
-        values[field.name] = ''
-    }
-  }
-  return values
-}
-
-function isKlingElementComplete(el: unknown): boolean {
-  if (!el || typeof el !== 'object') return false
-  const item = el as KlingElement
-  return (
-    typeof item.name === 'string' &&
-    item.name.trim().length > 0 &&
-    Array.isArray(item.element_input_urls) &&
-    item.element_input_urls.length >= 1
-  )
-}
-
-/** True when values differ from field defaults (used before model/category switch). */
-export function isFormDirty(
-  fields: FieldSchema[],
-  values: Record<string, unknown>,
-): boolean {
-  const defaults = buildDefaultValues(fields)
-  for (const field of fields) {
-    const v = values[field.name]
-    const d = defaults[field.name]
-    if (field.type === 'reference' || field.type === 'kling_elements') {
-      const arr = Array.isArray(v) ? v : []
-      const def = Array.isArray(d) ? d : []
-      if (arr.length !== def.length) return true
-      if (JSON.stringify(arr) !== JSON.stringify(def)) return true
-      continue
-    }
-    if (v !== d) return true
-  }
-  return false
-}
-
-export function focusFirstFieldError(errors: Record<string, string>): void {
-  const first = Object.keys(errors)[0]
-  if (!first) return
-  const id = fieldId(first)
-  window.requestAnimationFrame(() => {
-    const el = document.getElementById(id)
-    if (!el) return
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    if (
-      el instanceof HTMLInputElement ||
-      el instanceof HTMLTextAreaElement ||
-      el instanceof HTMLSelectElement ||
-      el instanceof HTMLButtonElement
-    ) {
-      el.focus({ preventScroll: true })
-    } else if (el instanceof HTMLElement) {
-      el.focus({ preventScroll: true })
-    }
-  })
-}
-
-export function validateFields(
-  fields: FieldSchema[],
-  values: Record<string, unknown>,
-): Record<string, string> {
-  const errors: Record<string, string> = {}
-  for (const field of fields) {
-    const v = values[field.name]
-
-    if (field.type === 'json') {
-      if (v === undefined || v === null || v === '') {
-        if (field.required) {
-          errors[field.name] = `${field.label}は必須です`
-        }
-        continue
-      }
-      // DynamicForm はパース失敗時に文字列を保持する → 送信不可
-      if (typeof v === 'string' || typeof v !== 'object') {
-        errors[field.name] = `${field.label}のJSONが不正です`
-      }
-      continue
-    }
-
-    if (field.type === 'kling_elements' && Array.isArray(v) && v.length > 0) {
-      const incomplete = v.some((el) => !isKlingElementComplete(el))
-      if (incomplete) {
-        errors[field.name] =
-          `${field.label}: 各要素に名前と画像（1枚以上）が必要です`
-        continue
-      }
-    }
-
-    if (!field.required) continue
-    if (v === undefined || v === null || v === '') {
-      errors[field.name] = `${field.label}は必須です`
-      continue
-    }
-    if (field.type === 'reference' && Array.isArray(v) && v.length === 0) {
-      errors[field.name] = `${field.label}は必須です`
-    }
-    if (
-      field.type === 'kling_elements' &&
-      Array.isArray(v) &&
-      v.length === 0
-    ) {
-      errors[field.name] = `${field.label}は必須です`
-    }
-  }
-  return errors
 }

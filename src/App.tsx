@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   useMutation,
   useQueries,
@@ -9,29 +17,38 @@ import { ExternalLink } from 'lucide-react'
 import { CategoryTabs } from './components/CategoryTabs.tsx'
 import { ModelSelect } from './components/ModelSelect.tsx'
 import {
-  DynamicForm,
   buildDefaultValues,
   focusFirstFieldError,
   isFormDirty,
   validateFields,
-} from './components/DynamicForm.tsx'
+} from './lib/form.ts'
+import { DynamicForm } from './components/DynamicForm.tsx'
 import { CreditBadge } from './components/CreditBadge.tsx'
-import { CreditPurchaseSheet } from './components/CreditPurchaseSheet.tsx'
 import { HistoryGallery } from './components/HistoryGallery.tsx'
 import { StudioShell } from './components/shell/StudioShell.tsx'
 import { Pressable } from './components/motion/Pressable.tsx'
+import { AudioPlayerProvider } from './components/audio/AudioPlayer.tsx'
+import { SunoStyleAssist } from './components/SunoStyleAssist.tsx'
 import {
+  ApiClientError,
+  fetchAudioAssets,
   fetchHealth,
   fetchHistory,
   fetchModels,
+  fetchPersonas,
   fetchTask,
   generateTask,
   importHistoryApi,
   migrateHistory,
-  putHistory,
 } from './lib/api.ts'
+import { classifyApiError } from './lib/submissionQueue.ts'
+import { useSubmissionQueue } from './lib/useSubmissionQueue.ts'
 import {
-  capItems,
+  sanitizeWorkflowInput,
+  validateWorkflowInput,
+} from './lib/workflowValidation.ts'
+import { parentTaskIdFor } from './lib/taskRelations.ts'
+import {
   exportHistoryJson,
   MAX_PINNED,
   mergeHistory,
@@ -44,15 +61,24 @@ import {
   upsertInList,
 } from './lib/history.ts'
 import { isVideoUrl } from './lib/media.ts'
+import { useHistoryPersistence } from './lib/useHistoryPersistence.ts'
 import type {
   FieldSchema,
   HistoryItem,
   ModelCategory,
   ModelDefinition,
+  MediaAsset,
+  QuickAction,
 } from './lib/models/types.ts'
 
+const CreditPurchaseSheet = lazy(() =>
+  import('./components/CreditPurchaseSheet.tsx').then((module) => ({
+    default: module.CreditPurchaseSheet,
+  })),
+)
+
 function promptFromInput(input: Record<string, unknown>): string | undefined {
-  const p = input.prompt
+  const p = input.prompt ?? input.text
   return typeof p === 'string' ? p.slice(0, 120) : undefined
 }
 
@@ -100,9 +126,17 @@ function isPendingState(item: HistoryItem): boolean {
 
 const LS_HISTORY_KEY = 'kie-studio-history'
 const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
-const HISTORY_SAVE_DEBOUNCE_MS = 400
+const EMPTY_MODELS: ModelDefinition[] = []
+
+function taskPollInterval(createdAt: number): number {
+  const age = Date.now() - createdAt
+  if (age < 30_000) return 2500
+  if (age < 2 * 60_000) return 5000
+  return 10_000
+}
 
 function isInsufficientCreditsError(error: unknown): boolean {
+  if (error instanceof ApiClientError && error.status === 402) return true
   const message = error instanceof Error ? error.message : String(error)
   return /(?:insufficient|not enough|low)\s+(?:credit|balance)|(?:credit|balance).*?(?:insufficient|not enough|low)|クレジット.*(?:不足|足りない|切れ)|(?:不足|足りない).*(?:クレジット|credit)/i.test(
     message,
@@ -123,19 +157,16 @@ export default function App() {
   const [batchCount, setBatchCount] = useState(1)
   const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
     useState(false)
+  const [creditSheetRequested, setCreditSheetRequested] = useState(false)
   const pendingRestoreRef = useRef<{
     modelId: string
     input: Record<string, unknown>
   } | null>(null)
   const historyHydratedRef = useRef(false)
-  /** False until hydrate/migrate finishes — blocks PUT that could wipe migrate. */
-  const historyPersistReadyRef = useRef(false)
-  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingPersistRef = useRef<HistoryItem[] | null>(null)
-  const persistHistoryRef = useRef<
-    (items: HistoryItem[], debounce?: boolean) => HistoryItem[]
-  >((items) => capItems(items))
-  const flushHistoryPersistRef = useRef<(items: HistoryItem[]) => void>(() => {})
+  const historyRef = useRef<HistoryItem[]>([])
+  const [historyPersistReady, setHistoryPersistReady] = useState(false)
+  const { queue: submissionQueue, items: submissionQueueItems } =
+    useSubmissionQueue()
 
   const healthQuery = useQuery({
     queryKey: ['health'],
@@ -149,67 +180,38 @@ export default function App() {
     staleTime: Infinity,
   })
 
-  const flushHistoryPersist = (items: HistoryItem[]) => {
-    if (!historyPersistReadyRef.current) {
-      pendingPersistRef.current = items
-      return
-    }
-    pendingPersistRef.current = null
-    void putHistory(items)
-      .then((res) => {
-        queryClient.setQueryData(['history'], res.data.items)
-      })
-      .catch(async (e) => {
-        setFormError(
-          e instanceof Error ? e.message : '履歴の保存に失敗しました',
-        )
-        try {
-          const res = await fetchHistory()
-          setHistory(res.data.items)
-          queryClient.setQueryData(['history'], res.data.items)
-        } catch {
-          // keep optimistic state if refetch also fails
-        }
-      })
-  }
-  flushHistoryPersistRef.current = flushHistoryPersist
+  const handleHistoryStored = useCallback(
+    (items: HistoryItem[]) => queryClient.setQueryData(['history'], items),
+    [queryClient],
+  )
+  const handleHistoryRecovered = useCallback(
+    (items: HistoryItem[]) => {
+      setHistory(items)
+      queryClient.setQueryData(['history'], items)
+    },
+    [queryClient],
+  )
+  const handleHistoryPersistError = useCallback((error: unknown) => {
+    setFormError(
+      error instanceof Error ? error.message : '履歴の保存に失敗しました',
+    )
+  }, [])
 
-  const persistHistory = (items: HistoryItem[], debounce = false): HistoryItem[] => {
-    const capped = capItems(items)
-    if (!debounce) {
-      if (persistTimerRef.current) {
-        clearTimeout(persistTimerRef.current)
-        persistTimerRef.current = null
-      }
-      flushHistoryPersist(capped)
-      return capped
-    }
-    pendingPersistRef.current = capped
-    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
-    persistTimerRef.current = setTimeout(() => {
-      persistTimerRef.current = null
-      if (pendingPersistRef.current) {
-        flushHistoryPersist(pendingPersistRef.current)
-      }
-    }, HISTORY_SAVE_DEBOUNCE_MS)
-    return capped
-  }
-  persistHistoryRef.current = persistHistory
+  const requestHistoryPersist = useHistoryPersistence({
+    items: history,
+    ready: historyPersistReady,
+    onStored: handleHistoryStored,
+    onRecovered: handleHistoryRecovered,
+    onError: handleHistoryPersistError,
+  })
 
   useEffect(() => {
-    return () => {
-      if (persistTimerRef.current) {
-        clearTimeout(persistTimerRef.current)
-        persistTimerRef.current = null
-      }
-      const pending = pendingPersistRef.current
-      pendingPersistRef.current = null
-      // Skip PUT before hydrate/migrate — stale snapshot can wipe migrated rows
-      if (pending && historyPersistReadyRef.current) {
-        void putHistory(pending)
-      }
-    }
-  }, [])
+    historyRef.current = history
+  }, [history])
+
+  useEffect(() => {
+    if (creditPurchaseSheetOpen) setCreditSheetRequested(true)
+  }, [creditPurchaseSheetOpen])
 
   useEffect(() => {
     if (!historyQuery.isSuccess || historyHydratedRef.current) return
@@ -248,12 +250,7 @@ export default function App() {
           queryClient.setQueryData(['history'], next)
           return next
         })
-        historyPersistReadyRef.current = true
-        // Flush any pre-hydrate pending after merging with migrate result
-        const pending = pendingPersistRef.current
-        if (pending) {
-          flushHistoryPersistRef.current(mergeHistory(pending, items))
-        }
+        setHistoryPersistReady(true)
       }
     })()
 
@@ -268,7 +265,7 @@ export default function App() {
     staleTime: 5 * 60_000,
   })
 
-  const models = modelsQuery.data?.data.models ?? []
+  const models = modelsQuery.data?.data.models ?? EMPTY_MODELS
   const syncedAt = modelsQuery.data?.data.syncedAt
   const hasApiKey = healthQuery.data?.hasKey === true
 
@@ -304,72 +301,122 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id])
 
-  const pendingTaskIds = useMemo(
-    () => history.filter((h) => isPendingState(h)).map((h) => h.taskId),
-    [history],
-  )
-
-  const pendingCount = pendingTaskIds.length
-
   // 開いたまま期限切れになった進行中を unknown に落とす
   useEffect(() => {
     const demoteStalePending = () => {
-      setHistory((prev) => {
-        const now = Date.now()
-        let changed = false
-        const next = prev.map((h) => {
-          if (
-            (h.state === 'waiting' ||
-              h.state === 'queuing' ||
-              h.state === 'generating') &&
-            now - h.createdAt >= PENDING_STALE_MS
-          ) {
-            changed = true
-            return { ...h, state: 'unknown' as const }
-          }
-          return h
-        })
-        return changed ? persistHistoryRef.current(next) : prev
+      const now = Date.now()
+      let changed = false
+      const next = historyRef.current.map((item) => {
+        if (
+          (item.state === 'waiting' ||
+            item.state === 'queuing' ||
+            item.state === 'generating') &&
+          now - item.createdAt >= PENDING_STALE_MS
+        ) {
+          changed = true
+          return { ...item, state: 'unknown' as const }
+        }
+        return item
       })
+      if (!changed) return
+      setHistory(next)
+      requestHistoryPersist('immediate')
     }
     demoteStalePending()
     const id = window.setInterval(demoteStalePending, 60_000)
     return () => window.clearInterval(id)
-  }, [])
+  }, [requestHistoryPersist])
+
+  const pendingTasks = useMemo(
+    () => history.filter((item) => isPendingState(item)),
+    [history],
+  )
+  const pendingCount = pendingTasks.length
 
   const taskQueries = useQueries({
-    queries: pendingTaskIds.map((taskId) => ({
-      queryKey: ['task', taskId] as const,
-      queryFn: () => fetchTask(taskId),
-      refetchInterval: 2500,
+    queries: pendingTasks.map((item) => ({
+      queryKey: [
+        'task',
+        item.taskId,
+        item.provider ?? 'market',
+        item.operation ?? 'generate',
+      ] as const,
+      queryFn: () => fetchTask(
+        item.taskId,
+        item.provider ?? 'market',
+        item.operation ?? 'generate',
+      ),
+      refetchInterval: () => taskPollInterval(item.createdAt),
       refetchIntervalInBackground: false,
       retry: 2,
     })),
   })
 
   const taskSnapshots = taskQueries
-    .map((q) => q.data?.data)
-    .filter(Boolean)
-    .map((d) =>
-      [
-        d!.taskId,
-        d!.state,
-        d!.resultUrls?.join(',') ?? '',
-        d!.creditsConsumed ?? '',
-        d!.failMsg ?? '',
-      ].join('|'),
-    )
+    .flatMap((query, index) => {
+      const data = query.data?.data
+      if (!data && query.error) {
+        const taskId = pendingTasks[index]?.taskId ?? 'unknown'
+        const error = query.error as { message?: unknown; status?: unknown; code?: unknown }
+        return [[
+          taskId,
+          'poll-error',
+          typeof error.message === 'string' ? error.message : String(query.error),
+          typeof error.status === 'number' ? error.status : '',
+          typeof error.code === 'number' ? error.code : '',
+        ].join('|')]
+      }
+      if (!data) return []
+      return [
+        [
+          data.taskId,
+          data.state,
+          data.resultUrls?.join(',') ?? '',
+          JSON.stringify(data.media),
+          data.providerStatus ?? '',
+          data.creditsConsumed ?? '',
+          data.failMsg ?? '',
+        ].join('|'),
+      ]
+    })
     .join(';')
 
   useEffect(() => {
     const updates = taskQueries
       .map((q) => q.data?.data)
       .filter((d): d is NonNullable<typeof d> => Boolean(d))
+    const pollFailures = taskQueries.flatMap((query, index) => {
+      if (!query.isError || !query.error) return []
+      const pending = pendingTasks[index]
+      if (!pending) return []
+      const candidate = query.error as { message?: unknown; status?: unknown; code?: unknown }
+      return [{
+        taskId: pending.taskId,
+        message: typeof candidate.message === 'string'
+          ? candidate.message
+          : String(query.error),
+        status: typeof candidate.status === 'number' ? candidate.status : undefined,
+        code: typeof candidate.code === 'number' ? candidate.code : undefined,
+      }]
+    })
 
-    if (updates.length === 0) return
+    if (updates.length === 0 && pollFailures.length === 0) return
 
-    let creditsChanged = false
-    let latestUsed: number | null = null
+    const completedUpdates = updates.filter(
+      (data) =>
+        data.state === 'success' ||
+        data.state === 'fail' ||
+        data.state === 'partial' ||
+        data.state === 'expired' ||
+        data.state === 'unknown',
+    )
+    const latestUsed = completedUpdates.reduce<number | null>(
+      (latest, data) =>
+        data.state === 'success' && typeof data.creditsConsumed === 'number'
+          ? data.creditsConsumed
+          : latest,
+      null,
+    )
 
     setHistory((prev) => {
       let next = prev
@@ -382,6 +429,8 @@ export default function App() {
           existing.state === data.state &&
           (existing.resultUrls?.join(',') ?? '') ===
             (data.resultUrls?.join(',') ?? '') &&
+          JSON.stringify(existing.media ?? []) === JSON.stringify(data.media) &&
+          existing.providerStatus === data.providerStatus &&
           existing.creditsConsumed === data.creditsConsumed &&
           (existing.failMsg ?? '') === (data.failMsg ?? '')
         ) {
@@ -391,31 +440,61 @@ export default function App() {
         const item: HistoryItem = {
           ...existing,
           state: data.state,
+          provider: data.provider,
+          operation: data.operation,
+          parentTaskId: data.parentTaskId ?? existing.parentTaskId,
           resultUrls: data.resultUrls,
+          media: data.media,
+          providerStatus: data.providerStatus,
+          partial: data.partial,
+          expiresAt: data.expiresAt,
           creditsConsumed: data.creditsConsumed,
           failMsg: data.failMsg,
+          rawParam: data.rawParam,
+          rawResult: data.rawResult,
           createdAt: normalizeTimestamp(data.createTime, existing.createdAt),
         }
         next = upsertInList(next, item)
         changed = true
 
-        if (data.state === 'success' && typeof data.creditsConsumed === 'number') {
-          latestUsed = data.creditsConsumed
-          creditsChanged = true
+      }
+
+      for (const failure of pollFailures) {
+        const existing = next.find((item) => item.taskId === failure.taskId)
+        if (!existing) continue
+        const rawResult = {
+          pollError: {
+            message: failure.message,
+            status: failure.status,
+            code: failure.code,
+            capturedAt: new Date().toISOString(),
+          },
+          previous: existing.rawResult,
         }
+        next = upsertInList(next, {
+          ...existing,
+          state: 'unknown',
+          providerStatus: 'POLL_ERROR',
+          failMsg: failure.message,
+          rawResult,
+        })
+        changed = true
       }
 
       if (!changed) return prev
-      return persistHistory(next, true)
+      return next
     })
 
+    if (completedUpdates.length > 0 || pollFailures.length > 0) {
+      requestHistoryPersist('debounced')
+    }
     if (latestUsed !== null) setLastUsedCredits(latestUsed)
-    if (creditsChanged) {
+    if (latestUsed !== null) {
       void queryClient.invalidateQueries({ queryKey: ['credits'] })
     }
     // taskSnapshots drives this effect; taskQueries is read for latest data
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskSnapshots, queryClient])
+  }, [taskSnapshots, queryClient, requestHistoryPersist])
 
   const generate = useMutation({
     mutationFn: async (vars: GenerateVars) => {
@@ -430,13 +509,27 @@ export default function App() {
         if (!item.input) {
           throw new Error('この履歴には入力データが保存されていません')
         }
-        const res = await generateTask({ model: item.model, input: item.input })
+        const provider = item.provider ?? 'market'
+        const operation = item.operation ?? 'generate'
+        const res = await submissionQueue.enqueue({
+          provider,
+          operation,
+          model: item.model,
+          run: () => generateTask({
+            model: item.model,
+            input: item.input as Record<string, unknown>,
+            provider,
+            operation,
+          }),
+        })
         return {
-          taskIds: [res.data.taskId],
-          input: item.input,
+          tasks: [{ taskId: res.data.taskId, input: item.input, normalized: res.data.task }],
           model: item.model,
           category: item.category,
           modelId: item.modelId,
+          provider,
+          operation,
+          parentTaskId: item.parentTaskId,
           failedCount: 0,
           insufficientCredits: false,
         }
@@ -444,7 +537,10 @@ export default function App() {
 
       if (!selected) throw new Error('モデルが選択されていません')
 
-      const errors = validateFields(selected.fields, values)
+      const errors = {
+        ...validateFields(selected.fields, values),
+        ...validateWorkflowInput(selected, values),
+      }
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors)
         focusFirstFieldError(errors)
@@ -452,7 +548,7 @@ export default function App() {
       }
       setFieldErrors({})
 
-      const input: Record<string, unknown> = {}
+      let input: Record<string, unknown> = {}
       for (const field of selected.fields) {
         const v = values[field.name]
         if (v === undefined || v === '') continue
@@ -489,70 +585,121 @@ export default function App() {
         input[field.name] = v
       }
 
+      input = sanitizeWorkflowInput(selected, input)
+
       const model = selected
+      const parentTaskId = parentTaskIdFor(model.operation ?? 'generate', input)
+      delete input._duration
+      delete input._parentTaskId
       const count = Math.max(1, Math.min(4, batchCount))
+      const segmentInputs = model.id === 'market/elevenlabs-tts' && typeof input.text === 'string'
+        ? input.text
+            .split(/\n\s*\n/g)
+            .map((text) => text.trim())
+            .filter(Boolean)
+            .map((text, index, segments) => ({
+              ...input,
+              text,
+              previous_text: segments[index - 1] ?? input.previous_text,
+              next_text: segments[index + 1] ?? input.next_text,
+            }))
+        : [input]
+      const requestInputs = Array.from(
+        { length: count },
+        () => segmentInputs,
+      ).flat()
       const settled = await Promise.allSettled(
-        Array.from({ length: count }, () =>
-          generateTask({ model: model.model, input }),
+        requestInputs.map((requestInput) =>
+          submissionQueue.enqueue({
+            provider: model.provider,
+            operation: model.operation ?? 'generate',
+            model: model.model,
+            run: () => generateTask({
+              model: model.model,
+              input: requestInput,
+              provider: model.provider,
+              operation: model.operation ?? 'generate',
+            }),
+          }),
         ),
       )
-      const taskIds = settled
-        .filter(
-          (r): r is PromiseFulfilledResult<{ data: { taskId: string } }> =>
-            r.status === 'fulfilled',
-        )
-        .map((r) => r.value.data.taskId)
+      const tasks = settled.flatMap((result, index) =>
+        result.status === 'fulfilled'
+          ? [{
+              taskId: result.value.data.taskId,
+              input: requestInputs[index] as Record<string, unknown>,
+              normalized: result.value.data.task,
+            }]
+          : [],
+      )
       const creditError = settled.find(
         (r): r is PromiseRejectedResult =>
           r.status === 'rejected' && isInsufficientCreditsError(r.reason),
       )
-      if (taskIds.length === 0) {
+      if (tasks.length === 0) {
         const first = creditError ?? (settled[0] as PromiseRejectedResult)
         throw first.reason instanceof Error
           ? first.reason
           : new Error('生成リクエストに失敗しました')
       }
       return {
-        taskIds,
-        input,
+        tasks,
         model: model.model,
         category: model.category,
         modelId: model.id,
-        failedCount: count - taskIds.length,
+        provider: model.provider,
+        operation: model.operation ?? 'generate',
+        parentTaskId,
+        failedCount: requestInputs.length - tasks.length,
         insufficientCredits: Boolean(creditError),
       }
     },
     onSuccess: ({
-      taskIds,
-      input,
+      tasks,
       model,
       category,
       modelId,
+      provider,
+      operation,
+      parentTaskId,
       failedCount,
       insufficientCredits,
     }) => {
       const now = Date.now()
       setHistory((prev) => {
         let next = prev
-        for (const taskId of taskIds) {
+        for (const task of tasks) {
           const item: HistoryItem = {
-            taskId,
+            taskId: task.taskId,
             model,
             category,
-            state: 'waiting',
+            state: task.normalized?.state ?? 'waiting',
             createdAt: now,
-            prompt: promptFromInput(input),
+            prompt: promptFromInput(task.input),
             modelId,
-            input,
+            input: task.input,
+            provider,
+            operation,
+            parentTaskId,
+            resultUrls: task.normalized?.resultUrls,
+            media: task.normalized?.media,
+            providerStatus: task.normalized?.providerStatus,
+            partial: task.normalized?.partial,
+            expiresAt: task.normalized?.expiresAt,
+            creditsConsumed: task.normalized?.creditsConsumed,
+            failMsg: task.normalized?.failMsg,
+            rawParam: task.normalized?.rawParam,
+            rawResult: task.normalized?.rawResult,
           }
           next = upsertInList(next, item)
         }
-        return persistHistory(next)
+        return next
       })
-      if (taskIds.length === 1) setViewerTaskId(taskIds[0])
+      requestHistoryPersist('immediate')
+      if (tasks.length === 1) setViewerTaskId(tasks[0]?.taskId ?? null)
       if (failedCount > 0) {
         setFormError(
-          `${taskIds.length} 件を送信しました（${failedCount} 件は送信に失敗）${
+          `${tasks.length} 件を送信しました（${failedCount} 件は送信に失敗）${
             insufficientCredits ? '。クレジットが不足している可能性があります' : ''
           }`,
         )
@@ -563,13 +710,42 @@ export default function App() {
       }
     },
     onError: (e) => {
-      setFormError(e instanceof Error ? e.message : '生成に失敗しました')
-      if (isInsufficientCreditsError(e)) {
+      const action = classifyApiError(e)
+      const base = e instanceof Error ? e.message : '生成に失敗しました'
+      setFormError(
+        action === 'refunded'
+          ? `${base}。クレジットは返却済みです。残高を更新しました`
+          : action === 'fix-input'
+            ? `${base}。入力内容を修正してから再送信してください`
+            : base,
+      )
+      if (action === 'purchase' || isInsufficientCreditsError(e)) {
         setCreditPurchaseSheetOpen(true)
+        void queryClient.invalidateQueries({ queryKey: ['credits'] })
+      }
+      if (action === 'refunded') {
         void queryClient.invalidateQueries({ queryKey: ['credits'] })
       }
     },
   })
+  const personasQuery = useQuery({
+    queryKey: ['personas'],
+    queryFn: async () => (await fetchPersonas()).data.items,
+    staleTime: 30_000,
+  })
+  const audioAssetsQuery = useQuery({
+    queryKey: ['audio-assets'],
+    queryFn: async () => (await fetchAudioAssets()).data.items,
+    staleTime: 30_000,
+  })
+
+  useEffect(() => {
+    const refresh = () => {
+      void queryClient.invalidateQueries({ queryKey: ['audio-assets'] })
+    }
+    window.addEventListener('kie:audio-assets-changed', refresh)
+    return () => window.removeEventListener('kie:audio-assets-changed', refresh)
+  }, [queryClient])
 
   const submitting = generate.isPending
   const generateDisabled = submitting || !hasApiKey || healthQuery.isLoading
@@ -629,6 +805,111 @@ export default function App() {
     generate.mutate({ source: 'retry', item: h })
   }
 
+  function updateHistoryItem(item: HistoryItem) {
+    setHistory((previous) => upsertInList(previous, item))
+    requestHistoryPersist('immediate')
+  }
+
+  function openWorkflow(
+    targetCategory: ModelCategory,
+    targetModelId: string,
+    input: Record<string, unknown>,
+    notice: string,
+  ) {
+    setViewerTaskId(null)
+    pendingRestoreRef.current = { modelId: targetModelId, input }
+    setFormError(null)
+    setFormNotice(notice)
+    if (category !== targetCategory) setCategory(targetCategory)
+    setModelId(targetModelId)
+  }
+
+  function quickAction(
+    item: HistoryItem,
+    media: MediaAsset,
+    action: QuickAction,
+    options: Record<string, unknown> = {},
+  ) {
+    const url = media.url ?? media.streamUrl
+    const audioId = media.providerAssetId ?? media.id
+    const metadata = media.metadata ?? {}
+    switch (action) {
+      case 'suno-extend':
+        openWorkflow('audio', 'suno/extend', {
+          taskId: item.taskId,
+          audioId,
+          continueAt: Math.max(0, (media.duration ?? 1) - 1),
+          prompt: '',
+          style: typeof metadata.tags === 'string' ? metadata.tags : '',
+          title: media.title ?? '',
+          model: typeof metadata.modelName === 'string' ? metadata.modelName : 'V5',
+        }, '元の曲を引き継ぎました。内容を確認してから送信してください')
+        break
+      case 'suno-replace-section':
+        openWorkflow('audio', 'suno/replace-section', {
+          taskId: item.taskId,
+          audioId,
+          infillStartS: options.infillStartS ?? 0,
+          infillEndS: options.infillEndS ?? Math.min(12, media.duration ?? 12),
+          prompt: '',
+          tags: typeof metadata.tags === 'string' ? metadata.tags : '',
+          title: media.title ?? 'Edited section',
+          _duration: media.duration ?? 0,
+        }, '選択区間を引き継ぎました。置換内容を入力してから送信してください')
+        break
+      case 'suno-upload-extend':
+        openWorkflow('audio', 'suno/upload-extend', {
+          uploadUrl: url,
+          continueAt: Math.max(0, (media.duration ?? 1) - 1),
+          prompt: '',
+        }, '音源を引き継ぎました。続きを確認してから送信してください')
+        break
+      case 'runway-aleph':
+        openWorkflow('video', 'runway/aleph', { _parentTaskId: item.taskId, videoUrl: url, prompt: '' }, '元動画を引き継ぎました。変更内容を入力してから送信してください')
+        break
+      case 'runway-extend':
+        openWorkflow('video', 'runway/extend', {
+          taskId: item.taskId,
+          videoId: media.providerAssetId ?? '',
+          prompt: '',
+        }, '元動画を引き継ぎました。延長内容を確認してから送信してください')
+        break
+      case 'veo-extend':
+        openWorkflow('video', 'veo/extend', { taskId: item.taskId, prompt: '' }, '元動画を引き継ぎました。延長内容を確認してから送信してください')
+        break
+      case 'veo-1080p':
+        openWorkflow('video', 'veo/1080p', { taskId: item.taskId, index: 0 }, '元タスクを引き継ぎました。確認後に1080p処理を送信してください')
+        break
+      case 'veo-4k':
+        openWorkflow('video', 'veo/4k', { taskId: item.taskId, index: 0 }, '元タスクを引き継ぎました。確認後に4K処理を送信してください')
+        break
+      case 'lip-sync':
+        openWorkflow('video', 'market/volcengine-lip-sync', {
+          video_url: url,
+          audio_url: options.audioUrl,
+        }, '動画と音声を引き継ぎました。尺の扱いを確認してから送信してください')
+        break
+      case 'market-upscale':
+        if (media.kind === 'video') {
+          openWorkflow('video', 'topaz/video-upscale', { video_url: url }, '元動画を引き継ぎました。倍率を確認してから送信してください')
+        } else {
+          openWorkflow('image', 'topaz/image-upscale', { image_url: url }, '元画像を引き継ぎました。倍率を確認してから送信してください')
+        }
+        break
+      case 'market-edit':
+        if (media.kind === 'video') {
+          openWorkflow('video', 'wan/2-7-videoedit', { video_url: url, prompt: '' }, '元動画を引き継ぎました。編集内容を入力してから送信してください')
+        } else {
+          openWorkflow('image', 'google/nano-banana-edit', { image_urls: [url], prompt: '' }, '元画像を引き継ぎました。編集内容を入力してから送信してください')
+        }
+        break
+      default: {
+        const exhaustive: never = action
+        return exhaustive
+      }
+    }
+  }
+
   function sendToInput(url: string) {
     if (!selected) return
     setViewerTaskId(null)
@@ -669,16 +950,13 @@ export default function App() {
   }
 
   function togglePin(taskId: string) {
-    let rejected: 'pin-limit' | undefined
-    setHistory((prev) => {
-      const result = togglePinInList(prev, taskId)
-      rejected = result.rejected
-      if (result.rejected) return prev
-      return persistHistory(result.next)
-    })
-    if (rejected === 'pin-limit') {
+    const result = togglePinInList(history, taskId)
+    if (result.rejected === 'pin-limit') {
       setFormError(`ピン留めは最大${MAX_PINNED}件までです`)
+      return
     }
+    setHistory(result.next)
+    requestHistoryPersist('immediate')
   }
 
   function exportHistory() {
@@ -732,14 +1010,14 @@ export default function App() {
   }
 
   return (
-    <>
+    <AudioPlayerProvider>
       <StudioShell
       chromeTitle={
         <>
           KIE <span className="text-[var(--accent)]">STUDIO</span>
         </>
       }
-      chromeSubtitle="kie.ai Market API · IMAGE / VIDEO"
+      chromeSubtitle="kie.ai · IMAGE / VIDEO / AUDIO"
       chromeMeta={
         <>
           {syncedAt && (
@@ -798,6 +1076,7 @@ export default function App() {
             <>
               <div id="panel-image" hidden={category !== 'image'} />
               <div id="panel-video" hidden={category !== 'video'} />
+              <div id="panel-audio" hidden={category !== 'audio'} />
               {selected.docsUrl && (
                 <a
                   href={selected.docsUrl}
@@ -818,6 +1097,57 @@ export default function App() {
                 fieldErrors={fieldErrors}
                 modelId={selected.id}
               />
+
+              {selected.provider === 'suno' && values.customMode !== false && selected.fields.some((field) => field.name === 'style') && (
+                <SunoStyleAssist
+                  value={typeof values.style === 'string' ? values.style : ''}
+                  disabled={submitting}
+                  onApply={(next) => handleFieldChange('style', next)}
+                />
+              )}
+
+              {selected.provider === 'suno' && values.customMode !== false && selected.fields.some((field) => field.name === 'personaId') && (personasQuery.data?.length ?? 0) > 0 && (
+                <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
+                  <label htmlFor="saved-persona" className="studio-label">素材棚 · Persona</label>
+                  <select
+                    id="saved-persona"
+                    className="studio-select mt-2 w-full"
+                    value={typeof values.personaId === 'string' ? values.personaId : ''}
+                    onChange={(event) => handleFieldChange('personaId', event.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="">Personaを使わない</option>
+                    {personasQuery.data?.map((saved) => (
+                      <option key={saved.id} value={saved.personaId}>{saved.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {selected.provider === 'suno' && selected.fields.some((field) => field.name === 'uploadUrl') && (audioAssetsQuery.data?.length ?? 0) > 0 && (
+                <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
+                  <span className="studio-label">素材棚 · 外部音源</span>
+                  <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                    {audioAssetsQuery.data?.map((asset) => {
+                      const expired = typeof asset.expiresAt === 'number' && asset.expiresAt <= Date.now()
+                      const selectedAsset = Array.isArray(values.uploadUrl) && values.uploadUrl.includes(asset.url)
+                      return (
+                        <Pressable
+                          key={asset.id}
+                          disabled={submitting || expired}
+                          aria-pressed={selectedAsset}
+                          className={`studio-chip min-w-36 justify-start ${selectedAsset ? 'is-active' : ''}`}
+                          onClick={() => handleFieldChange('uploadUrl', [asset.url])}
+                          scaleTo={0.97}
+                        >
+                          <span className="line-clamp-1">{asset.name}</span>
+                          <span className="ml-1 text-[9px] opacity-70">{expired ? '期限切れ' : '選択'}</span>
+                        </Pressable>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {formError && (
                 <div className="text-sm text-[var(--danger)]" role="alert">
@@ -844,8 +1174,27 @@ export default function App() {
 
               {pendingCount > 0 && (
                 <p className="text-xs text-[var(--warning)]" role="status">
-                  ギャラリーで {pendingCount} 件を並列生成中…
+                  API受付済み {pendingTasks.filter((item) => item.state === 'waiting' || item.state === 'queuing').length} 件
+                  {' · '}生成中 {pendingTasks.filter((item) => item.state === 'generating' || item.state === 'unknown').length} 件
                 </p>
+              )}
+
+              {submissionQueueItems.length > 0 && (
+                <div className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs">
+                  <span role="status">
+                    未送信 {submissionQueueItems.filter((item) => item.state === 'unsent').length} 件
+                    {' · '}API受付済み {submissionQueueItems.filter((item) => item.state === 'accepted').length} 件
+                  </span>
+                  {submissionQueueItems.some((item) => item.state === 'unsent') && (
+                    <Pressable
+                      className="studio-btn"
+                      onClick={() => submissionQueue.cancelUnsent()}
+                      scaleTo={0.97}
+                    >
+                      未送信をキャンセル
+                    </Pressable>
+                  )}
+                </div>
               )}
 
               <div className="studio-sticky-cta space-y-2">
@@ -921,9 +1270,12 @@ export default function App() {
           onTogglePin={togglePin}
           onExport={exportHistory}
           onImport={importHistory}
+          onUpdateItem={updateHistoryItem}
+          onQuickAction={quickAction}
           retryDisabled={generateDisabled}
           onRemove={(taskId) => {
-            setHistory((prev) => persistHistory(removeFromList(prev, taskId)))
+            setHistory((prev) => removeFromList(prev, taskId))
+            requestHistoryPersist('immediate')
             if (viewerTaskId === taskId) setViewerTaskId(null)
           }}
           onClear={() => {
@@ -934,18 +1286,21 @@ export default function App() {
             ) {
               return
             }
-            setHistory((prev) =>
-              persistHistory(prev.filter((h) => h.pinned)),
-            )
+            setHistory((prev) => prev.filter((h) => h.pinned))
+            requestHistoryPersist('immediate')
             setViewerTaskId(null)
           }}
         />
       }
       />
-      <CreditPurchaseSheet
-        open={creditPurchaseSheetOpen}
-        onClose={() => setCreditPurchaseSheetOpen(false)}
-      />
-    </>
+      {creditSheetRequested && (
+        <Suspense fallback={null}>
+          <CreditPurchaseSheet
+            open={creditPurchaseSheetOpen}
+            onClose={() => setCreditPurchaseSheetOpen(false)}
+          />
+        </Suspense>
+      )}
+    </AudioPlayerProvider>
   )
 }

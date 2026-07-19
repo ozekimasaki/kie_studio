@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+.studio-pressable {
+  touch-action: manipulation;
+  transition: transform 60ms ease-out;
+}
+
+.studio-pressable:active:not(:disabled) {
+  transform: scale(var(--press-scale, 0.96));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-pressable {
+    transition: none;
+  }
+}
+
 /*
   Precision Light — tokens from DESIGN.md
   Three layers: primitive → semantic → component (via studio-* classes)

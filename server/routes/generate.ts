@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { createTask } from '../kie/market.ts'
 import { assertPlainObject, assertSafeHttpsUrl } from '../kie/safe.ts'
 import { KieApiError } from '../kie/client.ts'
+import { getProviderAdapter } from '../kie/adapters/index.ts'
+import type { Operation, Provider } from '../kie/types.ts'
 
 export const generateRoutes = new Hono()
 
@@ -10,6 +11,8 @@ generateRoutes.post('/generate', async (c) => {
     model?: string
     input?: unknown
     callBackUrl?: string
+    provider?: Provider
+    operation?: Operation
   }
   try {
     body = await c.req.json()
@@ -45,11 +48,16 @@ generateRoutes.post('/generate', async (c) => {
     }
   }
 
-  const taskId = await createTask({
+  const provider = body.provider ?? 'market'
+  const operation = body.operation ?? 'generate'
+  const adapter = getProviderAdapter(provider)
+  const created = await adapter.create({
+    provider,
+    operation,
     model: body.model,
     input: body.input,
     callBackUrl,
   })
 
-  return c.json({ data: { taskId } })
+  return c.json({ data: created })
 })

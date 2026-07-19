@@ -1,5 +1,6 @@
 import { assertKieOk, KieApiError, kieFetch } from './client.ts'
 import type { NormalizedTask, TaskState } from './types.ts'
+import { mediaKindFromUrl } from '../../src/lib/media.ts'
 
 interface CreateTaskResponse {
   code: number
@@ -7,19 +8,23 @@ interface CreateTaskResponse {
   data?: { taskId: string }
 }
 
-interface RecordInfoResponse {
+export interface RecordInfoResponse {
   code: number
   msg: string
   data?: {
     taskId?: string
     model?: string
     state?: string
+    progress?: number
+    param?: string
     resultJson?: string
     failCode?: string | null
     failMsg?: string | null
     costTime?: number
     completeTime?: number
     createTime?: number
+    updateTime?: number
+    expireTime?: number
     creditsConsumed?: number
     consumeCredits?: number
     credit?: number
@@ -62,20 +67,29 @@ function normalizeState(state?: string): TaskState {
   }
 }
 
-function parseResultUrls(resultJson?: string): string[] {
-  if (!resultJson) return []
+function parseResult(resultJson?: string): { raw?: unknown; urls: string[] } {
+  if (!resultJson) return { urls: [] }
   try {
-    const parsed = JSON.parse(resultJson) as {
-      resultUrls?: string[]
-      resultObject?: { resultUrls?: string[] }
+    const parsed: unknown = JSON.parse(resultJson)
+    const urls = new Set<string>()
+    function visit(value: unknown, key = ''): void {
+      if (typeof value === 'string') {
+        if (/url/i.test(key) && /^https:\/\//i.test(value)) urls.add(value)
+        return
+      }
+      if (Array.isArray(value)) {
+        for (const entry of value) visit(entry, key)
+        return
+      }
+      if (!value || typeof value !== 'object') return
+      for (const [childKey, child] of Object.entries(value as Record<string, unknown>)) {
+        visit(child, childKey)
+      }
     }
-    if (Array.isArray(parsed.resultUrls)) return parsed.resultUrls
-    if (Array.isArray(parsed.resultObject?.resultUrls)) {
-      return parsed.resultObject.resultUrls
-    }
-    return []
+    visit(parsed)
+    return { raw: parsed, urls: [...urls] }
   } catch {
-    return []
+    return { raw: resultJson, urls: [] }
   }
 }
 
@@ -89,7 +103,14 @@ export async function getTaskDetail(taskId: string): Promise<NormalizedTask> {
     throw new KieApiError('Failed to get task detail', 502, res.code)
   }
 
-  const data = res.data
+  return normalizeMarketTask(taskId, res.data)
+}
+
+export function normalizeMarketTask(
+  taskId: string,
+  data: NonNullable<RecordInfoResponse['data']>,
+): NormalizedTask {
+  const result = parseResult(data.resultJson)
   const creditsConsumed =
     typeof data.creditsConsumed === 'number'
       ? data.creditsConsumed
@@ -99,14 +120,39 @@ export async function getTaskDetail(taskId: string): Promise<NormalizedTask> {
           ? data.credit
           : undefined
 
+  const normalizedState = normalizeState(data.state)
+  const state = normalizedState === 'fail' && result.urls.length > 0
+    ? 'partial'
+    : normalizedState
+  const fallbackKind = /audio|speech|voice|tts|music|sound/i.test(data.model ?? '')
+    ? 'audio'
+    : /video|kling|veo|runway|seedance|wan/i.test(data.model ?? '')
+      ? 'video'
+      : 'image'
+
   return {
     taskId: data.taskId ?? taskId,
-    state: normalizeState(data.state),
+    state,
+    provider: 'market',
+    operation: 'generate',
     model: data.model,
-    resultUrls: parseResultUrls(data.resultJson),
+    resultUrls: result.urls,
+    media: result.urls.map((url) => ({
+      kind: mediaKindFromUrl(url, fallbackKind),
+      url,
+    })),
+    providerStatus: data.state,
+    progress: data.progress,
+    partial: state === 'partial',
     failMsg: data.failMsg ?? undefined,
+    failCode: data.failCode ?? undefined,
     costTime: data.costTime,
     createTime: data.createTime,
+    updateTime: data.updateTime,
+    completeTime: data.completeTime,
     creditsConsumed,
+    expiresAt: data.expireTime,
+    rawParam: data.param,
+    rawResult: result.raw,
   }
 }

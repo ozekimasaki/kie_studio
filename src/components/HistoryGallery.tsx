@@ -1,30 +1,43 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { useMutation } from '@tanstack/react-query'
 import {
-  ArrowRight,
-  Check,
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import {
   Ellipsis,
   Pin,
   Plus,
+  Play,
   RotateCcw,
   X,
 } from 'lucide-react'
-import { fetchDownloadUrl } from '../lib/api.ts'
-import { isVideoUrl } from '../lib/media.ts'
+import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
 import {
-  mediaExpiry,
+  mediaExpiryAt,
   mediaExpiryCardLabel,
-  mediaExpiryViewerLabel,
   type MediaExpiry,
 } from '../lib/mediaExpiry.ts'
-import type { HistoryItem, TaskState } from '../lib/models/types.ts'
+import type { HistoryItem, MediaAsset, QuickAction, TaskState } from '../lib/models/types.ts'
 import { Pressable, PressableDiv } from './motion/Pressable.tsx'
 import { SharedMedia } from './motion/SharedMedia.tsx'
-import { SpringSheet } from './motion/SpringSheet.tsx'
+import { useAudioPlayer } from './audio/audioPlayerContext.ts'
+
+const HistorySheets = lazy(() =>
+  import('./HistorySheets.tsx').then((module) => ({
+    default: module.HistorySheets,
+  })),
+)
 
 function successExpiry(item: HistoryItem): MediaExpiry | null {
-  if (item.state !== 'success' || !(item.resultUrls?.length ?? 0)) return null
-  return mediaExpiry(item.createdAt)
+  if (
+    item.state !== 'success' ||
+    !((item.media?.length ?? 0) || (item.resultUrls?.length ?? 0))
+  ) return null
+  const expiresAt = item.expiresAt ?? item.media?.find((asset) => asset.expiresAt)?.expiresAt
+  return expiresAt ? mediaExpiryAt(expiresAt) : null
 }
 
 function expiryTextClass(status: MediaExpiry['status']): string {
@@ -61,12 +74,16 @@ function stateLabel(state: TaskState): string {
       return '成功'
     case 'fail':
       return '失敗'
+    case 'partial':
+      return '一部成功'
+    case 'expired':
+      return '期限切れ'
     case 'generating':
       return '生成中'
     case 'queuing':
       return 'キュー'
     case 'waiting':
-      return '待機'
+      return 'API受付済み'
     case 'unknown':
       return '状態不明'
     default: {
@@ -85,24 +102,58 @@ function isBusyState(state: TaskState): boolean {
   return state === 'waiting' || state === 'queuing' || state === 'generating'
 }
 
-/** 保存済み input があれば全文、なければ切り詰め済み prompt */
-function fullPrompt(item: HistoryItem): string | undefined {
-  const p = item.input?.prompt
-  if (typeof p === 'string' && p) return p
-  return item.prompt
-}
-
 function canReuse(item: HistoryItem): boolean {
   return Boolean(item.input && item.modelId)
 }
 
 type StateFilter = 'all' | 'success' | 'fail' | 'busy'
-type CategoryFilter = 'all' | 'image' | 'video'
+type CategoryFilter = 'all' | 'image' | 'video' | 'audio'
 
 const MAX_COMPARE = 4
+const HISTORY_PAGE_SIZE = 48
 
 const smallBtnClass = 'studio-btn'
 const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
+
+function DeferredVideo({
+  src,
+  className,
+}: {
+  src: string
+  className: string
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [nearViewport, setNearViewport] = useState(false)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || nearViewport) return
+    if (!('IntersectionObserver' in window)) {
+      setNearViewport(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setNearViewport(true)
+        observer.disconnect()
+      },
+      { rootMargin: '300px' },
+    )
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [nearViewport])
+
+  return (
+    <video
+      ref={videoRef}
+      src={nearViewport ? src : undefined}
+      muted
+      preload={nearViewport ? 'metadata' : 'none'}
+      className={className}
+    />
+  )
+}
 
 export function HistoryGallery({
   items,
@@ -119,6 +170,8 @@ export function HistoryGallery({
   onTogglePin,
   onExport,
   onImport,
+  onUpdateItem,
+  onQuickAction,
 }: {
   items: HistoryItem[]
   activeTaskId?: string | null
@@ -134,8 +187,15 @@ export function HistoryGallery({
   onTogglePin: (taskId: string) => void
   onExport: () => void
   onImport: (raw: string) => void
+  onUpdateItem: (item: HistoryItem) => void
+  onQuickAction: (
+    item: HistoryItem,
+    media: MediaAsset,
+    action: QuickAction,
+    options?: Record<string, unknown>,
+  ) => void
 }) {
-  const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const audioPlayer = useAudioPlayer()
   const importInputRef = useRef<HTMLInputElement>(null)
   const [stateFilter, setStateFilter] = useState<StateFilter>('all')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
@@ -143,21 +203,26 @@ export function HistoryGallery({
   const [compareMode, setCompareMode] = useState(false)
   const [compareIds, setCompareIds] = useState<string[]>([])
   const [showCompare, setShowCompare] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE)
+  const [sheetsRequested, setSheetsRequested] = useState(false)
 
-  const active = items.find((h) => h.taskId === activeTaskId) ?? null
-  const activeExpiry = active ? successExpiry(active) : null
+  const modelOptions = useMemo(
+    () => [...new Set(items.map((h) => h.model))],
+    [items],
+  )
+
+  const itemById = useMemo(
+    () => new Map(items.map((item) => [item.taskId, item])),
+    [items],
+  )
+  const active = (activeTaskId ? itemById.get(activeTaskId) : null) ?? null
   const showViewer = Boolean(
     active &&
       (isBusyState(active.state) ||
         active.state === 'fail' ||
         active.state === 'unknown' ||
+        (active.media?.length ?? 0) > 0 ||
         (active.resultUrls?.length ?? 0) > 0),
-  )
-
-  const modelOptions = useMemo(
-    () => [...new Set(items.map((h) => h.model))],
-    [items],
   )
 
   const filtered = useMemo(() => {
@@ -168,42 +233,46 @@ export function HistoryGallery({
       if (modelFilter !== 'all' && h.model !== modelFilter) return false
       switch (stateFilter) {
         case 'success':
-          return h.state === 'success'
+          return h.state === 'success' || h.state === 'partial'
         case 'fail':
-          return h.state === 'fail'
+          return h.state === 'fail' || h.state === 'expired'
         case 'busy':
           return isBusyState(h.state)
-        default:
+        case 'all':
           return true
+        default: {
+          const exhaustive: never = stateFilter
+          return exhaustive
+        }
       }
     })
     // ピン留めを先頭に表示（同グループ内は createdAt 降順）
-    return [...list].sort((a, b) => {
+    return list.toSorted((a, b) => {
       const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))
       if (pinDiff !== 0) return pinDiff
       return (b.createdAt ?? 0) - (a.createdAt ?? 0)
     })
   }, [items, categoryFilter, modelFilter, stateFilter])
 
+  const validCompareIds = useMemo(
+    () => compareIds.filter((id) => itemById.has(id)),
+    [compareIds, itemById],
+  )
   const compareItems = useMemo(
     () =>
-      compareIds
-        .map((id) => items.find((h) => h.taskId === id))
+      validCompareIds
+        .map((id) => itemById.get(id))
         .filter((h): h is HistoryItem => Boolean(h)),
-    [compareIds, items],
+    [itemById, validCompareIds],
   )
-
-  const download = useMutation({
-    mutationFn: async (url: string) => {
-      const res = await fetchDownloadUrl(url)
-      window.open(res.data.downloadUrl, '_blank', 'noopener,noreferrer')
-    },
-  })
-
-  useEffect(() => {
-    if (!showViewer) return
-    closeBtnRef.current?.focus()
-  }, [showViewer])
+  const compareIdSet = useMemo(
+    () => new Set(validCompareIds),
+    [validCompareIds],
+  )
+  const visibleItems = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount],
+  )
 
   useEffect(() => {
     if (!showCompare) return
@@ -215,24 +284,17 @@ export function HistoryGallery({
   }, [showCompare])
 
   useEffect(() => {
-    if (!copied) return
-    const t = setTimeout(() => setCopied(false), 1500)
-    return () => clearTimeout(t)
-  }, [copied])
-
-  // 削除・押し出しで消えたアイテムを比較選択から除去する
-  useEffect(() => {
-    setCompareIds((prev) => {
-      const next = prev.filter((id) => items.some((h) => h.taskId === id))
-      return next.length === prev.length ? prev : next
-    })
-  }, [items])
+    if (showViewer || showCompare) setSheetsRequested(true)
+  }, [showCompare, showViewer])
 
   function toggleCompare(taskId: string) {
     setCompareIds((prev) => {
-      if (prev.includes(taskId)) return prev.filter((id) => id !== taskId)
-      if (prev.length >= MAX_COMPARE) return prev
-      return [...prev, taskId]
+      const current = prev.filter((id) => itemById.has(id))
+      if (current.includes(taskId)) {
+        return current.filter((id) => id !== taskId)
+      }
+      if (current.length >= MAX_COMPARE) return current
+      return [...current, taskId]
     })
   }
 
@@ -244,15 +306,6 @@ export function HistoryGallery({
 
   async function handleImportFile(file: File) {
     onImport(await file.text())
-  }
-
-  async function copyPrompt(text: string) {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-    } catch {
-      window.prompt('コピーできませんでした。手動でコピーしてください:', text)
-    }
   }
 
   return (
@@ -319,7 +372,7 @@ export function HistoryGallery({
                 </button>
               )}
               <p className="border-t border-[var(--border)] px-3 py-2 text-[10px] leading-snug text-[var(--text-muted)]">
-                生成メディアは kie.ai 側で約14日で削除されます
+                生成メディアには保存期限があります。期限が不明なものも早めに保存してください
               </p>
             </div>
           </details>
@@ -342,19 +395,24 @@ export function HistoryGallery({
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <select
             value={categoryFilter}
-            onChange={(e) =>
+            onChange={(e) => {
               setCategoryFilter(e.target.value as CategoryFilter)
-            }
+              setVisibleCount(HISTORY_PAGE_SIZE)
+            }}
             aria-label="カテゴリで絞り込み"
             className={filterSelectClass}
           >
             <option value="all">全カテゴリ</option>
             <option value="image">画像</option>
             <option value="video">動画</option>
+            <option value="audio">音声</option>
           </select>
           <select
             value={stateFilter}
-            onChange={(e) => setStateFilter(e.target.value as StateFilter)}
+            onChange={(e) => {
+              setStateFilter(e.target.value as StateFilter)
+              setVisibleCount(HISTORY_PAGE_SIZE)
+            }}
             aria-label="状態で絞り込み"
             className={filterSelectClass}
           >
@@ -365,7 +423,10 @@ export function HistoryGallery({
           </select>
           <select
             value={modelFilter}
-            onChange={(e) => setModelFilter(e.target.value)}
+            onChange={(e) => {
+              setModelFilter(e.target.value)
+              setVisibleCount(HISTORY_PAGE_SIZE)
+            }}
             aria-label="モデルで絞り込み"
             className={`${filterSelectClass} max-w-44`}
           >
@@ -421,10 +482,16 @@ export function HistoryGallery({
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((h) => {
+            {visibleItems.map((h) => {
               const selected = h.taskId === activeTaskId
-              const comparing = compareIds.includes(h.taskId)
-              const thumb = h.resultUrls?.[0]
+              const comparing = compareIdSet.has(h.taskId)
+              const primaryMedia = h.media?.[0]
+              const mediaUrl = primaryMedia?.url ?? primaryMedia?.streamUrl ?? h.resultUrls?.[0]
+              const thumb = primaryMedia?.previewUrl ?? mediaUrl
+              const audioTracks = (h.media ?? []).filter((asset) => asset.kind === 'audio')
+              const isAudio = primaryMedia?.kind === 'audio'
+                || h.category === 'audio'
+                || Boolean(mediaUrl && isAudioUrl(mediaUrl))
               const busy = isBusyState(h.state)
               const expiry = successExpiry(h)
 
@@ -456,12 +523,10 @@ export function HistoryGallery({
                         layoutId={`media-${h.taskId}`}
                         className="relative aspect-square overflow-hidden bg-[var(--bg-elevated)]"
                       >
-                        {thumb ? (
-                          isVideoUrl(thumb) ? (
-                            <video
-                              src={thumb}
-                              muted
-                              preload="metadata"
+                        {thumb && !isAudio ? (
+                          isVideoUrl(mediaUrl ?? thumb) ? (
+                            <DeferredVideo
+                              src={mediaUrl ?? thumb}
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -473,6 +538,21 @@ export function HistoryGallery({
                               className="h-full w-full object-cover"
                             />
                           )
+                        ) : isAudio && !busy ? (
+                          <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-4 text-center">
+                            {primaryMedia?.previewUrl ? (
+                              <img src={primaryMedia.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+                            ) : null}
+                            <span className="relative grid size-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--on-accent)] shadow-lg">
+                              <Play size={20} fill="currentColor" />
+                            </span>
+                            <span className="relative line-clamp-2 text-xs font-semibold">
+                              {primaryMedia?.title ?? h.prompt ?? '生成オーディオ'}
+                            </span>
+                            {audioTracks.length > 1 && (
+                              <span className="relative text-[10px] text-[var(--text-muted)]">{audioTracks.length}候補</span>
+                            )}
+                          </div>
                         ) : busy ? (
                           <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-3">
                             <div className="relative">
@@ -523,13 +603,15 @@ export function HistoryGallery({
                           <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
                             <span>{relativeTime(h.createdAt)}</span>
                             <span className="flex shrink-0 items-center gap-1.5">
-                              {expiry && (
+                              {expiry ? (
                                 <span
                                   className={`font-semibold ${expiryTextClass(expiry.status)}`}
                                 >
                                   {mediaExpiryCardLabel(expiry)}
                                 </span>
-                              )}
+                              ) : h.state === 'success' ? (
+                                <span className="font-semibold">早めに保存</span>
+                              ) : null}
                               {typeof h.creditsConsumed === 'number' && (
                                 <span>−{h.creditsConsumed}</span>
                               )}
@@ -538,7 +620,7 @@ export function HistoryGallery({
                         </div>
 
                         <span className="absolute left-2 top-2 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-raised)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--text)]">
-                          {h.category === 'image' ? '画像' : '動画'}
+                          {h.category === 'image' ? '画像' : h.category === 'video' ? '動画' : '音声'}
                         </span>
 
                         {compareMode && (
@@ -550,7 +632,7 @@ export function HistoryGallery({
                             }`}
                           >
                             {comparing ? (
-                              compareIds.indexOf(h.taskId) + 1
+                              validCompareIds.indexOf(h.taskId) + 1
                             ) : (
                               <Plus size={12} strokeWidth={2.5} aria-hidden />
                             )}
@@ -602,6 +684,20 @@ export function HistoryGallery({
                           再実行
                         </Pressable>
                       )}
+                      {isAudio && audioTracks.length > 0 && (
+                        <Pressable
+                          title="再生"
+                          aria-label="再生"
+                          onClick={() => audioPlayer.play(
+                            audioTracks[0] as typeof audioTracks[number] & { taskId?: string },
+                            audioTracks,
+                          )}
+                          scaleTo={0.96}
+                          className="rounded-[var(--radius-sm)] p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                        >
+                          <Play size={14} fill="currentColor" aria-hidden />
+                        </Pressable>
+                      )}
                       <Pressable
                         title="削除"
                         aria-label="削除"
@@ -617,305 +713,41 @@ export function HistoryGallery({
               )
             })}
           </div>
+          {visibleItems.length < filtered.length && (
+            <div className="flex justify-center py-4">
+              <button
+                type="button"
+                className="studio-btn"
+                onClick={() =>
+                  setVisibleCount((count) => count + HISTORY_PAGE_SIZE)
+                }
+              >
+                さらに表示（残り {filtered.length - visibleItems.length} 件）
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      <SpringSheet
-        open={Boolean(showViewer && active)}
-        onClose={onClose}
-        labelledBy="viewer-title"
-      >
-        {active && (
-          <>
-            <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
-              <div className="min-w-0">
-                <div
-                  id="viewer-title"
-                  className="truncate text-lg font-bold"
-                >
-                  {shortModel(active.model)}
-                  {active.pinned && (
-                    <span
-                      className="ml-2 inline-flex align-middle text-[var(--accent)]"
-                      title="ピン留め済み"
-                    >
-                      <Pin
-                        size={14}
-                        strokeWidth={2}
-                        aria-hidden
-                        fill="currentColor"
-                      />
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 truncate text-xs text-[var(--text-muted)]">
-                  {fullPrompt(active) || active.taskId}
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                {canReuse(active) && (
-                  <Pressable
-                    onClick={() => onReuse(active)}
-                    className={`${smallBtnClass} inline-flex items-center gap-1`}
-                    title="この入力をフォームに復元"
-                    scaleTo={0.96}
-                  >
-                    <RotateCcw size={14} strokeWidth={2} aria-hidden />
-                    再利用
-                  </Pressable>
-                )}
-                <Pressable
-                  ref={closeBtnRef}
-                  className={smallBtnClass}
-                  onClick={onClose}
-                  scaleTo={0.96}
-                  data-sheet-initial-focus="true"
-                >
-                  閉じる
-                </Pressable>
-              </div>
-            </div>
-
-            <div className="max-h-[70vh] overflow-y-auto bg-[var(--bg)] p-5">
-              {isBusyState(active.state) && (
-                <div className="flex flex-col items-center justify-center gap-3 py-16">
-                  <div className="studio-spinner size-8 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
-                  <p className="text-sm text-[var(--text-muted)]">
-                    {stateLabel(active.state)}…
-                  </p>
-                </div>
-              )}
-              {active.state === 'fail' && (
-                <div className="space-y-3 py-10 text-center">
-                  <p className="text-sm font-medium text-[var(--danger)]">
-                    生成に失敗しました
-                  </p>
-                  {active.failMsg && (
-                    <p className="mx-auto max-w-md text-xs text-[var(--text-muted)]">
-                      {active.failMsg}
-                    </p>
-                  )}
-                  {canReuse(active) && (
-                    <Pressable
-                      disabled={retryDisabled}
-                      onClick={() => onRetry(active)}
-                      className="studio-btn-primary mx-auto w-auto px-4 py-2 text-xs disabled:opacity-50"
-                      scaleTo={0.97}
-                    >
-                      同じ入力で再実行
-                    </Pressable>
-                  )}
-                </div>
-              )}
-              {active.state === 'unknown' && (
-                <p className="py-10 text-center text-sm text-[var(--warning)]">
-                  状態を取得できませんでした
-                </p>
-              )}
-              {active.state === 'success' &&
-                (active.resultUrls ?? []).map((url, index) => (
-                  <div key={url} className="space-y-3">
-                    <SharedMedia
-                      layoutId={index === 0 ? `media-${active.taskId}` : `media-${active.taskId}-${index}`}
-                      className="studio-tile overflow-hidden"
-                    >
-                      {isVideoUrl(url) ? (
-                        <video
-                          src={url}
-                          controls
-                          preload="metadata"
-                          className="mx-auto max-h-[55vh] w-full bg-black object-contain"
-                        />
-                      ) : (
-                        <img
-                          src={url}
-                          alt={active.prompt || '生成結果'}
-                          decoding="async"
-                          className="mx-auto max-h-[55vh] w-full object-contain"
-                        />
-                      )}
-                    </SharedMedia>
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={smallBtnClass}
-                      >
-                        開く
-                      </a>
-                      <Pressable
-                        disabled={download.isPending}
-                        onClick={() => download.mutate(url)}
-                        className={smallBtnClass}
-                        scaleTo={0.96}
-                      >
-                        {download.isPending ? '取得中…' : 'API でダウンロード'}
-                      </Pressable>
-                      <Pressable
-                        onClick={() => onSendToInput(url)}
-                        title="この結果を左フォームの参照入力に追加"
-                        className={`${smallBtnClass} inline-flex items-center gap-1`}
-                        scaleTo={0.96}
-                      >
-                        <ArrowRight size={14} strokeWidth={2} aria-hidden />
-                        入力に使う
-                      </Pressable>
-                      {typeof active.creditsConsumed === 'number' && (
-                        <span className="ml-auto self-center text-xs text-[var(--text-muted)]">
-                          使用{' '}
-                          <span className="font-semibold text-[var(--danger)]">
-                            −{active.creditsConsumed}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                    {index === 0 && activeExpiry && (
-                      <p
-                        className={`text-xs ${
-                          activeExpiry.status === 'ok'
-                            ? 'text-[var(--text-muted)]'
-                            : activeExpiry.status === 'soon'
-                              ? 'text-[var(--warning)]'
-                              : 'text-[var(--danger)]'
-                        }`}
-                      >
-                        {mediaExpiryViewerLabel(activeExpiry)}
-                      </p>
-                    )}
-                    {download.isError && (
-                      <p className="studio-field-error">
-                        {(download.error as Error).message ||
-                          'ダウンロード URL の取得に失敗しました'}
-                      </p>
-                    )}
-                  </div>
-                ))}
-
-              {fullPrompt(active) && (
-                <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4">
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="studio-label">プロンプト</span>
-                    <Pressable
-                      onClick={() => void copyPrompt(fullPrompt(active)!)}
-                      className={`${smallBtnClass} text-[11px]`}
-                      scaleTo={0.96}
-                    >
-                      {copied ? (
-                        <>
-                          <span role="status" aria-live="polite">
-                            コピーしました
-                          </span>
-                          <Check size={12} strokeWidth={2.5} aria-hidden />
-                        </>
-                      ) : (
-                        'コピー'
-                      )}
-                    </Pressable>
-                  </div>
-                  <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--text)]">
-                    {fullPrompt(active)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </SpringSheet>
-
-      <SpringSheet
-        open={showCompare && compareItems.length >= 2}
-        onClose={() => setShowCompare(false)}
-        label="生成結果の比較"
-        maxWidthClass="max-w-6xl"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
-          <div className="text-lg font-bold tabular-nums">
-            比較（{compareItems.length} 件）
-          </div>
-          <Pressable
-            className={smallBtnClass}
-            onClick={() => setShowCompare(false)}
-            scaleTo={0.96}
-          >
-            閉じる
-          </Pressable>
-        </div>
-        <div className="max-h-[82vh] overflow-y-auto p-4">
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:grid sm:overflow-visible sm:pb-0 sm:[grid-template-columns:repeat(var(--compare-cols),minmax(0,1fr))]"
-            style={
-              {
-                '--compare-cols': String(compareItems.length),
-              } as CSSProperties
-            }
-          >
-            {compareItems.map((h) => {
-              const url = h.resultUrls?.[0]
-              return (
-                <div
-                  key={h.taskId}
-                  className="studio-tile flex w-[min(80vw,280px)] shrink-0 snap-center flex-col gap-2 p-2 sm:w-auto sm:min-w-0"
-                >
-                  <div className="overflow-hidden rounded-[var(--radius-sm)] bg-[var(--bg)]">
-                    {url ? (
-                      isVideoUrl(url) ? (
-                        <video
-                          src={url}
-                          controls
-                          muted
-                          preload="metadata"
-                          className="aspect-square w-full bg-black object-contain"
-                        />
-                      ) : (
-                        <img
-                          src={url}
-                          alt={h.prompt || shortModel(h.model)}
-                          loading="lazy"
-                          decoding="async"
-                          className="aspect-square w-full object-contain"
-                        />
-                      )
-                    ) : (
-                      <div className="flex aspect-square items-center justify-center text-xs text-[var(--text-muted)]">
-                        {stateLabel(h.state)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="truncate text-xs font-semibold">
-                      {shortModel(h.model)}
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
-                      <span>{relativeTime(h.createdAt)}</span>
-                      {typeof h.creditsConsumed === 'number' && (
-                        <span>−{h.creditsConsumed}</span>
-                      )}
-                    </div>
-                    {fullPrompt(h) && (
-                      <p className="line-clamp-6 whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[var(--text-muted)]">
-                        {fullPrompt(h)}
-                      </p>
-                    )}
-                    {canReuse(h) && (
-                      <Pressable
-                        onClick={() => {
-                          exitCompareMode()
-                          onReuse(h)
-                        }}
-                        className={`${smallBtnClass} w-full`}
-                        scaleTo={0.97}
-                      >
-                        <RotateCcw size={12} strokeWidth={2} aria-hidden />
-                        この入力を再利用
-                      </Pressable>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </SpringSheet>
+      {sheetsRequested && (
+        <Suspense fallback={null}>
+          <HistorySheets
+            active={active}
+            showViewer={showViewer}
+            compareItems={compareItems}
+            showCompare={showCompare}
+            retryDisabled={retryDisabled}
+            onCloseViewer={onClose}
+            onCloseCompare={() => setShowCompare(false)}
+            onReuse={onReuse}
+            onRetry={onRetry}
+            onSendToInput={onSendToInput}
+            items={items}
+            onUpdateItem={onUpdateItem}
+            onQuickAction={onQuickAction}
+          />
+        </Suspense>
+      )}
     </section>
   )
 }

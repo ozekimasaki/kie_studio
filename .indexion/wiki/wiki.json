@@ -12,7 +12,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "getting-started",
@@ -26,7 +26,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "core-concepts",
@@ -41,7 +41,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "architecture",
@@ -59,7 +59,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "frontend",
@@ -75,7 +75,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "client-lib",
@@ -86,7 +86,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "server-api",
@@ -99,7 +99,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "kie-integration",
@@ -110,7 +110,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "catalog-sync",
@@ -124,7 +124,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "prompt-optimize",

@@ -12,6 +12,8 @@ import { downloadUrlRoutes } from './routes/download-url.ts'
 import { modelsRoutes } from './routes/models.ts'
 import { optimizePromptRoutes } from './routes/optimize-prompt.ts'
 import { historyRoutes } from './routes/history.ts'
+import { sunoRoutes } from './routes/suno.ts'
+import { archiveRoutes } from './routes/archive.ts'
 import { KieApiError } from './kie/client.ts'
 import { syncCatalog } from './catalog/sync.ts'
 import { getDb, getDbPath } from './db/open.ts'
@@ -45,6 +47,8 @@ app.route('/api', downloadUrlRoutes)
 app.route('/api', modelsRoutes)
 app.route('/api', optimizePromptRoutes)
 app.route('/api', historyRoutes)
+app.route('/api', sunoRoutes)
+app.route('/api', archiveRoutes)
 
 app.onError((err, c) => {
   if (err instanceof KieApiError) {

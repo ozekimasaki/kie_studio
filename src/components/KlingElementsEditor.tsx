@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LoaderCircle, Plus, X } from 'lucide-react'
 import { uploadFile } from '../lib/api.ts'
 import type { KlingElement } from '../lib/models/types.ts'
@@ -24,9 +24,25 @@ export function KlingElementsEditor({
   disabled?: boolean
   onInsertMention?: (token: string) => void
 }) {
+  const [elementIds, setElementIds] = useState(() =>
+    value.map(() => crypto.randomUUID()),
+  )
   const [uploadingKey, setUploadingKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  useEffect(() => {
+    if (elementIds.length === value.length) return
+    if (elementIds.length > value.length) {
+      setElementIds((previous) => previous.slice(0, value.length))
+      return
+    }
+    const additions = Array.from(
+      { length: value.length - elementIds.length },
+      () => crypto.randomUUID(),
+    )
+    setElementIds((previous) => [...previous, ...additions])
+  }, [elementIds.length, value.length])
 
   function update(index: number, patch: Partial<KlingElement>) {
     onChange(value.map((el, i) => (i === index ? { ...el, ...patch } : el)))
@@ -62,13 +78,16 @@ export function KlingElementsEditor({
 
       {value.map((el, index) => {
         const token = `@${el.name || `element_${index + 1}`}`
-        const inputKey = `${index}:img`
+        const elementId =
+          elementIds[index] ??
+          `pending-${el.name}-${el.element_input_urls[0] ?? 'empty'}`
+        const inputKey = `${elementId}:img`
         const nameId = `kling-name-${index}`
         const descId = `kling-desc-${index}`
         const fileId = `kling-file-${index}`
         return (
           <div
-            key={index}
+            key={elementId}
             className="space-y-2 border-t border-[var(--border)] pt-3 first:border-t-0 first:pt-0"
           >
             <div className="flex items-start justify-between gap-2">
@@ -87,7 +106,10 @@ export function KlingElementsEditor({
                 <button
                   type="button"
                   disabled={disabled}
-                  onClick={() => onChange(value.filter((_, i) => i !== index))}
+                  onClick={() => {
+                    setElementIds((ids) => ids.filter((_, i) => i !== index))
+                    onChange(value.filter((_, i) => i !== index))
+                  }}
                   className="rounded-[var(--radius-md)] px-2 py-0.5 text-xs text-[var(--text-muted)] hover:text-[var(--danger)]"
                 >
                   削除
@@ -131,7 +153,7 @@ export function KlingElementsEditor({
               <div className="flex flex-wrap gap-2">
                 {el.element_input_urls.map((url, ui) => (
                   <div
-                    key={`${url}-${ui}`}
+                    key={url}
                     className="studio-tile relative h-16 w-16"
                   >
                     <img
@@ -191,6 +213,7 @@ export function KlingElementsEditor({
                   fileRefs.current[inputKey] = node
                 }}
                 type="file"
+                aria-label={`要素 ${index + 1} の画像を選択`}
                 accept="image/jpeg,image/png,image/webp,image/*"
                 multiple
                 className="sr-only"
@@ -209,7 +232,14 @@ export function KlingElementsEditor({
         <button
           type="button"
           disabled={disabled}
-          onClick={() => onChange([...value, emptyElement(value.length)])}
+          onClick={() => {
+            const elementId = crypto.randomUUID()
+            setElementIds((ids) => [
+              ...ids,
+              elementId,
+            ])
+            onChange([...value, emptyElement(value.length)])
+          }}
           className="inline-flex w-full items-center justify-center gap-1.5 border-t border-dashed border-[var(--border)] px-3 py-2.5 text-sm text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <Plus size={16} strokeWidth={2} aria-hidden />

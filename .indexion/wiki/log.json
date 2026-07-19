@@ -365,10 +365,472 @@
     ]
   },
   {
-    "timestamp": "1783830180935",
+    "timestamp": "0",
     "operation": "index build",
     "actor": "indexion",
     "summary": "Built index: 3 categories, 10 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: client-lib",
+    "details": {},
+    "affected_pages": [
+      "client-lib"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "8 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "overview",
+      "getting-started",
+      "core-concepts",
+      "architecture",
+      "frontend",
+      "server-api",
+      "catalog-sync",
+      "prompt-optimize"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 10 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: client-lib",
+    "details": {},
+    "affected_pages": [
+      "client-lib"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 10 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "2 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "core-concepts",
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: core-concepts",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 10 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: core-concepts",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 10 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "7 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "overview",
+      "getting-started",
+      "core-concepts",
+      "architecture",
+      "frontend",
+      "server-api",
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: overview",
+    "details": {},
+    "affected_pages": [
+      "overview"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: getting-started",
+    "details": {},
+    "affected_pages": [
+      "getting-started"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: architecture",
+    "details": {},
+    "affected_pages": [
+      "architecture"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: core-concepts",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: client-lib",
+    "details": {},
+    "affected_pages": [
+      "client-lib"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: server-api",
+    "details": {},
+    "affected_pages": [
+      "server-api"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: kie-integration",
+    "details": {},
+    "affected_pages": [
+      "kie-integration"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: core-concepts",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "3 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "core-concepts",
+      "architecture",
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: core-concepts",
+    "details": {},
+    "affected_pages": [
+      "core-concepts"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: architecture",
+    "details": {},
+    "affected_pages": [
+      "architecture"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "pages update",
+    "actor": "agent:codex",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "0",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "0",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 10 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1784400880755",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 8 hub pages",
     "details": {},
     "affected_pages": []
   }

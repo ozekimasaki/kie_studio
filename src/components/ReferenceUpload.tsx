@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { LoaderCircle, Plus, X } from 'lucide-react'
-import { uploadFile } from '../lib/api.ts'
+import { FileAudio, LoaderCircle, Plus, X } from 'lucide-react'
+import { uploadFileWithMetadata } from '../lib/api.ts'
 import { formatMention } from '../lib/models/mentions.ts'
 import type { MentionStyle } from '../lib/models/types.ts'
 import { Pressable } from './motion/Pressable.tsx'
@@ -14,6 +14,8 @@ export function ReferenceUpload({
   mentionStyle = 'at-image',
   onInsertMention,
   inputId,
+  maxFileSizeMb,
+  maxDurationSec,
 }: {
   value: string[]
   onChange: (urls: string[]) => void
@@ -23,10 +25,36 @@ export function ReferenceUpload({
   mentionStyle?: MentionStyle
   onInsertMention?: (token: string) => void
   inputId?: string
+  maxFileSizeMb?: number
+  maxDurationSec?: number
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>({})
+
+  async function mediaDuration(file: File): Promise<number | undefined> {
+    if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) return undefined
+    const url = URL.createObjectURL(file)
+    try {
+      const element = document.createElement(file.type.startsWith('audio/') ? 'audio' : 'video')
+      element.preload = 'metadata'
+      return await new Promise<number | undefined>((resolve) => {
+        const timeout = window.setTimeout(() => resolve(undefined), 5000)
+        element.onloadedmetadata = () => {
+          window.clearTimeout(timeout)
+          resolve(Number.isFinite(element.duration) ? element.duration : undefined)
+        }
+        element.onerror = () => {
+          window.clearTimeout(timeout)
+          resolve(undefined)
+        }
+        element.src = url
+      })
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return
@@ -35,8 +63,27 @@ export function ReferenceUpload({
     try {
       const remaining = Math.max(0, maxItems - value.length)
       const list = [...files].slice(0, remaining)
-      const urls = await Promise.all(list.map((file) => uploadFile(file)))
+      for (const file of list) {
+        if (maxFileSizeMb && file.size > maxFileSizeMb * 1024 * 1024) {
+          throw new Error(`${file.name} は ${maxFileSizeMb}MB 以下にしてください`)
+        }
+        if (maxDurationSec) {
+          const duration = await mediaDuration(file)
+          if (duration !== undefined && duration > maxDurationSec) {
+            throw new Error(`${file.name} は ${maxDurationSec}秒以内にしてください`)
+          }
+        }
+      }
+      const uploaded = await Promise.all(list.map((file) => uploadFileWithMetadata(file)))
+      const urls = uploaded.map((result) => result.fileUrl)
+      setDisplayNames((current) => ({
+        ...current,
+        ...Object.fromEntries(uploaded.map((result) => [result.fileUrl, result.originalFileName])),
+      }))
       onChange([...value, ...urls])
+      if (/audio/i.test(accept)) {
+        window.dispatchEvent(new Event('kie:audio-assets-changed'))
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'アップロードに失敗しました')
     } finally {
@@ -53,10 +100,7 @@ export function ReferenceUpload({
         {value.map((url, i) => {
           const token = formatMention(mentionStyle, i + 1)
           return (
-            <div
-              key={`${url}-${i}`}
-              className="studio-tile relative w-[88px]"
-            >
+            <div key={url} className="studio-tile relative w-[88px]">
               <div className="relative h-20 w-full">
                 {/\.(mp4|webm|mov)(\?|$)/i.test(url) ? (
                   <video
@@ -65,6 +109,11 @@ export function ReferenceUpload({
                     muted
                     preload="metadata"
                   />
+                ) : /\.(mp3|wav|m4a|aac|ogg|flac|opus)(\?|$)/i.test(url) || /audio/i.test(accept) ? (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[var(--accent-soft)] px-2 text-center">
+                    <FileAudio size={20} />
+                    <span className="line-clamp-2 text-[9px]">{displayNames[url] ?? `音声 ${i + 1}`}</span>
+                  </div>
                 ) : (
                   <img
                     src={url}
@@ -128,6 +177,7 @@ export function ReferenceUpload({
         id={inputId}
         ref={inputRef}
         type="file"
+        aria-label="参照ファイルを選択"
         accept={accept}
         multiple={maxItems > 1}
         className="sr-only"
@@ -136,7 +186,9 @@ export function ReferenceUpload({
         onChange={(e) => void handleFiles(e.target.files)}
       />
       <p className="text-[11px] text-[var(--text-muted)]">
-        {value.length}/{maxItems} · File Upload API（24h 有効）
+        {value.length}/{maxItems} · File Upload API（期限あり）
+        {maxFileSizeMb ? ` · ${maxFileSizeMb}MB以下` : ''}
+        {maxDurationSec ? ` · ${maxDurationSec}秒以内` : ''}
         {canMention && ' · チップを押すとプロンプトへ挿入'}
       </p>
       {error && (
