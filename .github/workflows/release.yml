@@ -51,6 +51,17 @@ jobs:
           RELEASE_BASE_URL: ${{ secrets.RELEASE_BASE_URL }}
         run: bun run desktop:build:${{ steps.channel.outputs.channel }}
 
+      - name: Build Linux .deb
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # Electrobun only emits tar.gz/tar.zst for Linux; wrap the executable
+          # tree from build/<channel>-linux-x64 into a .deb (dpkg-deb ships with
+          # the Ubuntu runner) and drop it next to the other artifacts so the
+          # publish step uploads it too.
+          bun scripts/build-linux-deb.mjs ${{ steps.channel.outputs.channel }}
+          cp release/*.deb artifacts/
+
       - name: Extract Windows installer (.exe)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -79,6 +90,7 @@ jobs:
           files: |
             artifacts/*.dmg
             artifacts/*.exe
+            artifacts/*.deb
             artifacts/*.zip
             artifacts/*.tar.gz
             artifacts/*.tar.zst

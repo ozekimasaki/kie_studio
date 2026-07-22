@@ -7,11 +7,11 @@
 ; と完全一致させ、自動アップデート (Updater) の期待パスを維持する。
 ;
 ; バージョン/チャネルは ISCC の /D で注入する（build-win-installer.mjs 経由）。
-;   iscc /DAppVersion=0.1.0 /DAppChannel=canary kie-studio.iss
+;   iscc /DAppVersion=0.1.1 /DAppChannel=canary kie-studio.iss
 ; =============================================================================
 
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.1.1"
 #endif
 #ifndef AppChannel
   #define AppChannel "canary"
