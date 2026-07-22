@@ -9,7 +9,6 @@ import {
 } from 'react'
 import {
   useMutation,
-  useQueries,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
@@ -39,10 +38,8 @@ import {
   fetchHistory,
   fetchModels,
   fetchPersonas,
-  fetchTask,
   generateTask,
   importHistoryApi,
-  migrateHistory,
 } from './lib/api.ts'
 import { classifyApiError } from './lib/submissionQueue.ts'
 import { useSubmissionQueue } from './lib/useSubmissionQueue.ts'
@@ -54,18 +51,17 @@ import { parentTaskIdFor } from './lib/taskRelations.ts'
 import {
   exportHistoryJson,
   MAX_PINNED,
-  mergeHistory,
-  normalizeTimestamp,
   parseHistoryJson,
   PENDING_STALE_MS,
   removeFromList,
   togglePinInList,
-  UNKNOWN_STALE_MS,
   upsertInList,
 } from './lib/history.ts'
 import { isVideoUrl } from './lib/media.ts'
 import { presentField } from './lib/studioPresentation.ts'
 import { useHistoryPersistence } from './lib/useHistoryPersistence.ts'
+import { useHistoryMigration } from './lib/useHistoryMigration.ts'
+import { useTaskPolling } from './lib/useTaskPolling.ts'
 import type {
   FieldSchema,
   HistoryItem,
@@ -119,31 +115,7 @@ type GenerateVars =
   | { source: 'form' }
   | { source: 'retry'; item: HistoryItem }
 
-function isPendingState(item: HistoryItem): boolean {
-  const age = Date.now() - item.createdAt
-  if (
-    item.state === 'waiting' ||
-    item.state === 'queuing' ||
-    item.state === 'generating'
-  ) {
-    return age < PENDING_STALE_MS
-  }
-  if (item.state === 'unknown') {
-    return age < UNKNOWN_STALE_MS
-  }
-  return false
-}
-
-const LS_HISTORY_KEY = 'kie-studio-history'
-const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
 const EMPTY_MODELS: ModelDefinition[] = []
-
-function taskPollInterval(createdAt: number): number {
-  const age = Date.now() - createdAt
-  if (age < 30_000) return 2500
-  if (age < 2 * 60_000) return 5000
-  return 10_000
-}
 
 function isInsufficientCreditsError(error: unknown): boolean {
   if (error instanceof ApiClientError && error.status === 402) return true
@@ -175,7 +147,6 @@ export default function App() {
     modelId: string
     input: Record<string, unknown>
   } | null>(null)
-  const historyHydratedRef = useRef(false)
   const historyRef = useRef<HistoryItem[]>([])
   const [historyPersistReady, setHistoryPersistReady] = useState(false)
   const { queue: submissionQueue, items: submissionQueueItems } =
@@ -230,51 +201,25 @@ export default function App() {
     if (settingsSheetOpen) setSettingsSheetRequested(true)
   }, [settingsSheetOpen])
 
-  useEffect(() => {
-    if (!historyQuery.isSuccess || historyHydratedRef.current) return
-    historyHydratedRef.current = true
+  const handleHistoryMigrationError = useCallback((error: unknown) => {
+    setFormError(
+      error instanceof Error
+        ? `履歴の移行に失敗しました: ${error.message}`
+        : '履歴の移行に失敗しました',
+    )
+  }, [])
+  const handleHistoryReady = useCallback(() => {
+    setHistoryPersistReady(true)
+  }, [])
 
-    let cancelled = false
-    void (async () => {
-      let items = historyQuery.data ?? []
-      try {
-        if (localStorage.getItem(LS_MIGRATED_KEY) !== '1') {
-          const raw = localStorage.getItem(LS_HISTORY_KEY)
-          if (raw) {
-            const parsed = JSON.parse(raw) as unknown
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const res = await migrateHistory(parsed)
-              items = res.data.items
-              localStorage.removeItem(LS_HISTORY_KEY)
-            }
-          }
-          localStorage.setItem(LS_MIGRATED_KEY, '1')
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setFormError(
-            e instanceof Error
-              ? `履歴の移行に失敗しました: ${e.message}`
-              : '履歴の移行に失敗しました',
-          )
-        }
-      }
-      if (!cancelled) {
-        // Prefer in-memory updates that landed during migrate await
-        setHistory((prev) => {
-          const next =
-            prev.length === 0 ? items : mergeHistory(prev, items)
-          queryClient.setQueryData(['history'], next)
-          return next
-        })
-        setHistoryPersistReady(true)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [historyQuery.isSuccess, historyQuery.data, queryClient])
+  useHistoryMigration({
+    isSuccess: historyQuery.isSuccess,
+    data: historyQuery.data,
+    setHistory,
+    queryClient,
+    onReady: handleHistoryReady,
+    onError: handleHistoryMigrationError,
+  })
 
   const modelsQuery = useQuery({
     queryKey: ['models', category],
@@ -344,174 +289,20 @@ export default function App() {
     return () => window.clearInterval(id)
   }, [requestHistoryPersist])
 
-  const pendingTasks = useMemo(
-    () => history.filter((item) => isPendingState(item)),
-    [history],
-  )
-  const pendingCount = pendingTasks.length
-
-  const taskQueries = useQueries({
-    queries: pendingTasks.map((item) => ({
-      queryKey: [
-        'task',
-        item.taskId,
-        item.provider ?? 'market',
-        item.operation ?? 'generate',
-      ] as const,
-      queryFn: () => fetchTask(
-        item.taskId,
-        item.provider ?? 'market',
-        item.operation ?? 'generate',
-      ),
-      refetchInterval: () => taskPollInterval(item.createdAt),
-      refetchIntervalInBackground: false,
-      retry: 2,
-    })),
-  })
-
-  const taskSnapshots = taskQueries
-    .flatMap((query, index) => {
-      const data = query.data?.data
-      if (!data && query.error) {
-        const taskId = pendingTasks[index]?.taskId ?? 'unknown'
-        const error = query.error as { message?: unknown; status?: unknown; code?: unknown }
-        return [[
-          taskId,
-          'poll-error',
-          typeof error.message === 'string' ? error.message : String(query.error),
-          typeof error.status === 'number' ? error.status : '',
-          typeof error.code === 'number' ? error.code : '',
-        ].join('|')]
-      }
-      if (!data) return []
-      return [
-        [
-          data.taskId,
-          data.state,
-          data.resultUrls?.join(',') ?? '',
-          JSON.stringify(data.media),
-          data.providerStatus ?? '',
-          data.creditsConsumed ?? '',
-          data.failMsg ?? '',
-        ].join('|'),
-      ]
-    })
-    .join(';')
-
-  useEffect(() => {
-    const updates = taskQueries
-      .map((q) => q.data?.data)
-      .filter((d): d is NonNullable<typeof d> => Boolean(d))
-    const pollFailures = taskQueries.flatMap((query, index) => {
-      if (!query.isError || !query.error) return []
-      const pending = pendingTasks[index]
-      if (!pending) return []
-      const candidate = query.error as { message?: unknown; status?: unknown; code?: unknown }
-      return [{
-        taskId: pending.taskId,
-        message: typeof candidate.message === 'string'
-          ? candidate.message
-          : String(query.error),
-        status: typeof candidate.status === 'number' ? candidate.status : undefined,
-        code: typeof candidate.code === 'number' ? candidate.code : undefined,
-      }]
-    })
-
-    if (updates.length === 0 && pollFailures.length === 0) return
-
-    const completedUpdates = updates.filter(
-      (data) =>
-        data.state === 'success' ||
-        data.state === 'fail' ||
-        data.state === 'partial' ||
-        data.state === 'expired' ||
-        data.state === 'unknown',
-    )
-    const latestUsed = completedUpdates.reduce<number | null>(
-      (latest, data) =>
-        data.state === 'success' && typeof data.creditsConsumed === 'number'
-          ? data.creditsConsumed
-          : latest,
-      null,
-    )
-
-    setHistory((prev) => {
-      let next = prev
-      let changed = false
-
-      for (const data of updates) {
-        const existing = next.find((h) => h.taskId === data.taskId)
-        if (!existing) continue
-        if (
-          existing.state === data.state &&
-          (existing.resultUrls?.join(',') ?? '') ===
-            (data.resultUrls?.join(',') ?? '') &&
-          JSON.stringify(existing.media ?? []) === JSON.stringify(data.media) &&
-          existing.providerStatus === data.providerStatus &&
-          existing.creditsConsumed === data.creditsConsumed &&
-          (existing.failMsg ?? '') === (data.failMsg ?? '')
-        ) {
-          continue
-        }
-
-        const item: HistoryItem = {
-          ...existing,
-          state: data.state,
-          provider: data.provider,
-          operation: data.operation,
-          parentTaskId: data.parentTaskId ?? existing.parentTaskId,
-          resultUrls: data.resultUrls,
-          media: data.media,
-          providerStatus: data.providerStatus,
-          partial: data.partial,
-          expiresAt: data.expiresAt,
-          creditsConsumed: data.creditsConsumed,
-          failMsg: data.failMsg,
-          rawParam: data.rawParam,
-          rawResult: data.rawResult,
-          createdAt: normalizeTimestamp(data.createTime, existing.createdAt),
-        }
-        next = upsertInList(next, item)
-        changed = true
-
-      }
-
-      for (const failure of pollFailures) {
-        const existing = next.find((item) => item.taskId === failure.taskId)
-        if (!existing) continue
-        const rawResult = {
-          pollError: {
-            message: failure.message,
-            status: failure.status,
-            code: failure.code,
-            capturedAt: new Date().toISOString(),
-          },
-          previous: existing.rawResult,
-        }
-        next = upsertInList(next, {
-          ...existing,
-          state: 'unknown',
-          providerStatus: 'POLL_ERROR',
-          failMsg: failure.message,
-          rawResult,
-        })
-        changed = true
-      }
-
-      if (!changed) return prev
-      return next
-    })
-
-    if (completedUpdates.length > 0 || pollFailures.length > 0) {
-      requestHistoryPersist('debounced')
-    }
-    if (latestUsed !== null) setLastUsedCredits(latestUsed)
-    if (latestUsed !== null) {
+  const handleCreditsUsed = useCallback(
+    (credits: number) => {
+      setLastUsedCredits(credits)
       void queryClient.invalidateQueries({ queryKey: ['credits'] })
-    }
-    // taskSnapshots drives this effect; taskQueries is read for latest data
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskSnapshots, queryClient, requestHistoryPersist])
+    },
+    [queryClient],
+  )
+
+  const { pendingCount, pendingTasks } = useTaskPolling({
+    history,
+    setHistory,
+    requestHistoryPersist,
+    onCreditsUsed: handleCreditsUsed,
+  })
 
   const generate = useMutation({
     mutationFn: async (vars: GenerateVars) => {
