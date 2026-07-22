@@ -1,10 +1,12 @@
 import { Hono } from 'hono'
-import { deleteSetting, getSetting, setSetting } from '../db/settings.ts'
+import { deleteSetting } from '../db/settings.ts'
 import {
   KIE_API_KEY_SETTING,
   getStoredApiKey,
+  hasStoredApiKeyInStore,
   hasUsableApiKey,
   maskApiKey,
+  setStoredApiKey,
 } from '../settings/apiKey.ts'
 import { getDb } from '../db/open.ts'
 
@@ -22,7 +24,7 @@ settingsRoutes.get('/settings', (c) => {
       hasApiKey: hasUsableApiKey(),
       apiKeyMasked: key ? maskApiKey(key) : null,
       // Whether the effective key comes from the persisted store (vs env only).
-      apiKeyFromStore: Boolean(getSetting(KIE_API_KEY_SETTING)),
+      apiKeyFromStore: hasStoredApiKeyInStore(),
     },
   })
 })
@@ -39,7 +41,7 @@ settingsRoutes.put('/settings/api-key', async (c) => {
   if (!apiKey || apiKey === PLACEHOLDER) {
     return c.json({ error: 'apiKey is required' }, 400)
   }
-  setSetting(KIE_API_KEY_SETTING, apiKey)
+  setStoredApiKey(apiKey)
   return c.json({
     data: { hasApiKey: true, apiKeyMasked: maskApiKey(apiKey) },
   })

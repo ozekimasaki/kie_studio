@@ -1,4 +1,5 @@
-import { getSetting } from '../db/settings.ts'
+import { getSetting, setSetting } from '../db/settings.ts'
+import { decryptSecret, encryptSecret } from './secretBox.ts'
 
 /** Settings key under which the KIE API key is persisted. */
 export const KIE_API_KEY_SETTING = 'KIE_API_KEY'
@@ -11,12 +12,34 @@ function normalize(value: string | null | undefined): string | null {
   return trimmed
 }
 
+/** Decrypt the persisted API key, tolerating legacy plaintext and corruption. */
+function readStoredSetting(): string | null {
+  const stored = getSetting(KIE_API_KEY_SETTING)
+  if (stored === null) return null
+  try {
+    return decryptSecret(stored)
+  } catch {
+    // Wrong key or tampered payload: treat as no usable stored key.
+    return null
+  }
+}
+
 /**
  * Resolve the effective KIE API key.
  * Priority: persisted setting (app_settings) → KIE_API_KEY env var.
  */
 export function getStoredApiKey(): string | null {
-  return normalize(getSetting(KIE_API_KEY_SETTING)) ?? normalize(process.env.KIE_API_KEY)
+  return normalize(readStoredSetting()) ?? normalize(process.env.KIE_API_KEY)
+}
+
+/** Persist the API key, encrypted at rest. */
+export function setStoredApiKey(key: string): void {
+  setSetting(KIE_API_KEY_SETTING, encryptSecret(key))
+}
+
+/** Whether a key is persisted in the store (independent of the env fallback). */
+export function hasStoredApiKeyInStore(): boolean {
+  return normalize(readStoredSetting()) !== null
 }
 
 /** Whether a usable key exists from either the store or the environment. */
