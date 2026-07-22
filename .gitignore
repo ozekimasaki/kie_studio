@@ -29,6 +29,8 @@ data/
 *.db
 *.db-shm
 *.db-wal
+# Local at-rest secret key (sibling of studio.db; never commit)
+*.key
 
 # Editor directories and files
 .vscode/*
