@@ -1,6 +1,7 @@
 import Electrobun, { BrowserWindow, Utils } from 'electrobun/bun'
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
 
 // Electrobun main process entry (build.bun.entrypoint). Boots the shared Hono
 // app inside Bun and points a native webview at the pre-built React UI.
@@ -11,6 +12,21 @@ import { join } from 'node:path'
 const userData = Utils.paths.userData
 mkdirSync(userData, { recursive: true })
 process.env.STUDIO_DB_PATH = join(userData, 'studio.db')
+
+// The catalog also lives in writable userData: the bundled source path is
+// read-only on packaged builds (notably Linux, where startup sync could not
+// persist its result and /api/models returned 503). Seed it once from the
+// catalog snapshot bundled with the app so models are available immediately,
+// even before — or without — a successful network sync.
+const catalogPath = join(userData, 'catalog.json')
+process.env.STUDIO_CATALOG_PATH = catalogPath
+if (!existsSync(catalogPath)) {
+  try {
+    writeFileSync(catalogPath, `${JSON.stringify(seedCatalog, null, 2)}\n`, 'utf8')
+  } catch (err) {
+    console.warn('[catalog] failed to seed bundled catalog', err)
+  }
+}
 
 // Import server modules only after STUDIO_DB_PATH is in place.
 const { createApp } = await import('../../server/app.ts')

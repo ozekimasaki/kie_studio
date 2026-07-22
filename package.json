@@ -17,7 +17,12 @@
     "desktop:build:stable": "npm run icons && vite build && electrobun build --env=stable && node scripts/collect-release.mjs",
     "desktop:package:canary": "npm run icons && electrobun build --env=canary && node scripts/collect-release.mjs",
     "desktop:package:stable": "npm run icons && electrobun build --env=stable && node scripts/collect-release.mjs",
+    "desktop:build:linux:canary": "bun node_modules/.bin/vite build && bun node_modules/electrobun/bin/electrobun.cjs build --env=canary && bun scripts/collect-release.mjs",
+    "desktop:build:linux:stable": "bun node_modules/.bin/vite build && bun node_modules/electrobun/bin/electrobun.cjs build --env=stable && bun scripts/collect-release.mjs",
+    "desktop:package:linux:canary": "bun node_modules/electrobun/bin/electrobun.cjs build --env=canary && bun scripts/collect-release.mjs",
+    "desktop:package:linux:stable": "bun node_modules/electrobun/bin/electrobun.cjs build --env=stable && bun scripts/collect-release.mjs",
     "desktop:installer:win": "node scripts/build-win-installer.mjs",
+    "desktop:installer:deb": "bun scripts/build-linux-deb.mjs",
     "icons": "node scripts/build-icons.mjs",
     "sync:models": "tsx scripts/sync-models.ts"
   },

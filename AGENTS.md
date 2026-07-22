@@ -164,7 +164,10 @@ npm run desktop:dev      # Electrobun デスクトップを開発起動（要 Bu
 npm run desktop:build:canary  # canary デスクトップビルド（vite build + electrobun build）
 npm run desktop:build:stable  # stable デスクトップビルド
 npm run desktop:package:canary  # canary 再パッケージ（vite build スキップ + release/ 集積）
+npm run desktop:package:linux:canary  # Linux 再パッケージ（bun 駆動 / icons スキップ / WSL 可）
+npm run desktop:build:linux:canary    # Linux フルビルド（vite build + electrobun build、bun 駆動）
 npm run desktop:installer:win   # Windows Inno Setup インストーラー生成（要 Inno Setup 6）
+npm run desktop:installer:deb   # Linux .deb 生成（要 Linux/WSL + dpkg-deb、bun 駆動）
 npm run icons                   # assets/icon-master.svg → icon.ico / icon.png
 npm run dev:web          # Vite のみ
 npm run lint             # oxlint（設定: .oxlintrc.json）
@@ -196,5 +199,6 @@ npm run sync:models -- --force
 - **Windows の第一導線は Inno Setup**（`installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`）。Electrobun 純正 Setup.exe は ARP 未登録・アンインストーラー不完全のため採用しない。インストール先は Electrobun 既定（`%LocalAppData%\ai.kie.studio\<ch>\app`）と完全一致させ、自動アップデート期待パスを維持する。
 - **ユーザー DB を壊すな（最重要）**: `studio.db`（+ WAL/SHM）はインストール先 `app\` の**親**（`...\<ch>\`）にある。アンインストールで `app\` のみ削除し、親ディレクトリには絶対に触れないこと（DB 破壊の破滅的行為）。
 - **アイコン**: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）で `icon.ico`/`icon.png`。Electrobun 本体は rcedit のパス解決バグ（CI ビルドパス参照）で `build.win.icon` の埋め込みに失敗するため、`build-win-installer.mjs` が staging の launcher.exe へ自前で rcedit 埋め込みする（失敗してもビルドは続行、ショートカット/ARP の app.ico で可視アイコンは担保）。
-- **arm64**: win-arm64 は x64 版が OS エミュレーションで動作するため個別ビルド不要。linux-arm64 はクロスビルド不可のため一旦見送り。Linux 配布は tar.gz のみ（`.deb` は Electrobun 非対応）。
+- **arm64**: win-arm64 は x64 版が OS エミュレーションで動作するため個別ビルド不要。linux-arm64 はクロスビルド不可のため一旦見送り。Electrobun 自体の Linux 出力は tar.gz のみ（`.deb`/AppImage 非対応）だが、`scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）が tar.gz ではなく `build/<ch>-linux-x64/` の実行ツリーから `dpkg-deb` で `.deb` を自前生成する（Windows の Inno Setup と同じく後段ラップ）。`.deb` は Linux/WSL 上でのみビルド可能。インストール先は `/opt/kie-studio/<ch>/`、`.desktop`/アイコンは `/usr/share/` 配下。
 - **release/ 集積**: Electrobun はビルドごとに `artifacts/` を削除・再生成し他プラットフォーム成果物が消えるため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする（ファイル名のプラットフォーム接頭辞で衝突せず両方蓄積）。
+- **WSL での Linux ビルド**: WSL に node が無くてもよい（native Linux Bun のみで完結）。win/linux ビルドはこの点で統一されている——`desktop:*:linux:*` スクリプトは `bun` で vite/electrobun の bin を直接実行する（bin の node shebang を回避）。`bun run desktop:package:linux:canary` → `bun run desktop:installer:deb canary` で `.deb` まで生成できる。`icons`（sharp）は Linux ではスキップ——`assets/icon.png` はコミット済みで `electrobun.config.ts` の `linux.icon` がそれを使う。`better-sqlite3` は test 専用（server は `bun:sqlite`）なので build には不要。カタログ同期は win/linux 共通で `STUDIO_CATALOG_PATH`（userData の writable path）に bundle スナップショットを seed して動く（`src/bun/index.ts`）。
