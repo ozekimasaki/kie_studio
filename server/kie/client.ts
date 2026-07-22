@@ -1,3 +1,5 @@
+import { getStoredApiKey } from '../settings/apiKey.ts'
+
 const API_BASE = 'https://api.kie.ai'
 const UPLOAD_BASE = 'https://kieai.redpandaai.co'
 
@@ -16,10 +18,10 @@ export class KieApiError extends Error {
 }
 
 export function getApiKey(): string {
-  const key = process.env.KIE_API_KEY?.trim()
-  if (!key || key === 'your_api_key_here') {
+  const key = getStoredApiKey()
+  if (!key) {
     throw new KieApiError(
-      'KIE_API_KEY is not set. Copy .env.example to .env and add your key.',
+      'KIE_API_KEY is not set. Open Settings in the app to save your key.',
       503,
     )
   }

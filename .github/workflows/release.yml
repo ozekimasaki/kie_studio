@@ -1,0 +1,88 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Needed for softprops/action-gh-release to create/update the GitHub Release.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    strategy:
+      # Each OS builds independently; one failing platform must not cancel the
+      # others (Electrobun cannot cross-compile).
+      fail-fast: false
+      matrix:
+        os: [macos-14, windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Determine channel
+        id: channel
+        shell: bash
+        run: |
+          # Prerelease-style tags (v1.2.3-canary / -beta / -rc) publish to the
+          # canary channel as a GitHub prerelease; everything else is stable.
+          if [[ "${GITHUB_REF_NAME}" == *canary* || "${GITHUB_REF_NAME}" == *beta* || "${GITHUB_REF_NAME}" == *rc* ]]; then
+            echo "channel=canary" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=stable" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build desktop app
+        env:
+          # Static host for differential auto-updates. Empty disables updates.
+          RELEASE_BASE_URL: ${{ secrets.RELEASE_BASE_URL }}
+        run: bun run desktop:build:${{ steps.channel.outputs.channel }}
+
+      - name: Extract Windows installer (.exe)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Electrobun emits a real *-Setup.exe inside a *-Setup.zip. Expand it
+          # to a temp dir and copy just the exe next to the other artifacts so
+          # end users can download the installer directly.
+          $zip = Get-ChildItem -Path artifacts -Filter '*-Setup*.zip' | Select-Object -First 1
+          if ($null -ne $zip) {
+            $dest = Join-Path $env:RUNNER_TEMP 'win-setup'
+            Expand-Archive -Path $zip.FullName -DestinationPath $dest -Force
+            Get-ChildItem -Path $dest -Recurse -Filter '*-Setup*.exe' | ForEach-Object {
+              Copy-Item $_.FullName -Destination (Join-Path artifacts $_.Name) -Force
+            }
+          } else {
+            Write-Host 'No Windows Setup zip found; skipping exe extraction.'
+          }
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ steps.channel.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: false
+          # Installers plus the auto-update payload (.tar.zst / .patch /
+          # update.json). The Windows .zip stays as a static-host fallback.
+          files: |
+            artifacts/*.dmg
+            artifacts/*.exe
+            artifacts/*.zip
+            artifacts/*.tar.gz
+            artifacts/*.tar.zst
+            artifacts/*.patch
+            artifacts/*.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

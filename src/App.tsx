@@ -13,7 +13,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Settings } from 'lucide-react'
 import { CategoryTabs } from './components/CategoryTabs.tsx'
 import { ModelSelect } from './components/ModelSelect.tsx'
 import {
@@ -78,6 +78,12 @@ import type {
 const CreditPurchaseSheet = lazy(() =>
   import('./components/CreditPurchaseSheet.tsx').then((module) => ({
     default: module.CreditPurchaseSheet,
+  })),
+)
+
+const SettingsSheet = lazy(() =>
+  import('./components/SettingsSheet.tsx').then((module) => ({
+    default: module.SettingsSheet,
   })),
 )
 
@@ -163,6 +169,8 @@ export default function App() {
   const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
     useState(false)
   const [creditSheetRequested, setCreditSheetRequested] = useState(false)
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)
+  const [settingsSheetRequested, setSettingsSheetRequested] = useState(false)
   const pendingRestoreRef = useRef<{
     modelId: string
     input: Record<string, unknown>
@@ -217,6 +225,10 @@ export default function App() {
   useEffect(() => {
     if (creditPurchaseSheetOpen) setCreditSheetRequested(true)
   }, [creditPurchaseSheetOpen])
+
+  useEffect(() => {
+    if (settingsSheetOpen) setSettingsSheetRequested(true)
+  }, [settingsSheetOpen])
 
   useEffect(() => {
     if (!historyQuery.isSuccess || historyHydratedRef.current) return
@@ -504,7 +516,7 @@ export default function App() {
   const generate = useMutation({
     mutationFn: async (vars: GenerateVars) => {
       if (!hasApiKey) {
-        throw new Error('API キーが未設定です。.env に KIE_API_KEY を設定してください')
+        throw new Error('API キーが未設定です。設定画面から KIE_API_KEY を保存してください')
       }
       setFormError(null)
 
@@ -1061,7 +1073,19 @@ export default function App() {
           )}
         </>
       }
-      chromeTrailing={<CreditBadge lastUsed={lastUsedCredits} />}
+      chromeTrailing={
+        <div className="flex items-stretch gap-1.5 sm:gap-2">
+          <CreditBadge lastUsed={lastUsedCredits} />
+          <Pressable
+            onClick={() => setSettingsSheetOpen(true)}
+            className="studio-btn shrink-0 self-stretch px-2.5"
+            aria-label="設定を開く"
+            scaleTo={0.96}
+          >
+            <Settings size={16} strokeWidth={2} aria-hidden />
+          </Pressable>
+        </div>
+      }
       form={
         <>
           <div className="sticky top-0 z-[var(--z-sticky)] -mx-5 -mt-5 mb-2 shrink-0 border-b border-[var(--border)] bg-[var(--surface-raised)] px-5 pt-5 pb-4">
@@ -1196,10 +1220,20 @@ export default function App() {
               )}
 
               {!hasApiKey && !healthQuery.isLoading && (
-                <p className="text-sm text-[var(--warning)]" role="status">
-                  API キー未設定のため生成できません。.env に KIE_API_KEY
-                  を設定してください。
-                </p>
+                <div
+                  className="flex flex-wrap items-center gap-2 text-sm text-[var(--warning)]"
+                  role="status"
+                >
+                  <span>API キー未設定のため生成できません。</span>
+                  <Pressable
+                    onClick={() => setSettingsSheetOpen(true)}
+                    className="studio-btn w-auto gap-1 px-3 text-xs"
+                    scaleTo={0.96}
+                  >
+                    <Settings size={13} strokeWidth={2} aria-hidden />
+                    設定画面を開く
+                  </Pressable>
+                </div>
               )}
 
               {pendingCount > 0 && (
@@ -1344,6 +1378,14 @@ export default function App() {
           <CreditPurchaseSheet
             open={creditPurchaseSheetOpen}
             onClose={() => setCreditPurchaseSheetOpen(false)}
+          />
+        </Suspense>
+      )}
+      {settingsSheetRequested && (
+        <Suspense fallback={null}>
+          <SettingsSheet
+            open={settingsSheetOpen}
+            onClose={() => setSettingsSheetOpen(false)}
           />
         </Suspense>
       )}

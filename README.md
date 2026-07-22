@@ -1,9 +1,10 @@
 # KIE STUDIO
 
-kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱うローカル Studio。
+kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う Studio。ブラウザ（Vite + React）でも、**Electrobun でパッケージした単一デスクトップアプリ**（Win/mac/Linux）でも動作する。
 
 - Vite + React 19 + Tailwind CSS v4
-- Hono API（API キーはサーバー側のみ）
+- Hono API（Bun ランタイムで起動。API キーはサーバー側のみ）
+- Electrobun デスクトップ版（ネイティブ webview + Bun メインプロセス、差分自動アップデート）
 - docs OpenAPI と専用 workflow を統合したモデルカタログ
 - Reference アップロード / 数値 / チェックボックスの動的フォーム
 - Market / Suno / Veo / Runway の生成・状態を共通形式で管理
@@ -16,8 +17,9 @@ kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う
 
 ## 要件
 
+- [Bun](https://bun.sh)（サーバー起動 `dev:server` と Electrobun ビルドに必須）
 - Node.js（Vite 8 / React 19 が動作する最近の LTS。目安: 20.19+ または 22.12+）と npm
-- kie.ai の API キー（<https://kie.ai/api-key>）
+- kie.ai の API キー（<https://kie.ai/api-key>）。デスクトップ版はアプリ内の設定画面からも保存可能
 - 任意: プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview)（認証は `grok login` または `XAI_API_KEY`）
 
 ## セットアップ
@@ -33,6 +35,26 @@ npm run dev
 - API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）
 
 プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview) を入れ、`grok login` するか `.env` に `XAI_API_KEY` を設定する。
+
+## デスクトップ版（Electrobun）
+
+Bun が必要です。ネイティブ webview 上でビルド済み UI をロードし、Hono API を Bun メインプロセス内で起動します。
+
+```bash
+npm run desktop:dev            # 開発（electrobun run --env=dev）
+npm run desktop:build:canary   # canary ビルド（vite build + electrobun build）
+npm run desktop:build:stable   # stable ビルド
+```
+
+- **API キー**: 初回は `.env` 不要。アプリ右上の設定アイコンから保存でき、SQLite に永続化されます（保存キーが環境変数より優先）。
+- **データ保存先**: DB はアプリのユーザーデータ領域（`Utils.paths.userData` 配下の `studio.db`）に作成されます。dev は `data/studio.db`。
+- **配布形態**: 各 OS のインストーラー。**Windows は `.exe` インストーラー**（Electrobun が `-Setup.zip` に内包する本物の `-Setup.exe` を CI で展開して直接配布）。
+- **未署名配布の OS 警告**: コード署名・公証は行っていないため OS 警告が出ます。
+  - macOS: 初回は右クリック→「開く」、または「システム設定 > プライバシーとセキュリティ」で許可。
+  - Windows: SmartScreen で「詳細情報」→「実行」。
+  - Linux: 実行権限を付与。
+- **自動アップデート**: `RELEASE_BASE_URL` に静的ホストを設定すると、起動時に差分（bsdiff + zstd）で自動更新します。未設定時はサイレントにスキップ。日常検証は `canary`、正式配布は `stable` チャネル。
+- 各 OS のビルドはその OS 上で実行します（クロスビルド不可）。CI 例は `.github/workflows/release.yml`（タグ push で 3 OS をマトリクスビルドし GitHub Releases へ公開）。
 
 ## モデルカタログの同期
 
@@ -92,13 +114,18 @@ npm run sync:models -- --force
 | PUT | `/api/history` | 履歴を一括置換 |
 | POST | `/api/history/import` | JSON から履歴をインポート |
 | POST | `/api/history/migrate` | 旧 localStorage 履歴を移行 |
+| GET | `/api/settings` | API キーの保存有無とマスク表示 |
+| PUT | `/api/settings/api-key` | API キーを保存（SQLite に永続化） |
+| DELETE | `/api/settings/api-key` | 保存した API キーを削除 |
 
 ## 環境変数
 
 | 変数 | 説明 |
 |------|------|
-| `KIE_API_KEY` | 必須。kie.ai API キー |
+| `KIE_API_KEY` | 任意。kie.ai API キー（デスクトップ版は設定画面からも保存可。保存キーが優先） |
 | `PORT` | API ポート（既定 `8787`） |
+| `STUDIO_DB_PATH` | 任意。SQLite の保存先を上書き（デスクトップ版は自動設定、dev は `data/studio.db`） |
+| `RELEASE_BASE_URL` | 任意。Electrobun 自動アップデートの静的ホスト URL（空で無効） |
 | `XAI_API_KEY` | 任意。Grok CLI 未ログイン時の認証 |
 | `SYNC_MODELS_ON_START` | `0` で起動時同期オフ（既定オン） |
 | `SYNC_MODELS_FORCE` | `1` で起動時に強制フル同期 |
@@ -109,8 +136,11 @@ npm run sync:models -- --force
 | コマンド | 説明 |
 |----------|------|
 | `npm run dev` | API + Web を同時起動（`dev:server` + `dev:web`） |
-| `npm run dev:server` | Hono API のみ（`tsx watch server/index.ts`） |
+| `npm run dev:server` | Hono API のみ（`bun --watch server/index.ts`） |
 | `npm run dev:web` | Vite 開発サーバーのみ |
+| `npm run desktop:dev` | Electrobun デスクトップを開発起動（`electrobun run --env=dev`） |
+| `npm run desktop:build:canary` | canary デスクトップビルド（`vite build` + `electrobun build`） |
+| `npm run desktop:build:stable` | stable デスクトップビルド |
 | `npm run build` | 型チェック（`tsc -b`）+ 本番ビルド |
 | `npm run preview` | ビルド成果物をプレビュー |
 | `npm run lint` | oxlint |
@@ -125,17 +155,22 @@ npm run sync:models -- --force
 ```text
 src/            # フロント（Vite + React 19 + Tailwind v4）
   App.tsx       # フォーム・キュー・履歴・ポーリング・Quick Action の調停
-  components/   # 画面 UI（audio/ ・ shell/ ・ motion/ を含む）
+  components/   # 画面 UI（audio/ ・ shell/ ・ motion/ を含む、SettingsSheet など）
   lib/          # API・履歴・キュー・検証・メディア・models
+  bun/          # Electrobun メインプロセス（index.ts: Bun.serve + BrowserWindow）
   data/catalog.json  # 同期で再生成されるモデルカタログ
-server/         # Hono API（127.0.0.1:8787）
-  index.ts      # エントリ・CORS・onError・起動時カタログ同期
-  routes/       # HTTP 境界（generate / task / Suno / archive / history 等）
+server/         # Hono API（Bun ランタイム、127.0.0.1:8787）
+  app.ts        # createApp（CORS・onError・全ルート登録を共通化）
+  index.ts      # dev エントリ（Bun.serve 起動・起動時カタログ同期）
+  routes/       # HTTP 境界（generate / task / Suno / archive / history / settings 等）
   kie/adapters/ # Market / Suno / Veo / Runway の共通化
-  db/           # SQLite（履歴・Persona・音源素材、既定 data/studio.db）
+  settings/     # API キー取得（永続ストア→環境変数）
+  db/           # bun:sqlite（履歴・Persona・音源素材・app_settings）
   grok/         # Grok CLI 連携（プロンプト最適化）
   catalog/      # docs OpenAPI と専用 workflow の統合
+electrobun.config.ts    # Electrobun ビルド・配布設定
 scripts/sync-models.ts  # カタログ同期 CLI
+.github/workflows/release.yml  # 3 OS マトリクスビルド + Releases 公開
 .indexion/wiki/         # プロジェクト知識ベース（indexion wiki）
 ```
 

@@ -19,5 +19,13 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "server/**/*.ts", "scripts/**/*.ts"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "electrobun.config.ts",
+    "server/**/*.ts",
+    "scripts/**/*.ts",
+    "src/bun/**/*.ts",
+    "types/**/*.d.ts"
+  ]
 }
