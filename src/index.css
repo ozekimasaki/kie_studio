@@ -273,6 +273,15 @@ textarea {
 
 /* Controls */
 
+/*
+  Component classes live in @layer components so that Tailwind utilities
+  (@layer utilities) can override them. Without the layer, unlayered CSS
+  beats layered utilities in the cascade, which silently ignored overrides
+  like `w-auto` on .studio-btn-primary (width:100%) and `pl-9` on
+  .studio-input — collapsing the settings API-key field.
+*/
+@layer components {
+
 .studio-input,
 .studio-select {
   border-radius: var(--radius-md);
@@ -364,6 +373,8 @@ textarea {
 
 .studio-btn-primary:hover:not(:disabled) {
   background: var(--color-teal-700);
+}
+
 }
 
 .model-favorite-button {

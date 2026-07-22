@@ -163,6 +163,9 @@ npm run dev:server       # Hono API のみ（bun --watch server/index.ts）
 npm run desktop:dev      # Electrobun デスクトップを開発起動（要 Bun）
 npm run desktop:build:canary  # canary デスクトップビルド（vite build + electrobun build）
 npm run desktop:build:stable  # stable デスクトップビルド
+npm run desktop:package:canary  # canary 再パッケージ（vite build スキップ + release/ 集積）
+npm run desktop:installer:win   # Windows Inno Setup インストーラー生成（要 Inno Setup 6）
+npm run icons                   # assets/icon-master.svg → icon.ico / icon.png
 npm run dev:web          # Vite のみ
 npm run lint             # oxlint（設定: .oxlintrc.json）
 npm test                 # Vitest を1回実行
@@ -187,3 +190,11 @@ npm run sync:models -- --force
 - プロンプト最適化は Grok CLI 依存。未インストール時は 503 でよい
 - `FieldType` / 特殊 UI を増やすときは `types.ts` → `DynamicForm` → 必要ならカタログ抽出を一連で見る
 - Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` と adapter を一連で見る
+
+### デスクトップ配布（Electrobun + Inno Setup）
+
+- **Windows の第一導線は Inno Setup**（`installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`）。Electrobun 純正 Setup.exe は ARP 未登録・アンインストーラー不完全のため採用しない。インストール先は Electrobun 既定（`%LocalAppData%\ai.kie.studio\<ch>\app`）と完全一致させ、自動アップデート期待パスを維持する。
+- **ユーザー DB を壊すな（最重要）**: `studio.db`（+ WAL/SHM）はインストール先 `app\` の**親**（`...\<ch>\`）にある。アンインストールで `app\` のみ削除し、親ディレクトリには絶対に触れないこと（DB 破壊の破滅的行為）。
+- **アイコン**: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）で `icon.ico`/`icon.png`。Electrobun 本体は rcedit のパス解決バグ（CI ビルドパス参照）で `build.win.icon` の埋め込みに失敗するため、`build-win-installer.mjs` が staging の launcher.exe へ自前で rcedit 埋め込みする（失敗してもビルドは続行、ショートカット/ARP の app.ico で可視アイコンは担保）。
+- **arm64**: win-arm64 は x64 版が OS エミュレーションで動作するため個別ビルド不要。linux-arm64 はクロスビルド不可のため一旦見送り。Linux 配布は tar.gz のみ（`.deb` は Electrobun 非対応）。
+- **release/ 集積**: Electrobun はビルドごとに `artifacts/` を削除・再生成し他プラットフォーム成果物が消えるため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする（ファイル名のプラットフォーム接頭辞で衝突せず両方蓄積）。

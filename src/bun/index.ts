@@ -52,10 +52,13 @@ if (process.env.SYNC_MODELS_ON_START !== '0') {
   })
 }
 
-// Hand the resolved API port to the webview via query string (no IPC needed).
+// NOTE: Electrobun's native wrapper treats the ENTIRE views:// URL path
+// (including ?query and #hash) as a literal file path. No parameters can be
+// appended to the URL. The frontend uses the default API port (8787) or
+// discovers it via the /api/health probe (see src/lib/api.ts).
 new BrowserWindow({
   title: 'KIE STUDIO',
-  url: `views://mainview/index.html?apiPort=${server.port}`,
+  url: 'views://mainview/index.html',
   frame: { width: 1280, height: 832 },
 })
 

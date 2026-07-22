@@ -49,15 +49,17 @@ export class ApiClientError extends Error {
 /**
  * Resolve the API base URL.
  * - dev / web (http(s) origin): relative path, proxied by Vite to the server.
- * - packaged webview (views:// or null origin): absolute 127.0.0.1 URL, using
- *   the port handed over via the `apiPort` query string (default 8787).
+ * - packaged webview (views:// or null origin): absolute 127.0.0.1 URL on the
+ *   default port 8787. Electrobun's native wrapper does NOT allow query strings
+ *   or hash fragments in views:// URLs (treated as file path), so the port
+ *   cannot be passed via URL. The server always binds 8787 first.
  * - override with VITE_API_BASE when needed.
  */
 const API_BASE: string =
   import.meta.env.VITE_API_BASE ??
   (location.protocol.startsWith('http')
     ? ''
-    : `http://127.0.0.1:${new URLSearchParams(location.search).get('apiPort') ?? '8787'}`)
+    : 'http://127.0.0.1:8787')
 
 export const apiUrl = (path: string): string => `${API_BASE}${path}`
 

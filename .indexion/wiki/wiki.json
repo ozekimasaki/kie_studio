@@ -58,8 +58,8 @@
         "server/db/"
       ],
       "children": [],
-      "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "provenance": "manual",
+      "last_actor": "agent:qoder"
     },
     {
       "id": "frontend",

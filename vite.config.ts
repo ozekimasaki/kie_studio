@@ -12,9 +12,10 @@ const pkg = JSON.parse(
 ) as { version: string }
 
 export default defineConfig(({ command }) => ({
-  // Packaged builds load assets from views://mainview/ via the Electrobun
-  // webview, so production must emit relative asset URLs. Dev keeps '/'.
-  base: command === 'build' ? './' : '/',
+  // Electrobun's views:// protocol resolves root-absolute paths (/assets/...)
+  // relative to the view directory (views/mainview/). Matches the official
+  // electrobun-starter which uses the default base '/'.
+  base: '/',
   plugins: [react(), tailwindcss()],
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),

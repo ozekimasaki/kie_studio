@@ -48,7 +48,14 @@ npm run desktop:build:stable   # stable ビルド
 
 - **API キー**: 初回は `.env` 不要。アプリ右上の設定アイコンから保存でき、SQLite に永続化されます（保存キーが環境変数より優先）。
 - **データ保存先**: DB はアプリのユーザーデータ領域（`Utils.paths.userData` 配下の `studio.db`）に作成されます。dev は `data/studio.db`。
-- **配布形態**: 各 OS のインストーラー。**Windows は `.exe` インストーラー**（Electrobun が `-Setup.zip` に内包する本物の `-Setup.exe` を CI で展開して直接配布）。
+- **配布形態**:
+  - **Windows**: Inno Setup 製の `canary-win-x64-KIESTUDIO-Setup.exe`（第一導線）。`npm run desktop:installer:win` で生成します。プログラム追加/削除（ARP）にアイコン・バージョン・発行者付きで登録され、アンインストーラーとスタートメニュー/デスクトップショートカットが付きます。per-user インストール（`%LocalAppData%\ai.kie.studio\<channel>\app`）で管理者権限不要。アンインストールでもユーザー DB（`studio.db`）は削除されません。
+  - **Linux**: tar.gz 自己展開アーカイブ（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）のみ。Electrobun は `.deb` 非対応のため採用していません。
+  - 自動アップデート用（`tar.zst` + `update.json` + patch）は `RELEASE_BASE_URL` 配下へ従来通り配信します（Inno Setup に依存しません）。
+- **アプリアイコン**: `assets/icon-master.svg`（プリズムモチーフ）を `npm run icons` で `icon.ico`（Windows・マルチサイズ）/ `icon.png`（Linux・512px）へ変換し `electrobun.config.ts` で指定します。Windows は Electrobun 本体の rcedit パス解決バグを避け、インストーラービルド時に launcher.exe へ自前でアイコンを埋め込みます。
+- **サポートアーキテクチャ**:
+  - Windows: x64 のみ。ARM Windows は x64 版が OS の自動エミュレーションで動作するため個別ビルドは不要です。
+  - Linux: x64 のみ配布。arm64 は Electrobun 対応ですがクロスビルド不可のため一旦見送り（arm64 ビルド環境/CI 確保後に別対応）。
 - **未署名配布の OS 警告**: コード署名・公証は行っていないため OS 警告が出ます。
   - macOS: 初回は右クリック→「開く」、または「システム設定 > プライバシーとセキュリティ」で許可。
   - Windows: SmartScreen で「詳細情報」→「実行」。
@@ -141,6 +148,10 @@ npm run sync:models -- --force
 | `npm run desktop:dev` | Electrobun デスクトップを開発起動（`electrobun run --env=dev`） |
 | `npm run desktop:build:canary` | canary デスクトップビルド（`vite build` + `electrobun build`） |
 | `npm run desktop:build:stable` | stable デスクトップビルド |
+| `npm run desktop:package:canary` | canary を再パッケージ（`vite build` スキップ。アイコン生成 + `electrobun build` + `release/` 集積） |
+| `npm run desktop:package:stable` | stable を再パッケージ |
+| `npm run desktop:installer:win` | Windows 用 Inno Setup インストーラーを生成（要 Inno Setup 6、`release/` へ出力） |
+| `npm run icons` | `assets/icon-master.svg` から `icon.ico` / `icon.png` を生成 |
 | `npm run build` | 型チェック（`tsc -b`）+ 本番ビルド |
 | `npm run preview` | ビルド成果物をプレビュー |
 | `npm run lint` | oxlint |
@@ -168,7 +179,12 @@ server/         # Hono API（Bun ランタイム、127.0.0.1:8787）
   db/           # bun:sqlite（履歴・Persona・音源素材・app_settings）
   grok/         # Grok CLI 連携（プロンプト最適化）
   catalog/      # docs OpenAPI と専用 workflow の統合
-electrobun.config.ts    # Electrobun ビルド・配布設定
+electrobun.config.ts    # Electrobun ビルド・配布設定（win/linux のアイコン指定を含む）
+assets/icon-master.svg  # アプリアイコンのベクターマスター（→ icon.ico / icon.png）
+installer/win/kie-studio.iss   # Inno Setup インストーラー定義（ARP・アンインストーラー・ショートカット）
+scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png（sharp + png-to-ico）
+scripts/build-win-installer.mjs # tar.zst 展開 → launcher.exe へアイコン埋め込み → Inno Setup コンパイル
+scripts/collect-release.mjs    # ビルド成果物を永続的な release/ へ集積
 scripts/sync-models.ts  # カタログ同期 CLI
 .github/workflows/release.yml  # 3 OS マトリクスビルド + Releases 公開
 .indexion/wiki/         # プロジェクト知識ベース（indexion wiki）

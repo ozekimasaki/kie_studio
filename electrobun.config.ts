@@ -14,10 +14,11 @@ export default {
       external: [],
     },
     views: {},
-    // Vite build output (base: './') → packaged webview under views://mainview/.
+    // Vite build output (base: '/') → packaged webview under views://mainview/.
     copy: {
       'dist/index.html': 'views/mainview/index.html',
       'dist/assets/': 'views/mainview/assets/',
+      'dist/favicon.svg': 'views/mainview/favicon.svg',
     },
     watchIgnore: ['dist/**'],
     // Code signing / notarization are out of scope (unsigned distribution).
@@ -29,9 +30,13 @@ export default {
     },
     linux: {
       bundleCEF: false,
+      // App icon for desktop entries / window / taskbar (PNG, >=256px).
+      icon: 'assets/icon.png',
     },
     win: {
       bundleCEF: false,
+      // App icon for installer / shortcuts / taskbar (multi-size ICO).
+      icon: 'assets/icon.ico',
     },
   },
   release: {

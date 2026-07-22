@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "241",
+  "next_vid": "248",
   "entries": [
     {
       "section": {
@@ -417,56 +417,6 @@
     },
     {
       "section": {
-        "id": "architecture",
-        "title": "Architecture",
-        "content": "\n",
-        "page_id": "architecture",
-        "level": 1
-      },
-      "vid": "226"
-    },
-    {
-      "section": {
-        "id": "architecture#-2",
-        "title": "レイヤ構成",
-        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...')\n             │\n             ▼\nHono (:8787)\n  ├─ routes/*          HTTP boundary\n  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization\n  ├─ db/*              history / personas / audio assets\n  ├─ catalog/*         docs + dedicated workflows\n  └─ grok/*            prompt optimization\n```\n\n`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "227"
-    },
-    {
-      "section": {
-        "id": "architecture#-3",
-        "title": "パッケージ責務",
-        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "228"
-    },
-    {
-      "section": {
-        "id": "architecture#-4",
-        "title": "拡張ポイント",
-        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "229"
-    },
-    {
-      "section": {
-        "id": "architecture#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
-        "page_id": "architecture",
-        "level": 2
-      },
-      "vid": "230"
-    },
-    {
-      "section": {
         "id": "catalog-sync",
         "title": "Catalog Sync",
         "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
@@ -514,6 +464,76 @@
         "level": 2
       },
       "vid": "240"
+    },
+    {
+      "section": {
+        "id": "architecture",
+        "title": "Architecture",
+        "content": "\n",
+        "page_id": "architecture",
+        "level": 1
+      },
+      "vid": "241"
+    },
+    {
+      "section": {
+        "id": "architecture#-2",
+        "title": "レイヤ構成",
+        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...')\n             │\n             ▼\nHono (:8787)\n  ├─ routes/*          HTTP boundary\n  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization\n  ├─ db/*              history / personas / audio assets\n  ├─ catalog/*         docs + dedicated workflows\n  └─ grok/*            prompt optimization\n```\n\n`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "242"
+    },
+    {
+      "section": {
+        "id": "architecture#desktop-electrobun-3",
+        "title": "Desktop 層（Electrobun）",
+        "content": "\nデスクトップ版は Electrobun（Bun メインプロセス `src/bun/index.ts` + ネイティブ webview）。`Bun.serve` で Hono を起動し、ビルド済み UI を `views://mainview/` でロードする。設定は `electrobun.config.ts`。\n\n- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。\n- 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "243"
+    },
+    {
+      "section": {
+        "id": "architecture#-4",
+        "title": "パッケージ責務",
+        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |\n| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater） |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "244"
+    },
+    {
+      "section": {
+        "id": "architecture#-5",
+        "title": "デスクトップ配布",
+        "content": "\n| プラットフォーム | 成果物 | 備考 |\n|------|------|------|\n| Windows x64 | `canary-win-x64-KIESTUDIO-Setup.exe`（Inno Setup） | 第一導線。ARP 登録・アンインストーラー・ショートカット・アイコン。per-user（`%LocalAppData%\\ai.kie.studio\\<ch>\\app`、管理者権限不要） |\n| Linux x64 | `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | tar.gz 自己展開のみ（`.deb` は Electrobun 非対応） |\n| 自動アップデート | `*.tar.zst` + `update.json` + patch | `RELEASE_BASE_URL` 配下へ配信（Inno Setup 非依存） |\n\n- Windows インストーラーは `installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`（tar.zst 展開 → launcher.exe へ rcedit アイコン埋め込み → ISCC コンパイル）。`npm run desktop:installer:win`。\n- アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。\n- arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。\n- アンインストールは `app\\` のみ削除し、親ディレクトリの `studio.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。\n- `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "245"
+    },
+    {
+      "section": {
+        "id": "architecture#-6",
+        "title": "拡張ポイント",
+        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "246"
+    },
+    {
+      "section": {
+        "id": "architecture#see-also-7",
+        "title": "See Also",
+        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
+        "page_id": "architecture",
+        "level": 2
+      },
+      "vid": "247"
     }
   ]
 }
