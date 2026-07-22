@@ -11,7 +11,7 @@ const pkg = JSON.parse(
   ),
 ) as { version: string }
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   // Electrobun's views:// protocol resolves root-absolute paths (/assets/...)
   // relative to the view directory (views/mainview/). Matches the official
   // electrobun-starter which uses the default base '/'.

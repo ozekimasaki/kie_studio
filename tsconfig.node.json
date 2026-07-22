@@ -10,6 +10,12 @@
     "module": "nodenext",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+
+    /* electrobun ships raw .ts sources (no .d.ts); type-check src/bun against
+       our local stub instead of the dependency's unbuildable sources. */
+    "paths": {
+      "electrobun/bun": ["./types/electrobun.d.ts"]
+    },
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
