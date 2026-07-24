@@ -1,7 +1,7 @@
 {
-  "syncedAt": "2026-07-19T08:34:09.551Z",
+  "syncedAt": "2026-07-24T15:25:20.697Z",
   "source": "docs.kie.ai/llms.txt",
-  "sourceHash": "67668ad0f6cd9afaea437c4d3bcc0f62dce3c58b0ca8a4564ff724346f6cb66a",
+  "sourceHash": "2a0af26c3d15680d6a1e32b45374c2326ff4c3a9f4ffd3ea21f9409a2e7bd6a2",
   "models": [
     {
       "id": "elevenlabs/audio-isolation",
@@ -2217,6 +2217,89 @@
       ]
     },
     {
+      "id": "pixverse-v6/transition",
+      "model": "pixverse-v6/transition",
+      "title": "PixVerse V6 First & Last Frame Transition",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/pixverse/transition",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Generate prompt, cannot be empty, length is limited to 3-5000 characters.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "first_frame_image_url",
+          "type": "reference",
+          "label": "First Frame Image Url",
+          "description": "First frame image URL. Supports HTTP, HTTPS, and OSS addresses; supported image formats include JPG, JPEG, PNG, and WebP; the size of a single image file must not exceed 20 MB",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "last_frame_image_url",
+          "type": "reference",
+          "label": "Last Frame Image Url",
+          "description": "Last frame image URL. Supports HTTP, HTTPS, and OSS addresses; supported image formats include JPG, JPEG, PNG, and WebP; the size of a single image file must not exceed 20 MB",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Output video resolution. Supports 360p, 540p, 720p, and 1080p.",
+          "required": true,
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Output video duration in seconds. PixVerse V6 supports 1–15 seconds.",
+          "required": true,
+          "default": 5,
+          "min": 1,
+          "max": 15,
+          "step": 1
+        },
+        {
+          "name": "generate_audio_switch",
+          "type": "boolean",
+          "label": "Generate Audio Switch",
+          "description": "Whether to generate audio synchronized with the video content.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed, value range is 0–2147483647. Using the same parameters and seed helps improve result reproducibility.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
       "id": "qwen/image-edit",
       "model": "qwen/image-edit",
       "title": "Qwen - Image Edit",
@@ -3153,12 +3236,13 @@
           "name": "quality",
           "type": "enum",
           "label": "Quality",
-          "description": "Basic outputs 2K images, while High outputs 4K images.",
+          "description": "Basic outputs 2K images, while High outputs 3K images, and Ultra outputs 4K images.",
           "required": true,
           "default": "basic",
           "enum": [
             "basic",
-            "high"
+            "high",
+            "ultra"
           ]
         },
         {
@@ -3220,12 +3304,13 @@
           "name": "quality",
           "type": "enum",
           "label": "Quality",
-          "description": "Basic outputs 2K images, while High outputs 4K images.",
+          "description": "Basic outputs 2K images, while High outputs 3K images, and Ultra outputs 4K images.",
           "required": true,
           "default": "basic",
           "enum": [
             "basic",
-            "high"
+            "high",
+            "ultra"
           ]
         },
         {
@@ -3239,13 +3324,6 @@
             "png",
             "jpeg"
           ]
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -3460,13 +3538,6 @@
             "16:9",
             "9:16"
           ]
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -4751,9 +4822,9 @@
           "name": "image_urls",
           "type": "reference",
           "label": "Image Urls",
-          "description": "Upload image files to be used as API input. Supported file types: image/jpeg, image/png, image/webp, image/jpg. Maximum file size: 20MB. Supports multi-file upload, up to 1 file.",
+          "description": "Upload image files to be used as API input. Supported file types: image/jpeg, image/png, image/webp, image/jpg. Maximum file size: 20MB. Supports multi-file upload, up to 7 file.",
           "required": false,
-          "maxItems": 1,
+          "maxItems": 7,
           "accept": "image/jpeg,image/png,image/webp,image/*",
           "mentionStyle": "at-image"
         },
@@ -6584,6 +6655,327 @@
       ]
     },
     {
+      "id": "pixverse-v6/reference-to-video",
+      "model": "pixverse-v6/reference-to-video",
+      "title": "PixVerse V6 Fusion / Reference-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/pixverse/reference-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Generate prompt, cannot be empty, length is limited to 3-5000 characters.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "image_references",
+          "type": "json",
+          "label": "Image References",
+          "description": "Fusion multi-reference image list.",
+          "required": true,
+          "maxItems": 7
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Output video aspect ratio. Supported in text-to-video and Fusion multi-reference image to video modes.",
+          "required": true,
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "2:3",
+            "3:2",
+            "21:9"
+          ]
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Output video resolution. Supports 360p, 540p, 720p, and 1080p.",
+          "required": true,
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Output video duration, in seconds.",
+          "required": true,
+          "default": 5,
+          "min": 1,
+          "max": 15,
+          "step": 1
+        },
+        {
+          "name": "generate_audio_switch",
+          "type": "boolean",
+          "label": "Generate Audio Switch",
+          "description": "Whether to generate audio synchronized with the video content.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed, value range is 0-2147483647. Using the same parameters and seed helps improve the reproducibility of the results.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "pixverse-v6/image-to-video",
+      "model": "pixverse-v6/image-to-video",
+      "title": "PixVerse V6 Image-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/pixverse/image-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Generate prompt, cannot be empty, length is limited to 3-5000 characters.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Image URLs, supports up to 2 images, single image size not exceeding 20 MB. Supports HTTP, HTTPS, and OSS addresses. Supported image formats include JPG, JPEG, PNG, and WebP.",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 8
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Output video resolution. Supports 360p, 540p, 720p, and 1080p.",
+          "required": true,
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Generated video duration in seconds, ranging from 1 to 15. Required when template_id is not passed; if template_id is passed, the video duration is fixed by the selected template, please do not pass this parameter at the same time.",
+          "required": true,
+          "default": 5,
+          "min": 1,
+          "max": 15,
+          "step": 1
+        },
+        {
+          "name": "generate_audio_switch",
+          "type": "boolean",
+          "label": "Generate Audio Switch",
+          "description": "Whether to generate audio synchronized with the video content.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "generate_multi_clip_switch",
+          "type": "boolean",
+          "label": "Generate Multi Clip Switch",
+          "description": "Whether to generate a multi-clip video.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed, value range is 0-2147483647. Using the same parameters and seed helps improve result reproducibility.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        },
+        {
+          "name": "template_id",
+          "type": "enum",
+          "label": "Template Id",
+          "description": "Used to select a PixVerse video effect template. Please pass in the corresponding template_id. Once a template_id is provided, the video duration is fixed by the selected template, so duration cannot be set at the same time. effect_type indicates the number of images required by the selected template. Please upload the specified number of images accordingly. To preview the template effect, open https://static.aiquickdraw.com/tools/example/<template_id>.mp4 in a browser and replace <template_id> with the actual template ID. For example:https://static.aiquickdraw.com/tools/example/412736208886848.mp4.",
+          "required": false,
+          "enum": [
+            "412736208886848",
+            "411563216524736",
+            "411316927927040",
+            "411174903569216",
+            "410999246341952",
+            "408891141511104",
+            "410317363057408",
+            "410285445698304",
+            "410133101388544",
+            "409899296377728",
+            "408897485909952",
+            "408869061406656",
+            "408661207662528",
+            "409767750265728",
+            "409766559675264",
+            "409589071559552",
+            "407804339389760",
+            "407658863287616",
+            "407474361215744",
+            "407473438360320",
+            "407467702283008",
+            "385844572217469",
+            "406428904874432",
+            "406423682060736",
+            "406411724685760",
+            "406372274350528",
+            "406218913317312",
+            "406218479198656",
+            "406064763308480",
+            "406413607395776",
+            "405662117814720",
+            "406014934000064",
+            "405658369331648",
+            "405321470423488",
+            "405175211454656",
+            "404955806201792",
+            "404820147974080",
+            "398980393937856",
+            "403916646846400",
+            "403739217192896",
+            "403560060358144",
+            "403556618212098",
+            "398965022284579",
+            "402201060373270",
+            "403085292466285",
+            "402061828030966",
+            "402888569901524",
+            "402155676592228",
+            "402047865383360",
+            "402046136040202"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pixverse-v6/text-to-video",
+      "model": "pixverse-v6/text-to-video",
+      "title": "PixVerse V6 Text-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/pixverse/text-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Generate prompt, cannot be empty, length is limited to 3-5000 characters.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Output video aspect ratio. This parameter is supported in text-to-video and Fusion multi-reference image-to-video modes.",
+          "required": true,
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16",
+            "2:3",
+            "3:2",
+            "21:9"
+          ]
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Output video resolution. Supports 360p, 540p, 720p, and 1080p.",
+          "required": true,
+          "default": "720p",
+          "enum": [
+            "360p",
+            "540p",
+            "720p",
+            "1080p"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Output video duration in seconds. PixVerse V6 supports 1–15 seconds.",
+          "required": true,
+          "default": 5,
+          "min": 1,
+          "max": 15,
+          "step": 1
+        },
+        {
+          "name": "generate_audio_switch",
+          "type": "boolean",
+          "label": "Generate Audio Switch",
+          "description": "Whether to generate audio synchronized with the video content.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "generate_multi_clip_switch",
+          "type": "boolean",
+          "label": "Generate Multi Clip Switch",
+          "description": "Whether to generate a multi-clip video.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed, value range is 0–2147483647. Using the same parameters and seed helps improve result reproducibility.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "pixverse-v6/extend",
+      "model": "pixverse-v6/extend",
+      "title": "PixVerse V6 Video Extension",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/pixverse/extend",
+      "fields": []
+    },
+    {
       "id": "topaz/video-upscale",
       "model": "topaz/video-upscale",
       "title": "Topaz - Video Upscale",
@@ -6899,13 +7291,6 @@
           "min": 1,
           "max": 10,
           "step": 0.1
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -8311,13 +8696,6 @@
           "min": 0,
           "max": 2147483647,
           "step": 1
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     }
