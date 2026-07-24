@@ -131,7 +131,48 @@ scripts/sync-models.ts
 - 既存の型・命名・UI パターンに合わせる。不要なリファクタやドキュメント追加はしない
 - インライン import 禁止（ファイル先頭にまとめる）
 - union / enum の `switch` は `default` で `never` チェック
+- **コード編集後は必ず検証コマンドを実行する**: `npm run lint && npm test && npx tsc -b`（3 つすべてが成功することを確認してから完了とする）
 - 大きな機能変更の前後で、関係する wiki ページを `ingest` → 必要なら `pages update`
+
+## Skills ルーティング
+
+このプロジェクトのスタック（Vite + React 19 + Tailwind CSS v4 + Hono + Bun + Vitest + oxlint + Motion）に合致する Skill のみ使用する。
+
+### 有効な Skills
+
+| カテゴリ | Skill 名 | 用途 |
+|---------|----------|------|
+| React | `react-best-practices` | React 19 パフォーマンス・パターン |
+| テスト | `vitest` | Vitest 単体テスト・モック・fixture |
+| バックエンド | `hono` | Hono ルート・ミドルウェア・バリデーション |
+| ビルド | `vite` | Vite 設定・プラグイン・SSR |
+| Lint | `oxlint` | oxlint 設定・ルール |
+| CSS | `tailwind-css-patterns` | Tailwind CSS v4 ユーティリティ |
+| アクセシビリティ | `accessibility`, `fixing-accessibility` | WCAG 監査・修正 |
+| デザイン | `impeccable`, `baseline-ui`, `emil-design-eng`, `make-interfaces-feel-better`, `apple-design` | UI 品質（DESIGN.md 優先順位に従う） |
+| モーション | `animation-principles`, `mastering-animate-presence` | Motion / AnimatePresence |
+| 型 | `typescript-advanced-types` | 高度な型設計 |
+| デバッグ | `diagnosing-bugs`, `systematic-debugging` | 障害診断 |
+| リファクタ | `refactor`, `improve-codebase-architecture` | 安全なリファクタリング |
+
+### 使用しない Skills
+
+以下はこのプロジェクトのスタック外のため **使用禁止**:
+
+- **Vue / Nuxt 系**: `vue`, `vue-best-practices`, `nuxt`, `pinia`, `vue-router-best-practices`, `vueuse-functions` 等
+- **Next.js 系**: `next-best-practices`, `next-upgrade`, `next-rspack`, `next-cache-components` 等
+- **Remotion 系**: `remotion-*` 全て
+- **Three.js 系**: `threejs-*` 全て
+- **Svelte 系**: `svelte-code-writer` 等
+- **Cloudflare 系**: `cloudflare`, `wrangler`, `durable-objects`, `workers-best-practices` 等
+- **Supabase 系**: `supabase`, `supabase-postgres-best-practices`
+- **その他フレームワーク**: `react-router-framework-mode`, `react-native-best-practices`, `swiftui-ui-patterns`
+
+### デザイン Skill 優先順位
+
+競合時は `DESIGN.md`「Skill priority on conflict」のチェインに従う:
+
+> impeccable → baseline-ui → design-system → emil-design-eng → apple-design (sheet only) → make-interfaces-feel-better
 
 ## Git: push を忘れるな（超重要）
 
@@ -203,3 +244,71 @@ npm run sync:models -- --force
 - **release/ 集積**: Electrobun はビルドごとに `artifacts/` を削除・再生成し他プラットフォーム成果物が消えるため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする（ファイル名のプラットフォーム接頭辞で衝突せず両方蓄積）。
 - **WSL での Linux ビルド**: WSL に node が無くてもよい（native Linux Bun のみで完結）。win/linux ビルドはこの点で統一されている——`desktop:*:linux:*` スクリプトは `bun` で vite/electrobun の bin を直接実行する（bin の node shebang を回避）。`bun run desktop:package:linux:canary` → `bun run desktop:installer:deb canary` で `.deb` まで生成できる。`icons`（sharp）は Linux ではスキップ——`assets/icon.png` はコミット済みで `electrobun.config.ts` の `linux.icon` がそれを使う。`better-sqlite3` は test 専用（server は `bun:sqlite`）なので build には不要。カタログ同期は win/linux 共通で `STUDIO_CATALOG_PATH`（userData の writable path）に bundle スナップショットを seed して動く（`src/bun/index.ts`）。
 - **リリース CI（`.github/workflows/release.yml`）**: `v*` tag の push で mac/win/linux を並列ビルドし GitHub Releases へ公開する（`v*-canary`/`-beta`/`-rc` は canary prerelease、それ以外は stable）。Linux ジョブは electrobun build 後に `scripts/build-linux-deb.mjs` を実行し、生成した `.deb` を `artifacts/` へコピーして配布物に含める（`dpkg-deb` は Ubuntu ランナーに同梱）。`app.version`（`electrobun.config.ts`）は `package.json` の version と揃える。新しい canary は version を上げて `v<version>-canary` tag を push する。
+
+### リリース失敗時の最小回復手順
+
+リリースパイプライン（CI またはローカル）が失敗した場合、**再ビルド → 再パッケージ → 再デプロイ** の順で復帰する。各ステップで前段階の成功を確認してから次に進む。
+
+#### 1. 再ビルド（型チェック + Vite + Electrobun）
+
+```bash
+# 失敗原因の切り分け: 型エラーかバンドルエラーか
+npx tsc -b                        # 型チェック
+npm run build                     # tsc -b + vite build（フロントエンド）
+npm run desktop:build:canary      # canary: vite build + electrobun build（フルビルド）
+# npm run desktop:build:stable    # stable: 同上（stable チャネル）
+```
+
+確認ポイント:
+- `npx tsc -b` が 0 で終了すること
+- `npm run build` が `dist/` を生成すること
+- `desktop:build:*` が `artifacts/` にプラットフォーム成果物を出力すること
+- `artifacts/` に期待するファイル（`.exe` / `.tar.gz` 等）が存在すること
+
+#### 2. 再パッケージ（Inno Setup / .deb / release 集積）
+
+ビルドが成功している場合、パッケージングのみ再実行する（`vite build` はスキップ）。
+
+```bash
+# Windows: Inno Setup インストーラー
+npm run desktop:installer:win
+
+# Linux: .deb（WSL 可）
+bun run desktop:installer:deb canary
+
+# 成果物を release/ に集積
+node scripts/collect-release.mjs
+```
+
+確認ポイント:
+- `release/` に最新のインストーラー（`.exe`）/ `.deb` が配置されていること
+- `release/` のファイル名にプラットフォーム接頭辞が付き、旧成果物と衝突しないこと
+- Inno Setup 失敗時は `installer/win/kie-studio.iss` と `scripts/build-win-installer.mjs` のログを確認する
+
+#### 3. 再デプロイ（GitHub Releases / タグ）
+
+CI が失敗した場合は、修正後にタグを再 push する。
+
+```bash
+# バージョン確認（electrobun.config.ts と package.json が一致していること）
+# 修正後、タグを打ち直す
+git tag -f v<version>-canary       # 既存タグの上書き
+git push origin v<version>-canary --force
+```
+
+確認ポイント:
+- `package.json` の version と `electrobun.config.ts` の `app.version` が一致していること
+- タグ名が `v<version>-canary` / `v<version>` の形式であること
+- GitHub Actions のリリースワークフローが緑で完了すること
+- GitHub Releases の該当リリースに全プラットフォーム成果物がアップロードされていること
+
+#### 回復の判断基準
+
+| 失敗箇所 | 再実行コマンド | 確認 |
+|---------|--------------|------|
+| 型チェック（`tsc -b`） | コード修正 → `npx tsc -b` | 0 で終了 |
+| Vite ビルド | `npm run build` | `dist/` 生成 |
+| Electrobun ビルド | `npm run desktop:build:canary` | `artifacts/` に成果物 |
+| Inno Setup | `npm run desktop:installer:win` | `release/` に `.exe` |
+| .deb パッケージ | `bun run desktop:installer:deb canary` | `release/` に `.deb` |
+| CI / GitHub Releases | タグ再 push | ワークフロー成功 + 全成果物アップロード |
