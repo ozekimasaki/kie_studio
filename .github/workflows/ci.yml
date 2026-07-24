@@ -1,0 +1,45 @@
+name: CI
+
+# Acceptance gate that bundles the validation loop documented in AGENTS.md
+# (lint / test / type-check / build) onto every change before it is merged.
+# Complements release.yml, which only runs on `v*` tags for distribution.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint / test / types / build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # LTS that satisfies Vite 8 / React 19; matches the range in AGENTS.md.
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Type check
+        run: npx tsc -b
+
+      - name: Build
+        run: npm run build
