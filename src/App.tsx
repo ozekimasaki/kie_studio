@@ -1060,7 +1060,7 @@ export default function App() {
                   <span className="shrink-0 tabular-nums">
                     {creditEstimate === null
                       ? 'クレジット推定なし'
-                      : `約${creditEstimate * batchCount} cr`}
+                      : `約${creditEstimate} cr/回`}
                   </span>
                 </div>
                 {formIssues.length > 0 && (
@@ -1114,9 +1114,13 @@ export default function App() {
                 >
                   {submitting
                     ? '送信中…'
-                    : batchCount > 1
-                      ? `生成 ×${batchCount}`
-                      : '生成'}
+                    : creditEstimate !== null
+                      ? batchCount > 1
+                        ? `生成 ×${batchCount}（約${creditEstimate * batchCount} cr）`
+                        : `生成（約${creditEstimate} cr）`
+                      : batchCount > 1
+                        ? `生成 ×${batchCount}`
+                        : '生成'}
                 </Pressable>
               </div>
             </>

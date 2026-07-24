@@ -138,7 +138,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         onEnded={() => move(1)}
       />
       {active && (
-        <aside className="fixed right-3 bottom-3 left-3 z-[var(--z-modal)] mx-auto max-w-3xl rounded-[var(--radius-lg)] border border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--surface-raised)_94%,transparent)] p-3 shadow-2xl backdrop-blur-xl" aria-label="オーディオプレイヤー">
+        <aside className="fixed right-3 bottom-3 left-3 z-[var(--z-modal)] mx-auto max-w-3xl rounded-[var(--radius-lg)] border border-[var(--border-strong)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]" aria-label="オーディオプレイヤー">
           <div className="flex items-center gap-3">
             {active.previewUrl ? (
               <img src={active.previewUrl} alt="" className="size-11 rounded-[var(--radius-sm)] object-cover" />

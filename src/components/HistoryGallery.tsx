@@ -184,6 +184,19 @@ function DeferredVideo({
   )
 }
 
+/** 1 秒ごとにティックし、`createdAt` からの経過時間を表示するライブタイマー。 */
+function ElapsedTimer({ createdAt }: { createdAt: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const sec = Math.max(0, Math.floor((now - createdAt) / 1000))
+  const label =
+    sec < 60 ? `${sec}秒` : `${Math.floor(sec / 60)}分${sec % 60}秒`
+  return <span className="tabular-nums">{label}経過</span>
+}
+
 export function HistoryGallery({
   items,
   activeCategory,
@@ -608,6 +621,9 @@ export function HistoryGallery({
                             <div className="text-center">
                               <div className="text-xs font-semibold text-[var(--accent)]">
                                 生成中
+                              </div>
+                              <div className="mt-0.5 text-[11px] font-medium text-[var(--text)]">
+                                <ElapsedTimer createdAt={h.createdAt} />
                               </div>
                               <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
                                 {stateLabel(h.state)}

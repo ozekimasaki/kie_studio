@@ -585,32 +585,43 @@ export function HistorySheets({
                     )}
 
                     {video && (
-                      <div className="flex flex-wrap gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
-                        {active.provider === 'runway' && (
-                          <>
-                            <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'runway-aleph')}>プロンプトで映像を変える</Pressable>
-                            <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'runway-extend')}>延長</Pressable>
-                          </>
-                        )}
-                        {active.provider === 'veo' && (
-                          <>
+                      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
+                        <div className="flex flex-wrap gap-2">
+                          {active.provider === 'runway' && (
+                            <>
+                              <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'runway-aleph')}>プロンプトで映像を変える</Pressable>
+                              <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'runway-extend')}>延長</Pressable>
+                            </>
+                          )}
+                          {active.provider === 'veo' && (
                             <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'veo-extend')}>延長</Pressable>
-                            <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'veo-1080p')}>1080p</Pressable>
-                            <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'veo-4k')}>4K</Pressable>
-                          </>
-                        )}
-                        {availableAudio.length > 0 && (
-                          <select className="studio-select py-1.5 text-xs" value={selectedAudioUrl} onChange={(event) => setSelectedAudioUrl(event.target.value)} aria-label="リップシンクに使う音声">
-                            <option value="">音声を選択…</option>
-                            {availableAudio.map((entry, audioIndex) => <option key={`${entry.url}-${audioIndex}`} value={entry.url}>{entry.label}</option>)}
-                          </select>
-                        )}
-                        {selectedAudioUrl && (
-                          <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'lip-sync', { audioUrl: selectedAudioUrl })}>音声とリップシンク</Pressable>
-                        )}
-                        {availableAudio.length > 0 && <p className="w-full text-[10px] text-[var(--text-muted)]">動画と音声の尺が異なる場合、モデル側で切り詰めまたはループされることがあります。フォーム確認後に送信されます。</p>}
-                        <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'market-upscale')}>高画質化</Pressable>
-                        <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'market-edit')}>Marketで編集</Pressable>
+                          )}
+                          <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'market-upscale')}>高画質化</Pressable>
+                        </div>
+                        <details className="mt-2 text-[11px] text-[var(--text-muted)]">
+                          <summary className="min-h-6 cursor-pointer py-1 font-medium text-[var(--accent)]">
+                            その他のアクション
+                          </summary>
+                          <div className="flex flex-wrap gap-2 pb-1">
+                            {active.provider === 'veo' && (
+                              <>
+                                <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'veo-1080p')}>1080p</Pressable>
+                                <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'veo-4k')}>4K</Pressable>
+                              </>
+                            )}
+                            <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'market-edit')}>Marketで編集</Pressable>
+                            {availableAudio.length > 0 && (
+                              <select className="studio-select py-1.5 text-xs" value={selectedAudioUrl} onChange={(event) => setSelectedAudioUrl(event.target.value)} aria-label="リップシンクに使う音声">
+                                <option value="">音声を選択…</option>
+                                {availableAudio.map((entry, audioIndex) => <option key={`${entry.url}-${audioIndex}`} value={entry.url}>{entry.label}</option>)}
+                              </select>
+                            )}
+                            {selectedAudioUrl && (
+                              <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'lip-sync', { audioUrl: selectedAudioUrl })}>音声とリップシンク</Pressable>
+                            )}
+                            {availableAudio.length > 0 && <p className="w-full text-[10px] text-[var(--text-muted)]">動画と音声の尺が異なる場合、モデル側で切り詰めまたはループされることがあります。フォーム確認後に送信されます。</p>}
+                          </div>
+                        </details>
                       </div>
                     )}
 
