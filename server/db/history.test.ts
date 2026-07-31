@@ -16,8 +16,10 @@ const {
   historyCount,
   importHistoryItems,
   listHistory,
+  listUnarchivedMedia,
   migrateHistoryItems,
   replaceAllFromUnknown,
+  updateMediaLocalPaths,
 } = await import('./history.ts')
 
 function makeItem(
@@ -105,5 +107,121 @@ describe('server/db/history', () => {
     ])
     expect(merged.find((i) => i.taskId === 't-a')?.prompt).toBeUndefined()
     expect(merged.some((i) => i.taskId === 't-b')).toBe(true)
+  })
+
+  describe('updateMediaLocalPaths', () => {
+    it('merges localPath into existing media JSON by URL match', () => {
+      replaceAllFromUnknown([
+        makeItem('t-ml', Date.now(), {
+          media: [
+            { kind: 'image', url: 'https://cdn.example.com/a.png' },
+            { kind: 'image', url: 'https://cdn.example.com/b.png' },
+          ],
+        }),
+      ])
+      updateMediaLocalPaths('t-ml', [
+        { kind: 'image', url: 'https://cdn.example.com/a.png', localPath: 'media/t-ml/0.png' },
+        { kind: 'image', url: 'https://cdn.example.com/b.png' },
+      ])
+      const item = listHistory().find((i) => i.taskId === 't-ml')
+      expect(item?.media?.[0]?.localPath).toBe('media/t-ml/0.png')
+      expect(item?.media?.[1]?.localPath).toBeUndefined()
+    })
+
+    it('matches by URL even when array order differs', () => {
+      replaceAllFromUnknown([
+        makeItem('t-ord', Date.now(), {
+          media: [
+            { kind: 'image', url: 'https://cdn.example.com/first.png' },
+            { kind: 'video', url: 'https://cdn.example.com/second.mp4' },
+          ],
+        }),
+      ])
+      // Archived result in reverse order
+      updateMediaLocalPaths('t-ord', [
+        { kind: 'video', url: 'https://cdn.example.com/second.mp4', localPath: 'media/t-ord/1.mp4' },
+        { kind: 'image', url: 'https://cdn.example.com/first.png', localPath: 'media/t-ord/0.png' },
+      ])
+      const item = listHistory().find((i) => i.taskId === 't-ord')
+      expect(item?.media?.[0]?.localPath).toBe('media/t-ord/0.png')
+      expect(item?.media?.[1]?.localPath).toBe('media/t-ord/1.mp4')
+    })
+
+    it('does nothing for a non-existent taskId', () => {
+      replaceAllFromUnknown([makeItem('t-x', Date.now())])
+      expect(() =>
+        updateMediaLocalPaths('no-such', [{ kind: 'image', localPath: 'x' }]),
+      ).not.toThrow()
+    })
+  })
+
+  describe('replaceAllHistory preserves localPath', () => {
+    it('retains server-managed localPath across client full-replace', () => {
+      const now = Date.now()
+      replaceAllFromUnknown([
+        makeItem('t-preserve', now, {
+          media: [{ kind: 'image', url: 'https://cdn.example.com/p.png' }],
+        }),
+      ])
+      // Simulate server archiving
+      updateMediaLocalPaths('t-preserve', [
+        { kind: 'image', url: 'https://cdn.example.com/p.png', localPath: 'media/t-preserve/0.png' },
+      ])
+      // Client PUT without localPath (as it would from polling)
+      replaceAllFromUnknown([
+        makeItem('t-preserve', now, {
+          media: [{ kind: 'image', url: 'https://cdn.example.com/p.png' }],
+        }),
+      ])
+      const item = listHistory().find((i) => i.taskId === 't-preserve')
+      expect(item?.media?.[0]?.localPath).toBe('media/t-preserve/0.png')
+    })
+  })
+
+  describe('listUnarchivedMedia', () => {
+    it('returns only success/partial items without localPath', () => {
+      const now = Date.now()
+      replaceAllFromUnknown([
+        makeItem('t-archived', now, {
+          media: [{ kind: 'image', url: 'https://x.com/a.png', localPath: 'media/t/0.png' }],
+        }),
+        makeItem('t-unarchived', now - 1_000, {
+          media: [{ kind: 'image', url: 'https://x.com/b.png' }],
+        }),
+        makeItem('t-failed', now - 2_000, {
+          state: 'fail',
+          media: [{ kind: 'image', url: 'https://x.com/c.png' }],
+        }),
+      ])
+      const result = listUnarchivedMedia()
+      expect(result).toHaveLength(1)
+      expect(result[0].taskId).toBe('t-unarchived')
+    })
+
+    it('excludes items older than 13 days', () => {
+      const now = Date.now()
+      const old = now - 14 * 24 * 60 * 60 * 1000 // 14 days ago
+      replaceAllFromUnknown([
+        makeItem('t-old', old, {
+          media: [{ kind: 'image', url: 'https://x.com/old.png' }],
+        }),
+        makeItem('t-recent', now, {
+          media: [{ kind: 'image', url: 'https://x.com/new.png' }],
+        }),
+      ])
+      const result = listUnarchivedMedia()
+      expect(result).toHaveLength(1)
+      expect(result[0].taskId).toBe('t-recent')
+    })
+
+    it('respects the limit parameter', () => {
+      const now = Date.now()
+      replaceAllFromUnknown([
+        makeItem('t-u1', now - 1_000, { media: [{ kind: 'image', url: 'https://x.com/1.png' }] }),
+        makeItem('t-u2', now - 2_000, { media: [{ kind: 'image', url: 'https://x.com/2.png' }] }),
+        makeItem('t-u3', now - 3_000, { media: [{ kind: 'image', url: 'https://x.com/3.png' }] }),
+      ])
+      expect(listUnarchivedMedia(2)).toHaveLength(2)
+    })
   })
 })

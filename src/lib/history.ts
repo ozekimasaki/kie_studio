@@ -175,7 +175,7 @@ function asMedia(value: unknown): MediaAsset[] | undefined {
       return []
     }
     const asset: MediaAsset = { kind: raw.kind }
-    for (const key of ['id', 'url', 'streamUrl', 'previewUrl', 'title', 'mimeType', 'providerAssetId'] as const) {
+    for (const key of ['id', 'url', 'streamUrl', 'previewUrl', 'title', 'mimeType', 'providerAssetId', 'localPath'] as const) {
       const parsed = asString(raw[key])
       if (parsed !== undefined) asset[key] = parsed
     }

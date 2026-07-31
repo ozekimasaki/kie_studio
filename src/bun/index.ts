@@ -32,6 +32,8 @@ if (!existsSync(catalogPath)) {
 const { createApp } = await import('../../server/app.ts')
 const { getDb, getDbPath } = await import('../../server/db/open.ts')
 const { syncCatalog } = await import('../../server/catalog/sync.ts')
+const { startBackfill } = await import('../../server/media/backfill.ts')
+const { registerUpdateHandler } = await import('../../server/routes/update.ts')
 
 const app = createApp()
 
@@ -68,6 +70,9 @@ if (process.env.SYNC_MODELS_ON_START !== '0') {
   })
 }
 
+// Backfill: download media for existing history items that lack localPath.
+startBackfill()
+
 // NOTE: Electrobun's native wrapper treats the ENTIRE views:// URL path
 // (including ?query and #hash) as a literal file path. No parameters can be
 // appended to the URL. The frontend uses the default API port (8787) or
@@ -80,13 +85,16 @@ new BrowserWindow({
 
 // Non-blocking, best-effort update check. Silently skipped when no baseUrl is
 // configured (local builds) or when the updater API is unavailable.
+// Downloads the update so it is applied on next startup.
 async function checkForUpdatesQuietly() {
   try {
     const local = await Electrobun.Updater.getLocal()
     if (!local?.baseUrl) return
     const info = await Electrobun.Updater.checkForUpdate()
     if (info?.updateAvailable) {
-      console.log(`[updater] update available: ${info.version ?? 'unknown'}`)
+      console.log(`[updater] update available: ${info.version ?? 'unknown'} — downloading…`)
+      await Electrobun.Updater.downloadUpdate()
+      console.log('[updater] download complete; will apply on next startup')
     }
   } catch (err) {
     console.warn('[updater] update check skipped', err)
@@ -94,6 +102,21 @@ async function checkForUpdatesQuietly() {
 }
 
 void checkForUpdatesQuietly()
+
+// Register the /api/update/check handler so the frontend SettingsSheet can
+// trigger an explicit update check + download from the UI.
+registerUpdateHandler(async () => {
+  const local = await Electrobun.Updater.getLocal()
+  if (!local?.baseUrl) {
+    return { available: false }
+  }
+  const info = await Electrobun.Updater.checkForUpdate()
+  if (!info?.updateAvailable) {
+    return { available: false, version: info?.version }
+  }
+  await Electrobun.Updater.downloadUpdate()
+  return { available: true, version: info.version, downloaded: true }
+})
 
 process.on('exit', () => {
   try {

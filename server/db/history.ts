@@ -1,4 +1,4 @@
-import type { HistoryItem } from '../../src/lib/models/types.ts'
+import type { HistoryItem, MediaAsset } from '../../src/lib/models/types.ts'
 import {
   capItems,
   mergeHistory,
@@ -157,6 +157,37 @@ export function replaceAllHistory(items: HistoryItem[]): HistoryItem[] {
     items.toSorted((a, b) => b.createdAt - a.createdAt),
   )
   const db = getDb()
+
+  // Preserve server-managed localPath values across client full-replace
+  const existingRows = db.prepare(
+    `SELECT task_id, media FROM history_items WHERE media LIKE '%"localPath"%'`,
+  ).all() as { task_id: string; media: string }[]
+  const localPathMap = new Map<string, Map<string, string>>()
+  for (const row of existingRows) {
+    const media = parseJsonColumn<MediaAsset[]>(row.media)
+    if (!media) continue
+    const urlMap = new Map<string, string>()
+    for (const asset of media) {
+      if (asset.localPath) {
+        const key = asset.url ?? asset.streamUrl ?? ''
+        if (key) urlMap.set(key, asset.localPath)
+      }
+    }
+    if (urlMap.size > 0) localPathMap.set(row.task_id, urlMap)
+  }
+
+  const preserved = capped.map((item) => {
+    const urlMap = localPathMap.get(item.taskId)
+    if (!urlMap || !item.media?.length) return item
+    const merged = item.media.map((asset) => {
+      if (asset.localPath) return asset
+      const key = asset.url ?? asset.streamUrl ?? ''
+      const existing = key ? urlMap.get(key) : undefined
+      return existing ? { ...asset, localPath: existing } : asset
+    })
+    return { ...item, media: merged }
+  })
+
   const insert = insertStmt()
   const tx = db.transaction((list: HistoryItem[]) => {
     db.prepare('DELETE FROM history_items').run()
@@ -164,7 +195,7 @@ export function replaceAllHistory(items: HistoryItem[]): HistoryItem[] {
       insert.run(itemToParams(item))
     }
   })
-  tx(capped)
+  tx(preserved)
   return listHistory()
 }
 
@@ -211,4 +242,60 @@ export function migrateHistoryItems(raw: unknown): HistoryItem[] {
     }
     return replaceAllHistory(mergeHistory(current, incoming))
   })()
+}
+
+/** Merge localPath values from archived media into the stored media JSON. */
+export function updateMediaLocalPaths(taskId: string, media: MediaAsset[]): void {
+  const db = getDb()
+  const row = db
+    .prepare('SELECT media FROM history_items WHERE task_id = ?')
+    .get(taskId) as { media: string | null } | null
+  if (!row) return
+
+  const existing = parseJsonColumn<MediaAsset[]>(row.media)
+  if (!existing?.length) {
+    // No existing media column — write the full archived media
+    db.prepare('UPDATE history_items SET media = ? WHERE task_id = ?')
+      .run(JSON.stringify(media), taskId)
+    return
+  }
+
+  // Merge: match by URL (not index) to avoid misattribution
+  const byUrl = new Map(
+    media.filter((m) => m.localPath).map((m) => [m.url ?? m.streamUrl ?? '', m.localPath!]),
+  )
+  const merged = existing.map((asset) => {
+    if (asset.localPath) return asset
+    const key = asset.url ?? asset.streamUrl ?? ''
+    const lp = key ? byUrl.get(key) : undefined
+    return lp ? { ...asset, localPath: lp } : asset
+  })
+
+  db.prepare('UPDATE history_items SET media = ? WHERE task_id = ?')
+    .run(JSON.stringify(merged), taskId)
+}
+
+/** List success/partial items that have media assets still lacking localPath (for backfill). */
+const MEDIA_RETENTION_MS = 13 * 24 * 60 * 60 * 1000 // 13 days (margin from kie.ai's 14-day retention)
+
+export function listUnarchivedMedia(limit?: number): { taskId: string; media: MediaAsset[] }[] {
+  const cutoff = Date.now() - MEDIA_RETENTION_MS
+  const rows = getDb()
+    .prepare(
+      `SELECT task_id, media FROM history_items
+       WHERE state IN ('success', 'partial')
+         AND media IS NOT NULL
+         AND created_at > ?
+       ORDER BY created_at DESC
+       ${limit !== undefined ? 'LIMIT ?' : ''}`,
+    )
+    .all(cutoff, ...(limit !== undefined ? [limit] : [])) as { task_id: string; media: string }[]
+
+  return rows.flatMap((row) => {
+    const media = parseJsonColumn<MediaAsset[]>(row.media)
+    if (!media?.length) return []
+    // Only include items that have at least one downloadable URL without localPath
+    const needsArchive = media.some((asset) => (asset.url ?? asset.streamUrl) && !asset.localPath)
+    return needsArchive ? [{ taskId: row.task_id, media }] : []
+  })
 }

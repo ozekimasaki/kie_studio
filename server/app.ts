@@ -12,6 +12,9 @@ import { historyRoutes } from './routes/history.ts'
 import { sunoRoutes } from './routes/suno.ts'
 import { archiveRoutes } from './routes/archive.ts'
 import { settingsRoutes } from './routes/settings.ts'
+import { updateRoutes, isUpdateHandlerRegistered } from './routes/update.ts'
+import { mediaRoutes } from './routes/media.ts'
+import { backfillRoutes } from './media/backfill.ts'
 import { KieApiError } from './kie/client.ts'
 import { hasUsableApiKey } from './settings/apiKey.ts'
 
@@ -46,6 +49,7 @@ export function createApp(): Hono {
     c.json({
       ok: true,
       hasKey: hasUsableApiKey(),
+      isDesktop: isUpdateHandlerRegistered(),
     }),
   )
 
@@ -60,6 +64,9 @@ export function createApp(): Hono {
   app.route('/api', sunoRoutes)
   app.route('/api', archiveRoutes)
   app.route('/api', settingsRoutes)
+  app.route('/api', updateRoutes)
+  app.route('/api', backfillRoutes)
+  app.route('/', mediaRoutes)
 
   app.onError((err, c) => {
     // zValidator（JSON パース失敗など）は HTTPException を投げるため

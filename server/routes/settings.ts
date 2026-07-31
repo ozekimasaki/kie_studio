@@ -1,3 +1,5 @@
+import { exec } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
 import { Hono } from 'hono'
 import { deleteSetting } from '../db/settings.ts'
 import {
@@ -8,6 +10,7 @@ import {
   maskApiKey,
   setStoredApiKey,
 } from '../settings/apiKey.ts'
+import { getMediaRoot } from '../media/archiver.ts'
 import { getDb } from '../db/open.ts'
 import { z } from 'zod'
 import { validateJson } from './validation.ts'
@@ -50,4 +53,23 @@ settingsRoutes.put('/settings/api-key', validateJson(apiKeySchema), (c) => {
 settingsRoutes.delete('/settings/api-key', (c) => {
   deleteSetting(KIE_API_KEY_SETTING)
   return c.json({ data: { hasApiKey: hasUsableApiKey() } })
+})
+
+/** ローカルメディアフォルダを OS のファイルマネージャで開く */
+settingsRoutes.post('/settings/open-media-folder', (c) => {
+  const mediaRoot = getMediaRoot()
+  mkdirSync(mediaRoot, { recursive: true })
+
+  const cmd =
+    process.platform === 'win32'
+      ? `explorer.exe "${mediaRoot}"`
+      : process.platform === 'darwin'
+        ? `open "${mediaRoot}"`
+        : `xdg-open "${mediaRoot}"`
+
+  exec(cmd, (err) => {
+    if (err) console.warn('[settings] failed to open media folder:', err.message)
+  })
+
+  return c.json({ data: { path: mediaRoot } })
 })

@@ -1,6 +1,7 @@
 import { createApp } from './app.ts'
 import { syncCatalog } from './catalog/sync.ts'
 import { getDb, getDbPath } from './db/open.ts'
+import { startBackfill } from './media/backfill.ts'
 
 // Bun auto-loads `.env` from the project root, so no explicit dotenv step is
 // needed here. This entry is intentionally thin: it starts the shared Hono app
@@ -46,3 +47,6 @@ if (syncEnabled) {
 } else {
   console.log('[catalog] startup sync disabled (SYNC_MODELS_ON_START=0)')
 }
+
+// Backfill: download media for existing history items that lack localPath.
+startBackfill()

@@ -7,9 +7,9 @@ import {
   fetchDownloadUrl,
   fetchPersonas,
   fetchTimestampedLyrics,
+  localMediaUrl,
 } from '../lib/api.ts'
 import { isAudioUrl, isVideoUrl, mediaKindFromUrl } from '../lib/media.ts'
-import { mediaExpiry, mediaExpiryAt, mediaExpiryViewerLabel } from '../lib/mediaExpiry.ts'
 import type {
   HistoryItem,
   MediaAsset,
@@ -78,26 +78,24 @@ function canReuse(item: HistoryItem): boolean {
   return Boolean(item.input && item.modelId)
 }
 
-/** 詳細ビューアー用の画像。読み込み失敗時に期限切れプレースホルダーを表示する。 */
+/** 詳細ビューアー用の画像。読み込み失敗時にフォールバックを表示する。 */
 function ViewerImage({
   src,
   alt,
-  expired,
 }: {
   src: string
   alt: string
-  expired: boolean
 }) {
   const [failed, setFailed] = useState(false)
-  if (failed || expired) {
+  if (failed) {
     return (
       <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
-        <span className="grid size-12 place-items-center rounded-full bg-[var(--danger)]/15 text-[var(--danger)]">
+        <span className="grid size-12 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
           <Clock size={22} aria-hidden />
         </span>
-        <p className="text-sm font-semibold text-[var(--danger)]">メディア期限切れ</p>
+        <p className="text-sm font-semibold text-[var(--text-muted)]">メディアを取得できません</p>
         <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
-          kie.ai の保管期限（14日）を過ぎたため、このメディアは取得できません。同じ入力で再生成できます。
+          メディアの読み込みに失敗しました。同じ入力で再生成できます。
         </p>
       </div>
     )
@@ -180,14 +178,6 @@ export function HistorySheets({
       }))),
     [items],
   )
-  const activeExpiry =
-    active?.state === 'success' && activeMedia.length > 0
-      ? (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt)
-        ? mediaExpiryAt(
-            (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt) as number,
-          )
-        : mediaExpiry(active.createdAt)
-      : null
   const download = useMutation({
     mutationFn: async (url: string) => {
       const response = await fetchDownloadUrl(url)
@@ -392,7 +382,7 @@ export function HistorySheets({
                 <div className="mb-4 grid grid-cols-2 gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
                   {[{ label: 'Before', item: parent }, { label: 'After', item: active }].map(({ label, item }) => {
                     const asset = mediaFor(item).find((entry) => entry.kind === 'video')
-                    const url = asset?.url ?? asset?.streamUrl
+                    const url = asset?.localPath ? localMediaUrl(asset.localPath) : asset?.url ?? asset?.streamUrl
                     return (
                       <div key={label} className="min-w-0">
                         <span className="studio-label">{label}</span>
@@ -419,7 +409,10 @@ export function HistorySheets({
                       </div>
                     )
                   }
-                  const url = asset.url ?? asset.streamUrl
+                  const remoteUrl = asset.url ?? asset.streamUrl
+                  const url = asset.localPath
+                    ? localMediaUrl(asset.localPath)
+                    : remoteUrl
                   if (!url) return null
                   const audio = asset.kind === 'audio' || isAudioUrl(url)
                   const video = asset.kind === 'video' || isVideoUrl(url)
@@ -478,7 +471,6 @@ export function HistorySheets({
                         <ViewerImage
                           src={url}
                           alt={active.prompt || '生成結果'}
-                          expired={activeExpiry?.status === 'expired'}
                         />
                       )}
                     </SharedMedia>
@@ -492,15 +484,15 @@ export function HistorySheets({
                         新しいタブ
                       </a>
                       <Pressable
-                        disabled={download.isPending}
-                        onClick={() => download.mutate(url)}
+                        disabled={download.isPending || !remoteUrl}
+                        onClick={() => remoteUrl && download.mutate(remoteUrl)}
                         className={smallBtnClass}
                         scaleTo={0.96}
                       >
                         {download.isPending ? '保存準備中…' : '保存'}
                       </Pressable>
                       <Pressable
-                        onClick={() => onSendToInput(url)}
+                        onClick={() => onSendToInput(remoteUrl ?? url)}
                         className={`${smallBtnClass} inline-flex items-center gap-1`}
                         scaleTo={0.96}
                       >
@@ -666,21 +658,7 @@ export function HistorySheets({
                         <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'market-edit')}>Marketで編集</Pressable>
                       </div>
                     )}
-                    {index === 0 && activeExpiry ? (
-                      <p
-                        className={`text-xs ${
-                          activeExpiry.status === 'ok'
-                            ? 'text-[var(--text-muted)]'
-                            : activeExpiry.status === 'soon'
-                              ? 'text-[var(--warning)]'
-                              : 'text-[var(--danger)]'
-                        }`}
-                      >
-                        {mediaExpiryViewerLabel(activeExpiry)}
-                      </p>
-                    ) : index === 0 ? (
-                      <p className="text-xs text-[var(--warning)]">保存期限あり · 早めにまとめて保存してください</p>
-                    ) : null}
+
                     {download.isError && (
                       <p className="studio-field-error">
                         {(download.error as Error).message ||
@@ -769,7 +747,7 @@ export function HistorySheets({
           >
             {compareItems.map((item) => {
               const asset = mediaFor(item)[0]
-              const url = asset?.url ?? asset?.streamUrl
+              const url = asset?.localPath ? localMediaUrl(asset.localPath) : asset?.url ?? asset?.streamUrl
               return (
                 <div
                   key={item.taskId}

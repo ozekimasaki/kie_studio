@@ -18,12 +18,7 @@ import {
 } from 'lucide-react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
-import {
-  mediaExpiry,
-  mediaExpiryAt,
-  mediaExpiryCardLabel,
-  type MediaExpiry,
-} from '../lib/mediaExpiry.ts'
+import { localMediaUrl } from '../lib/api.ts'
 import type { HistoryItem, MediaAsset, QuickAction, TaskState } from '../lib/models/types.ts'
 import { Pressable, PressableDiv } from './motion/Pressable.tsx'
 import { SharedMedia } from './motion/SharedMedia.tsx'
@@ -34,31 +29,6 @@ const HistorySheets = lazy(() =>
     default: module.HistorySheets,
   })),
 )
-
-function successExpiry(item: HistoryItem): MediaExpiry | null {
-  if (
-    item.state !== 'success' ||
-    !((item.media?.length ?? 0) || (item.resultUrls?.length ?? 0))
-  ) return null
-  const expiresAt = item.expiresAt ?? item.media?.find((asset) => asset.expiresAt)?.expiresAt
-  // 明示的な expiresAt が無い場合は kie.ai 公式の 14 日保持期間から推定する
-  return expiresAt ? mediaExpiryAt(expiresAt) : mediaExpiry(item.createdAt)
-}
-
-function expiryTextClass(status: MediaExpiry['status']): string {
-  switch (status) {
-    case 'expired':
-      return 'text-[var(--danger)]'
-    case 'soon':
-      return 'text-[var(--warning)]'
-    case 'ok':
-      return 'text-white/70'
-    default: {
-      const _exhaustive: never = status
-      return _exhaustive
-    }
-  }
-}
 
 function relativeTime(ts: number): string {
   const diff = Date.now() - ts
@@ -119,35 +89,29 @@ const MAX_COMPARE = 4
 const smallBtnClass = 'studio-btn'
 const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
 
-/** 画像読み込み失敗時に表示する期限切れプレースホルダー。 */
-function ExpiredPlaceholder({ label }: { label?: string }) {
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
-      <span className="grid size-10 place-items-center rounded-full bg-[var(--danger)]/15 text-[var(--danger)]">
-        <Clock size={18} aria-hidden />
-      </span>
-      <span className="text-[11px] font-semibold text-[var(--danger)]">期限切れ</span>
-      <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
-        {label ?? 'kie.ai の保管期限（14日）を過ぎたためメディアを取得できません'}
-      </span>
-    </div>
-  )
-}
-
-/** img の onError で期限切れ表示に切り替えるラッパー。 */
+/** img の onError でフォールバック表示に切り替えるラッパー。 */
 function GalleryImage({
   src,
   alt,
   className,
-  expired,
 }: {
   src: string
   alt: string
   className: string
-  expired: boolean
 }) {
   const [failed, setFailed] = useState(false)
-  if (failed || expired) return <ExpiredPlaceholder />
+  if (failed) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
+        <span className="grid size-10 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
+          <Clock size={18} aria-hidden />
+        </span>
+        <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
+          メディアを取得できません
+        </span>
+      </div>
+    )
+  }
   return (
     <img
       src={src}
@@ -489,9 +453,6 @@ export function HistoryGallery({
                   すべて削除
                 </button>
               )}
-              <p className="border-t border-[var(--border)] px-3 py-2 text-[10px] leading-snug text-[var(--text-muted)]">
-                生成メディアには保存期限があります。期限が不明なものも早めに保存してください
-              </p>
             </div>
           </details>
           <input
@@ -623,14 +584,17 @@ export function HistoryGallery({
               const selected = h.taskId === activeTaskId
               const comparing = compareIdSet.has(h.taskId)
               const primaryMedia = h.media?.[0]
-              const mediaUrl = primaryMedia?.url ?? primaryMedia?.streamUrl ?? h.resultUrls?.[0]
-              const thumb = primaryMedia?.previewUrl ?? mediaUrl
+              const mediaUrl = primaryMedia?.localPath
+                ? localMediaUrl(primaryMedia.localPath)
+                : primaryMedia?.url ?? primaryMedia?.streamUrl ?? h.resultUrls?.[0]
+              const thumb = primaryMedia?.localPath
+                ? localMediaUrl(primaryMedia.localPath)
+                : primaryMedia?.previewUrl ?? mediaUrl
               const audioTracks = (h.media ?? []).filter((asset) => asset.kind === 'audio')
               const isAudio = primaryMedia?.kind === 'audio'
                 || h.category === 'audio'
                 || Boolean(mediaUrl && isAudioUrl(mediaUrl))
               const busy = isBusyState(h.state)
-              const expiry = successExpiry(h)
 
               return (
                 <div
@@ -675,7 +639,6 @@ export function HistoryGallery({
                               src={thumb}
                               alt={h.prompt || shortModel(h.model)}
                               className="h-full w-full object-cover"
-                              expired={expiry?.status === 'expired'}
                             />
                           )
                         ) : isAudio && !busy ? (
@@ -731,15 +694,6 @@ export function HistoryGallery({
                           </div>
                         )}
 
-                        {expiry?.status === 'expired' && !isAudio && (
-                          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-1.5">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--danger)] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                              <Clock size={10} aria-hidden />
-                              期限切れ
-                            </span>
-                          </div>
-                        )}
-
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 studio-tile-scrim p-2">
                           <div className="truncate text-[11px] font-medium text-white">
                             {shortModel(h.model)}
@@ -747,15 +701,6 @@ export function HistoryGallery({
                           <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
                             <span>{relativeTime(h.createdAt)}</span>
                             <span className="flex shrink-0 items-center gap-1.5">
-                              {expiry ? (
-                                <span
-                                  className={`font-semibold ${expiryTextClass(expiry.status)}`}
-                                >
-                                  {mediaExpiryCardLabel(expiry)}
-                                </span>
-                              ) : h.state === 'success' ? (
-                                <span className="font-semibold">早めに保存</span>
-                              ) : null}
                               {typeof h.creditsConsumed === 'number' && (
                                 <span>−{h.creditsConsumed}</span>
                               )}

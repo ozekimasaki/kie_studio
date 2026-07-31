@@ -63,6 +63,9 @@ const API_BASE: string =
 
 export const apiUrl = (path: string): string => `${API_BASE}${path}`
 
+/** ローカルメディアの配信 URL を生成（dev: 相対、desktop: 絶対 127.0.0.1） */
+export const localMediaUrl = (localPath: string): string => apiUrl(`/${localPath}`)
+
 async function parseJson<T>(res: Response): Promise<T> {
   let data: unknown
   try {
@@ -100,7 +103,7 @@ export async function fetchCredits() {
 
 export async function fetchHealth() {
   const res = await fetch(apiUrl('/api/health'))
-  return parseJson<{ ok: boolean; hasKey: boolean }>(res)
+  return parseJson<{ ok: boolean; hasKey: boolean; isDesktop: boolean }>(res)
 }
 
 export async function uploadFile(file: File): Promise<string> {
@@ -375,4 +378,22 @@ export async function clearApiKey() {
     method: 'DELETE',
   })
   return parseJson<{ data: { hasApiKey: boolean } }>(res)
+}
+
+export async function openMediaFolder() {
+  const res = await fetch(apiUrl('/api/settings/open-media-folder'), {
+    method: 'POST',
+  })
+  return parseJson<{ data: { path: string } }>(res)
+}
+
+export interface UpdateCheckResult {
+  available: boolean
+  version?: string
+  downloaded?: boolean
+}
+
+export async function checkForUpdate() {
+  const res = await fetch(apiUrl('/api/update/check'), { method: 'POST' })
+  return parseJson<{ data: UpdateCheckResult }>(res)
 }
