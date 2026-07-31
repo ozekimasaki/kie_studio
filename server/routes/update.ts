@@ -8,19 +8,32 @@ export interface UpdateCheckResult {
 
 type UpdateHandler = () => Promise<UpdateCheckResult>
 
-let handler: UpdateHandler | null = null
+// globalThis に保存する。Electrobun のバンドラは server/app.ts 経由と
+// src/bun/index.ts 経由でこのモジュールのインスタンスを2つ生成するため、
+// module-level let ではハンドラが共有されない。
+const UPDATE_HANDLER_KEY = Symbol.for('kie.updateHandler')
+
+type GlobalWithHandler = typeof globalThis & {
+  [UPDATE_HANDLER_KEY]?: UpdateHandler
+}
 
 /**
  * デスクトップメインプロセス（src/bun/index.ts）から Updater ハンドラを登録する。
  * 未登録時（dev / web 環境）は 503 を返す。
  */
 export function registerUpdateHandler(fn: UpdateHandler) {
-  handler = fn
+  ;(globalThis as GlobalWithHandler)[UPDATE_HANDLER_KEY] = fn
+}
+
+/** ハンドラ登録済み（= デスクトップ版）かどうか */
+export function isUpdateHandlerRegistered(): boolean {
+  return typeof (globalThis as GlobalWithHandler)[UPDATE_HANDLER_KEY] === 'function'
 }
 
 export const updateRoutes = new Hono()
 
 updateRoutes.post('/update/check', async (c) => {
+  const handler = (globalThis as GlobalWithHandler)[UPDATE_HANDLER_KEY]
   if (!handler) {
     return c.json(
       { error: 'アップデート機能はデスクトップ版でのみ利用できます' },

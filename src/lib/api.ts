@@ -103,7 +103,7 @@ export async function fetchCredits() {
 
 export async function fetchHealth() {
   const res = await fetch(apiUrl('/api/health'))
-  return parseJson<{ ok: boolean; hasKey: boolean }>(res)
+  return parseJson<{ ok: boolean; hasKey: boolean; isDesktop: boolean }>(res)
 }
 
 export async function uploadFile(file: File): Promise<string> {

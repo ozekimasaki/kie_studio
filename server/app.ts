@@ -12,7 +12,7 @@ import { historyRoutes } from './routes/history.ts'
 import { sunoRoutes } from './routes/suno.ts'
 import { archiveRoutes } from './routes/archive.ts'
 import { settingsRoutes } from './routes/settings.ts'
-import { updateRoutes } from './routes/update.ts'
+import { updateRoutes, isUpdateHandlerRegistered } from './routes/update.ts'
 import { mediaRoutes } from './routes/media.ts'
 import { backfillRoutes } from './media/backfill.ts'
 import { KieApiError } from './kie/client.ts'
@@ -49,6 +49,7 @@ export function createApp(): Hono {
     c.json({
       ok: true,
       hasKey: hasUsableApiKey(),
+      isDesktop: isUpdateHandlerRegistered(),
     }),
   )
 

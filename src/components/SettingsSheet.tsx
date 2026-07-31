@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
-import { clearApiKey, checkForUpdate, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
+import { clearApiKey, checkForUpdate, fetchHealth, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
 import { Pressable } from './motion/Pressable.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 
@@ -192,6 +192,13 @@ export function SettingsSheet({
     staleTime: 30_000,
   })
 
+  const healthQuery = useQuery({
+    queryKey: ['health'],
+    queryFn: fetchHealth,
+    enabled: open,
+    staleTime: 60_000,
+  })
+
   async function refreshDependentQueries() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['settings'] }),
@@ -327,11 +334,13 @@ export function SettingsSheet({
                 <span className="text-[var(--text-muted)]">v{APP_VERSION}</span>
               </p>
             </div>
-            <UpdateCheckButton />
+            {healthQuery.data?.isDesktop && <UpdateCheckButton />}
           </div>
-          <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
-            デスクトップ版は起動時に自動でアップデートを確認します。新しい版がある場合は次回起動時に適用されます。
-          </p>
+          {healthQuery.data?.isDesktop && (
+            <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
+              デスクトップ版は起動時に自動でアップデートを確認します。新しい版がある場合は次回起動時に適用されます。
+            </p>
+          )}
         </section>
 
         <div className="mt-5 flex justify-end">
