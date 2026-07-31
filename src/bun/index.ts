@@ -32,6 +32,7 @@ if (!existsSync(catalogPath)) {
 const { createApp } = await import('../../server/app.ts')
 const { getDb, getDbPath } = await import('../../server/db/open.ts')
 const { syncCatalog } = await import('../../server/catalog/sync.ts')
+const { startBackfill } = await import('../../server/media/backfill.ts')
 
 const app = createApp()
 
@@ -67,6 +68,9 @@ if (process.env.SYNC_MODELS_ON_START !== '0') {
     console.warn('[catalog] startup sync failed (using existing catalog):', err)
   })
 }
+
+// Backfill: download media for existing history items that lack localPath.
+startBackfill()
 
 // NOTE: Electrobun's native wrapper treats the ENTIRE views:// URL path
 // (including ?query and #hash) as a literal file path. No parameters can be

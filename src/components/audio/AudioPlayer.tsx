@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import { Pressable } from '../motion/Pressable.tsx'
+import { apiUrl } from '../../lib/api.ts'
 import {
   AudioPlayerContext,
   type AudioPlayerValue,
@@ -23,6 +24,7 @@ import {
 } from './audioPlayerContext.ts'
 
 function sourceOf(track: AudioTrack): string | undefined {
+  if (track.localPath) return apiUrl(`/${track.localPath}`)
   return track.streamUrl ?? track.url
 }
 

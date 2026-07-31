@@ -123,6 +123,8 @@ export interface MediaAsset {
   expiresAt?: number
   providerAssetId?: string
   metadata?: Record<string, unknown>
+  /** ローカル保存済みファイルの相対パス (server 基準)。存在すれば期限切れなし */
+  localPath?: string
 }
 
 export interface NormalizedTask {

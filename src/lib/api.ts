@@ -63,6 +63,9 @@ const API_BASE: string =
 
 export const apiUrl = (path: string): string => `${API_BASE}${path}`
 
+/** ローカルメディアの配信 URL を生成（dev: 相対、desktop: 絶対 127.0.0.1） */
+export const localMediaUrl = (localPath: string): string => apiUrl(`/${localPath}`)
+
 async function parseJson<T>(res: Response): Promise<T> {
   let data: unknown
   try {
