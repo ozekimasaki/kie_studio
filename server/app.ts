@@ -22,13 +22,23 @@ import { hasUsableApiKey } from './settings/apiKey.ts'
 export function createApp(): Hono {
   const app = new Hono()
 
-  // Local-only API: allow localhost (Vite dev) and packaged webview origins
-  // (`views://...` or a null origin). Credentials are never used, so
-  // reflecting the request origin is safe.
+  // Local-only API: allow Vite dev origins and packaged webview origins
+  // (`views://...` or a null origin). Reject all other web origins to
+  // prevent malicious sites from accessing the local API.
+  const DEV_ORIGINS = new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ])
   app.use(
     '*',
     cors({
-      origin: (origin) => origin ?? '*',
+      origin: (origin) => {
+        // Packaged webview sends null or views:// origin
+        if (!origin || origin === 'null' || origin.startsWith('views://')) {
+          return origin ?? '*'
+        }
+        return DEV_ORIGINS.has(origin) ? origin : ''
+      },
     }),
   )
 
