@@ -2,13 +2,14 @@ import { useActionState, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
+  FolderOpen,
   KeyRound,
   RefreshCw,
   Settings,
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
-import { clearApiKey, fetchSettings, saveApiKey } from '../lib/api.ts'
+import { clearApiKey, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
 import { Pressable } from './motion/Pressable.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 
@@ -229,6 +230,25 @@ export function SettingsSheet({
               )}
             </>
           )}
+        </section>
+
+        <section className="mt-6 border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="studio-label">ローカルメディア</div>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+                生成結果はこの端末のフォルダに自動保存されます。14日を過ぎたファイルは削除される場合があります。
+              </p>
+            </div>
+            <Pressable
+              onClick={() => void openMediaFolder()}
+              className="studio-btn w-auto shrink-0 gap-1 px-3 text-xs"
+              scaleTo={0.96}
+            >
+              <FolderOpen size={13} strokeWidth={2} aria-hidden />
+              フォルダを開く
+            </Pressable>
+          </div>
         </section>
 
         <section className="mt-6 border-t border-[var(--border)] pt-4">

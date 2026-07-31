@@ -379,3 +379,10 @@ export async function clearApiKey() {
   })
   return parseJson<{ data: { hasApiKey: boolean } }>(res)
 }
+
+export async function openMediaFolder() {
+  const res = await fetch(apiUrl('/api/settings/open-media-folder'), {
+    method: 'POST',
+  })
+  return parseJson<{ data: { path: string } }>(res)
+}
