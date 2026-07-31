@@ -4,7 +4,18 @@ import { listUnarchivedMedia, updateMediaLocalPaths } from '../db/history.ts'
 
 const MAX_CONCURRENCY = 2
 
-let backfillRunning = false
+// globalThis に保存する。Electrobun のバンドラがモジュールインスタンスを
+// 2つ生成するため module-level let ではフラグが共有されない（update.ts と同様）。
+const BACKFILL_KEY = Symbol.for('kie.backfillRunning')
+
+type GlobalWithBackfill = typeof globalThis & { [BACKFILL_KEY]?: boolean }
+
+function isBackfillRunning(): boolean {
+  return (globalThis as GlobalWithBackfill)[BACKFILL_KEY] === true
+}
+function setBackfillRunning(v: boolean) {
+  ;(globalThis as GlobalWithBackfill)[BACKFILL_KEY] = v
+}
 
 /**
  * Process unarchived media items with limited concurrency.
@@ -12,8 +23,8 @@ let backfillRunning = false
  * Items older than 14 days will fail (kie.ai deleted them) — skipped gracefully.
  */
 async function runBackfill(): Promise<{ archived: number; failed: number }> {
-  if (backfillRunning) return { archived: 0, failed: 0 }
-  backfillRunning = true
+  if (isBackfillRunning()) return { archived: 0, failed: 0 }
+  setBackfillRunning(true)
 
   let archived = 0
   let failed = 0
@@ -51,7 +62,7 @@ async function runBackfill(): Promise<{ archived: number; failed: number }> {
     await Promise.all(workers)
     console.log(`[media-backfill] done: ${archived} archived, ${failed} failed/skipped`)
   } finally {
-    backfillRunning = false
+    setBackfillRunning(false)
   }
 
   return { archived, failed }
@@ -68,7 +79,7 @@ export function startBackfill(): void {
 export const backfillRoutes = new Hono()
 
 backfillRoutes.post('/media/backfill', (c) => {
-  if (backfillRunning) {
+  if (isBackfillRunning()) {
     return c.json({ data: { status: 'already_running' } })
   }
   void runBackfill().catch((err) =>
