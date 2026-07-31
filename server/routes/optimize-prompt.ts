@@ -29,7 +29,7 @@ optimizePromptRoutes.get('/optimize-profile', (c) => {
       modality: profile.modality,
       formula: profile.formula,
       mention: profile.mention,
-      hasGuide: Boolean(profile.guideFile),
+      hasGuide: Boolean(profile.guide),
     },
   })
 })

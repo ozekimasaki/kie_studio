@@ -46,6 +46,23 @@ export class ApiClientError extends Error {
   }
 }
 
+/**
+ * Resolve the API base URL.
+ * - dev / web (http(s) origin): relative path, proxied by Vite to the server.
+ * - packaged webview (views:// or null origin): absolute 127.0.0.1 URL on the
+ *   default port 8787. Electrobun's native wrapper does NOT allow query strings
+ *   or hash fragments in views:// URLs (treated as file path), so the port
+ *   cannot be passed via URL. The server always binds 8787 first.
+ * - override with VITE_API_BASE when needed.
+ */
+const API_BASE: string =
+  import.meta.env.VITE_API_BASE ??
+  (location.protocol.startsWith('http')
+    ? ''
+    : 'http://127.0.0.1:8787')
+
+export const apiUrl = (path: string): string => `${API_BASE}${path}`
+
 async function parseJson<T>(res: Response): Promise<T> {
   let data: unknown
   try {
@@ -66,7 +83,7 @@ async function parseJson<T>(res: Response): Promise<T> {
 
 export async function fetchModels(category?: ModelCategory) {
   const q = category ? `?category=${category}` : ''
-  const res = await fetch(`/api/models${q}`)
+  const res = await fetch(apiUrl(`/api/models${q}`))
   return parseJson<{
     data: {
       syncedAt: string | null
@@ -77,12 +94,12 @@ export async function fetchModels(category?: ModelCategory) {
 }
 
 export async function fetchCredits() {
-  const res = await fetch('/api/credits')
+  const res = await fetch(apiUrl('/api/credits'))
   return parseJson<{ data: { credits: number } }>(res)
 }
 
 export async function fetchHealth() {
-  const res = await fetch('/api/health')
+  const res = await fetch(apiUrl('/api/health'))
   return parseJson<{ ok: boolean; hasKey: boolean }>(res)
 }
 
@@ -100,7 +117,7 @@ export async function uploadFileWithMetadata(file: File): Promise<{
   form.append('file', file)
   form.append('uploadPath', 'kie-studio')
   form.append('fileName', file.name)
-  const res = await fetch('/api/upload', { method: 'POST', body: form })
+  const res = await fetch(apiUrl('/api/upload'), { method: 'POST', body: form })
   const json = await parseJson<{
     data: {
       fileUrl: string
@@ -118,7 +135,7 @@ export async function generateTask(params: {
   provider?: Provider
   operation?: Operation
 }) {
-  const res = await fetch('/api/generate', {
+  const res = await fetch(apiUrl('/api/generate'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -137,12 +154,12 @@ export async function fetchTask(
   operation: Operation = 'generate',
 ) {
   const query = new URLSearchParams({ taskId, provider, operation })
-  const res = await fetch(`/api/task?${query}`)
+  const res = await fetch(apiUrl(`/api/task?${query}`))
   return parseJson<{ data: NormalizedTask }>(res)
 }
 
 export async function fetchTimestampedLyrics(taskId: string, audioId: string) {
-  const res = await fetch('/api/suno/timestamped-lyrics', {
+  const res = await fetch(apiUrl('/api/suno/timestamped-lyrics'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ taskId, audioId }),
@@ -156,7 +173,7 @@ export async function fetchTimestampedLyrics(taskId: string, audioId: string) {
 }
 
 export async function boostMusicStyle(style: string) {
-  const res = await fetch('/api/suno/style', {
+  const res = await fetch(apiUrl('/api/suno/style'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ style }),
@@ -170,7 +187,7 @@ export async function createPersona(params: {
   name: string
   description?: string
 }) {
-  const res = await fetch('/api/suno/persona', {
+  const res = await fetch(apiUrl('/api/suno/persona'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -181,26 +198,26 @@ export async function createPersona(params: {
 }
 
 export async function fetchPersonas() {
-  const res = await fetch('/api/personas')
+  const res = await fetch(apiUrl('/api/personas'))
   return parseJson<{
     data: { items: SavedPersona[] }
   }>(res)
 }
 
 export async function deletePersona(id: string) {
-  const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, {
+  const res = await fetch(apiUrl(`/api/personas/${encodeURIComponent(id)}`), {
     method: 'DELETE',
   })
   return parseJson<{ data: { removed: true } }>(res)
 }
 
 export async function fetchAudioAssets() {
-  const res = await fetch('/api/audio-assets')
+  const res = await fetch(apiUrl('/api/audio-assets'))
   return parseJson<{ data: { items: SavedAudioAsset[] } }>(res)
 }
 
 export async function deleteAudioAsset(id: string) {
-  const res = await fetch(`/api/audio-assets/${encodeURIComponent(id)}`, {
+  const res = await fetch(apiUrl(`/api/audio-assets/${encodeURIComponent(id)}`), {
     method: 'DELETE',
   })
   return parseJson<{ data: { removed: true } }>(res)
@@ -211,7 +228,7 @@ export async function downloadArchive(items: Array<{
   name?: string
   lyrics?: string
 }>) {
-  const res = await fetch('/api/archive', {
+  const res = await fetch(apiUrl('/api/archive'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
@@ -239,7 +256,7 @@ export async function downloadArchive(items: Array<{
 }
 
 export async function fetchDownloadUrl(url: string) {
-  const res = await fetch('/api/download-url', {
+  const res = await fetch(apiUrl('/api/download-url'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
@@ -248,7 +265,7 @@ export async function fetchDownloadUrl(url: string) {
 }
 
 export async function fetchGrokStatus() {
-  const res = await fetch('/api/grok/status')
+  const res = await fetch(apiUrl('/api/grok/status'))
   return parseJson<{
     data: { available: boolean; version?: string }
   }>(res)
@@ -256,7 +273,7 @@ export async function fetchGrokStatus() {
 
 export async function fetchOptimizeProfile(modelId?: string | null) {
   const q = modelId ? `?modelId=${encodeURIComponent(modelId)}` : ''
-  const res = await fetch(`/api/optimize-profile${q}`)
+  const res = await fetch(apiUrl(`/api/optimize-profile${q}`))
   return parseJson<{
     data: {
       family: string
@@ -275,7 +292,7 @@ export async function optimizePrompt(params: {
   modelId?: string
   mode: 'generate' | 'optimize'
 }) {
-  const res = await fetch('/api/optimize-prompt', {
+  const res = await fetch(apiUrl('/api/optimize-prompt'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -290,7 +307,7 @@ export async function optimizePrompt(params: {
 }
 
 export async function fetchHistory() {
-  const res = await fetch('/api/history')
+  const res = await fetch(apiUrl('/api/history'))
   return parseJson<{
     data: { items: HistoryItem[]; count: number }
   }>(res)
@@ -299,7 +316,7 @@ export async function fetchHistory() {
 export async function putHistory(
   items: HistoryItem[],
 ) {
-  const res = await fetch('/api/history', {
+  const res = await fetch(apiUrl('/api/history'), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
@@ -312,7 +329,7 @@ export async function putHistory(
 export async function importHistoryApi(
   items: HistoryItem[],
 ) {
-  const res = await fetch('/api/history/import', {
+  const res = await fetch(apiUrl('/api/history/import'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
@@ -323,7 +340,7 @@ export async function importHistoryApi(
 }
 
 export async function migrateHistory(items: unknown[]) {
-  const res = await fetch('/api/history/migrate', {
+  const res = await fetch(apiUrl('/api/history/migrate'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
@@ -331,4 +348,31 @@ export async function migrateHistory(items: unknown[]) {
   return parseJson<{
     data: { items: HistoryItem[] }
   }>(res)
+}
+
+export type AppSettings = {
+  hasApiKey: boolean
+  apiKeyMasked: string | null
+  apiKeyFromStore: boolean
+}
+
+export async function fetchSettings() {
+  const res = await fetch(apiUrl('/api/settings'))
+  return parseJson<{ data: AppSettings }>(res)
+}
+
+export async function saveApiKey(apiKey: string) {
+  const res = await fetch(apiUrl('/api/settings/api-key'), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey }),
+  })
+  return parseJson<{ data: { hasApiKey: boolean; apiKeyMasked: string } }>(res)
+}
+
+export async function clearApiKey() {
+  const res = await fetch(apiUrl('/api/settings/api-key'), {
+    method: 'DELETE',
+  })
+  return parseJson<{ data: { hasApiKey: boolean } }>(res)
 }

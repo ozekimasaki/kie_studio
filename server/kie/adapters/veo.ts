@@ -5,22 +5,25 @@ import {
   asNumber,
   asRecord,
   asString,
+  failOrPartial,
+  type KieResponse,
   mediaFromUrls,
   normalizeEpoch,
   parseJson,
+  taskIdFrom,
   uniqueUrls,
+  unknownOrPartial,
+  unwrapKiePayload,
   urlsFrom,
 } from './utils.ts'
-
-type KieResponse = { code?: number; msg?: string; data?: unknown }
 
 function veoState(flag: unknown, mediaCount: number): TaskState {
   if (flag === 0 || flag === '0') return 'generating'
   if (flag === 1 || flag === '1') return 'success'
   if (flag === 2 || flag === '2' || flag === 3 || flag === '3') {
-    return mediaCount > 0 ? 'partial' : 'fail'
+    return failOrPartial(mediaCount)
   }
-  return mediaCount > 0 ? 'partial' : 'unknown'
+  return unknownOrPartial(mediaCount)
 }
 
 export function normalizeVeoTask(
@@ -28,9 +31,7 @@ export function normalizeVeoTask(
   operation: Operation,
   payload: unknown,
 ): NormalizedTask {
-  const envelope = asRecord(payload) ?? {}
-  const data = asRecord(envelope.data) ?? envelope
-  const response = asRecord(data.response) ?? data
+  const { data, response } = unwrapKiePayload(payload)
   const urls = [
     ...urlsFrom(response.resultUrls),
     ...urlsFrom(response.fullResultUrls),
@@ -95,7 +96,7 @@ export const veoAdapter: ProviderAdapter = {
     })
     assertKieOk(response.code, response.msg, 'Failed to create Veo task')
     const data = asRecord(response.data)
-    const taskId = asString(data?.taskId) ?? asString(data?.id)
+    const taskId = taskIdFrom(data)
     const immediateUrl = asString(data?.resultUrl)
     if (!taskId && immediateUrl) {
       const immediateTaskId = [

@@ -35,7 +35,7 @@
   --color-teal-700: oklch(0.4 0.11 210);
   --color-teal-soft: oklch(0.48 0.12 210 / 0.12);
   --color-red-600: oklch(0.55 0.2 25);
-  --color-amber-600: oklch(0.65 0.14 70);
+  --color-amber-600: oklch(0.55 0.14 70);
   --color-green-600: oklch(0.55 0.14 155);
   --color-green-soft: oklch(0.55 0.14 155 / 0.14);
 
@@ -100,6 +100,7 @@
   --z-dropdown: 20;
   --z-sheet-backdrop: 40;
   --z-sheet: 50;
+  --z-modal: 55;
   --z-toast: 60;
 
   font-family:
@@ -138,12 +139,20 @@ body {
   background: var(--bg);
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
+/*
+Form-control reset belongs in @layer base (preflight-style normalization).
+If left unlayered, it beats layered component classes in the cascade —
+e.g. `color: inherit` overrides .studio-btn-primary's `color: var(--on-accent)`,
+making white button text inherit the dark ink color (~2:1 contrast).
+*/
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
 }
 
 :focus-visible {
@@ -273,6 +282,15 @@ textarea {
 
 /* Controls */
 
+/*
+  Component classes live in @layer components so that Tailwind utilities
+  (@layer utilities) can override them. Without the layer, unlayered CSS
+  beats layered utilities in the cascade, which silently ignored overrides
+  like `w-auto` on .studio-btn-primary (width:100%) and `pl-9` on
+  .studio-input — collapsing the settings API-key field.
+*/
+@layer components {
+
 .studio-input,
 .studio-select {
   border-radius: var(--radius-md);
@@ -364,6 +382,8 @@ textarea {
 
 .studio-btn-primary:hover:not(:disabled) {
   background: var(--color-teal-700);
+}
+
 }
 
 .model-favorite-button {

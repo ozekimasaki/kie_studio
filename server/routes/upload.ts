@@ -7,8 +7,21 @@ import {
 } from '../kie/safe.ts'
 import { KieApiError } from '../kie/client.ts'
 import { listAudioAssets, removeAudioAsset, saveAudioAsset } from '../db/audio-assets.ts'
+import { z } from 'zod'
+import { firstIssueMessage } from './validation.ts'
 
 export const uploadRoutes = new Hono()
+
+/** アップロード上限（音源用途を考慮して 100MB） */
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+
+// content-type で JSON / multipart を分岐するため zValidator ミドルウェアではなく
+// JSON ブランチ内で safeParse する
+const uploadJsonSchema = z.object({
+  fileUrl: z.string({ error: 'fileUrl is required' }).min(1, 'fileUrl is required'),
+  uploadPath: z.string().optional(),
+  fileName: z.string().optional(),
+})
 
 function expiryTimestamp(value?: string): number | undefined {
   if (!value) return undefined
@@ -35,19 +48,17 @@ uploadRoutes.post('/upload', async (c) => {
   const contentType = c.req.header('content-type') || ''
 
   if (contentType.includes('application/json')) {
-    let body: {
-      fileUrl?: string
-      uploadPath?: string
-      fileName?: string
-    }
+    let raw: unknown
     try {
-      body = await c.req.json()
+      raw = await c.req.json()
     } catch {
       return c.json({ error: 'Invalid JSON' }, 400)
     }
-    if (!body.fileUrl) {
-      return c.json({ error: 'fileUrl is required' }, 400)
+    const parsed = uploadJsonSchema.safeParse(raw)
+    if (!parsed.success) {
+      return c.json({ error: firstIssueMessage(parsed.error) }, 400)
     }
+    const body = parsed.data
     try {
       assertSafeHttpsUrl(body.fileUrl, 'fileUrl')
       const uploadPath = sanitizeUploadPath(body.uploadPath)
@@ -83,6 +94,12 @@ uploadRoutes.post('/upload', async (c) => {
   const file = form.get('file')
   if (!(file instanceof File)) {
     return c.json({ error: 'file is required' }, 400)
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return c.json(
+      { error: `ファイルサイズが上限（${MAX_UPLOAD_BYTES / 1024 / 1024}MB）を超えています` },
+      413,
+    )
   }
 
   try {

@@ -16,7 +16,19 @@ import {
 import type { Catalog, ModelDefinition } from '../../src/lib/models/types.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-export const CATALOG_PATH = resolve(__dirname, '../../src/data/catalog.json')
+const DEFAULT_CATALOG_PATH = resolve(__dirname, '../../src/data/catalog.json')
+
+/**
+ * Resolve the catalog file location.
+ *
+ * Desktop builds set STUDIO_CATALOG_PATH to a writable userData path because the
+ * bundled source path is read-only (and catalog.json is not shipped inside the
+ * app bundle). Dev/CLI leave it unset and fall back to the repo source file.
+ */
+export function getCatalogPath(): string {
+  const override = process.env.STUDIO_CATALOG_PATH
+  return override && override.length > 0 ? resolve(override) : DEFAULT_CATALOG_PATH
+}
 const LLMS_TXT = 'https://docs.kie.ai/llms.txt'
 const FETCH_TIMEOUT_MS = 15_000
 const DEFAULT_CONCURRENCY = 12
@@ -209,13 +221,14 @@ function setCachedCatalog(catalog: Catalog | null): void {
 }
 
 export async function readCatalog(): Promise<Catalog | null> {
+  const path = getCatalogPath()
   try {
-    const info = await stat(CATALOG_PATH)
+    const info = await stat(path)
     if (
       cachedCatalog !== undefined &&
       cachedCatalogMtimeMs === info.mtimeMs
     ) return cachedCatalog
-    const raw = await readFile(CATALOG_PATH, 'utf8')
+    const raw = await readFile(path, 'utf8')
     const catalog = JSON.parse(raw) as Catalog
     setCachedCatalog(catalog)
     cachedCatalogMtimeMs = info.mtimeMs
@@ -377,8 +390,9 @@ export async function syncCatalog(
     models: sorted,
   }
 
-  await mkdir(dirname(CATALOG_PATH), { recursive: true })
-  await writeFile(CATALOG_PATH, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8')
+  const catalogPath = getCatalogPath()
+  await mkdir(dirname(catalogPath), { recursive: true })
+  await writeFile(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8')
   setCachedCatalog(catalog)
 
   if (!quiet) {

@@ -7,13 +7,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { ExternalLink } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ExternalLink, Settings } from 'lucide-react'
 import { CategoryTabs } from './components/CategoryTabs.tsx'
 import { ModelSelect } from './components/ModelSelect.tsx'
 import {
@@ -33,46 +28,24 @@ import { Pressable } from './components/motion/Pressable.tsx'
 import { AudioPlayerProvider } from './components/audio/AudioPlayer.tsx'
 import { SunoStyleAssist } from './components/SunoStyleAssist.tsx'
 import {
-  ApiClientError,
   fetchAudioAssets,
   fetchHealth,
-  fetchHistory,
   fetchModels,
   fetchPersonas,
-  fetchTask,
-  generateTask,
-  importHistoryApi,
-  migrateHistory,
 } from './lib/api.ts'
-import { classifyApiError } from './lib/submissionQueue.ts'
 import { useSubmissionQueue } from './lib/useSubmissionQueue.ts'
-import {
-  sanitizeWorkflowInput,
-  validateWorkflowInput,
-} from './lib/workflowValidation.ts'
-import { parentTaskIdFor } from './lib/taskRelations.ts'
-import {
-  exportHistoryJson,
-  MAX_PINNED,
-  mergeHistory,
-  normalizeTimestamp,
-  parseHistoryJson,
-  PENDING_STALE_MS,
-  removeFromList,
-  togglePinInList,
-  UNKNOWN_STALE_MS,
-  upsertInList,
-} from './lib/history.ts'
+import { validateWorkflowInput } from './lib/workflowValidation.ts'
 import { isVideoUrl } from './lib/media.ts'
 import { presentField } from './lib/studioPresentation.ts'
-import { useHistoryPersistence } from './lib/useHistoryPersistence.ts'
+import { useGenerateFlow } from './lib/useGenerateFlow.ts'
+import { useHistoryState } from './lib/useHistoryState.ts'
+import { useQuickAction } from './lib/useQuickAction.ts'
+import { useTaskPolling } from './lib/useTaskPolling.ts'
 import type {
   FieldSchema,
   HistoryItem,
   ModelCategory,
   ModelDefinition,
-  MediaAsset,
-  QuickAction,
 } from './lib/models/types.ts'
 
 const CreditPurchaseSheet = lazy(() =>
@@ -81,10 +54,11 @@ const CreditPurchaseSheet = lazy(() =>
   })),
 )
 
-function promptFromInput(input: Record<string, unknown>): string | undefined {
-  const p = input.prompt ?? input.text
-  return typeof p === 'string' ? p.slice(0, 120) : undefined
-}
+const SettingsSheet = lazy(() =>
+  import('./components/SettingsSheet.tsx').then((module) => ({
+    default: module.SettingsSheet,
+  })),
+)
 
 /** Restore saved input over defaults; unknown keys are dropped. */
 function mergeInputWithDefaults(
@@ -109,43 +83,7 @@ function mergeInputWithDefaults(
   return values
 }
 
-type GenerateVars =
-  | { source: 'form' }
-  | { source: 'retry'; item: HistoryItem }
-
-function isPendingState(item: HistoryItem): boolean {
-  const age = Date.now() - item.createdAt
-  if (
-    item.state === 'waiting' ||
-    item.state === 'queuing' ||
-    item.state === 'generating'
-  ) {
-    return age < PENDING_STALE_MS
-  }
-  if (item.state === 'unknown') {
-    return age < UNKNOWN_STALE_MS
-  }
-  return false
-}
-
-const LS_HISTORY_KEY = 'kie-studio-history'
-const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
 const EMPTY_MODELS: ModelDefinition[] = []
-
-function taskPollInterval(createdAt: number): number {
-  const age = Date.now() - createdAt
-  if (age < 30_000) return 2500
-  if (age < 2 * 60_000) return 5000
-  return 10_000
-}
-
-function isInsufficientCreditsError(error: unknown): boolean {
-  if (error instanceof ApiClientError && error.status === 402) return true
-  const message = error instanceof Error ? error.message : String(error)
-  return /(?:insufficient|not enough|low)\s+(?:credit|balance)|(?:credit|balance).*?(?:insufficient|not enough|low)|クレジット.*(?:不足|足りない|切れ)|(?:不足|足りない).*(?:クレジット|credit)/i.test(
-    message,
-  )
-}
 
 export default function App() {
   const queryClient = useQueryClient()
@@ -156,20 +94,18 @@ export default function App() {
   const [formError, setFormError] = useState<string | null>(null)
   const [formNotice, setFormNotice] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [history, setHistory] = useState<HistoryItem[]>([])
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
   const [batchCount, setBatchCount] = useState(1)
   const [mobileView, setMobileView] = useState<MobileStudioView>('create')
   const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
     useState(false)
   const [creditSheetRequested, setCreditSheetRequested] = useState(false)
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)
+  const [settingsSheetRequested, setSettingsSheetRequested] = useState(false)
   const pendingRestoreRef = useRef<{
     modelId: string
     input: Record<string, unknown>
   } | null>(null)
-  const historyHydratedRef = useRef(false)
-  const historyRef = useRef<HistoryItem[]>([])
-  const [historyPersistReady, setHistoryPersistReady] = useState(false)
   const { queue: submissionQueue, items: submissionQueueItems } =
     useSubmissionQueue()
 
@@ -179,90 +115,25 @@ export default function App() {
     staleTime: 60_000,
   })
 
-  const historyQuery = useQuery({
-    queryKey: ['history'],
-    queryFn: async () => (await fetchHistory()).data.items,
-    staleTime: Infinity,
-  })
-
-  const handleHistoryStored = useCallback(
-    (items: HistoryItem[]) => queryClient.setQueryData(['history'], items),
-    [queryClient],
-  )
-  const handleHistoryRecovered = useCallback(
-    (items: HistoryItem[]) => {
-      setHistory(items)
-      queryClient.setQueryData(['history'], items)
-    },
-    [queryClient],
-  )
-  const handleHistoryPersistError = useCallback((error: unknown) => {
-    setFormError(
-      error instanceof Error ? error.message : '履歴の保存に失敗しました',
-    )
-  }, [])
-
-  const requestHistoryPersist = useHistoryPersistence({
-    items: history,
-    ready: historyPersistReady,
-    onStored: handleHistoryStored,
-    onRecovered: handleHistoryRecovered,
-    onError: handleHistoryPersistError,
-  })
-
-  useEffect(() => {
-    historyRef.current = history
-  }, [history])
+  const {
+    history,
+    setHistory,
+    requestHistoryPersist,
+    togglePin,
+    exportHistory,
+    importHistory,
+    updateHistoryItem,
+    removeHistoryItem,
+    clearUnpinned,
+  } = useHistoryState({ setFormError, setFormNotice })
 
   useEffect(() => {
     if (creditPurchaseSheetOpen) setCreditSheetRequested(true)
   }, [creditPurchaseSheetOpen])
 
   useEffect(() => {
-    if (!historyQuery.isSuccess || historyHydratedRef.current) return
-    historyHydratedRef.current = true
-
-    let cancelled = false
-    void (async () => {
-      let items = historyQuery.data ?? []
-      try {
-        if (localStorage.getItem(LS_MIGRATED_KEY) !== '1') {
-          const raw = localStorage.getItem(LS_HISTORY_KEY)
-          if (raw) {
-            const parsed = JSON.parse(raw) as unknown
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const res = await migrateHistory(parsed)
-              items = res.data.items
-              localStorage.removeItem(LS_HISTORY_KEY)
-            }
-          }
-          localStorage.setItem(LS_MIGRATED_KEY, '1')
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setFormError(
-            e instanceof Error
-              ? `履歴の移行に失敗しました: ${e.message}`
-              : '履歴の移行に失敗しました',
-          )
-        }
-      }
-      if (!cancelled) {
-        // Prefer in-memory updates that landed during migrate await
-        setHistory((prev) => {
-          const next =
-            prev.length === 0 ? items : mergeHistory(prev, items)
-          queryClient.setQueryData(['history'], next)
-          return next
-        })
-        setHistoryPersistReady(true)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [historyQuery.isSuccess, historyQuery.data, queryClient])
+    if (settingsSheetOpen) setSettingsSheetRequested(true)
+  }, [settingsSheetOpen])
 
   const modelsQuery = useQuery({
     queryKey: ['models', category],
@@ -306,433 +177,34 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id])
 
-  // 開いたまま期限切れになった進行中を unknown に落とす
-  useEffect(() => {
-    const demoteStalePending = () => {
-      const now = Date.now()
-      let changed = false
-      const next = historyRef.current.map((item) => {
-        if (
-          (item.state === 'waiting' ||
-            item.state === 'queuing' ||
-            item.state === 'generating') &&
-          now - item.createdAt >= PENDING_STALE_MS
-        ) {
-          changed = true
-          return { ...item, state: 'unknown' as const }
-        }
-        return item
-      })
-      if (!changed) return
-      setHistory(next)
-      requestHistoryPersist('immediate')
-    }
-    demoteStalePending()
-    const id = window.setInterval(demoteStalePending, 60_000)
-    return () => window.clearInterval(id)
-  }, [requestHistoryPersist])
-
-  const pendingTasks = useMemo(
-    () => history.filter((item) => isPendingState(item)),
-    [history],
+  const handleCreditsUsed = useCallback(
+    (credits: number) => {
+      setLastUsedCredits(credits)
+      void queryClient.invalidateQueries({ queryKey: ['credits'] })
+    },
+    [queryClient],
   )
-  const pendingCount = pendingTasks.length
 
-  const taskQueries = useQueries({
-    queries: pendingTasks.map((item) => ({
-      queryKey: [
-        'task',
-        item.taskId,
-        item.provider ?? 'market',
-        item.operation ?? 'generate',
-      ] as const,
-      queryFn: () => fetchTask(
-        item.taskId,
-        item.provider ?? 'market',
-        item.operation ?? 'generate',
-      ),
-      refetchInterval: () => taskPollInterval(item.createdAt),
-      refetchIntervalInBackground: false,
-      retry: 2,
-    })),
+  const { pendingCount, pendingTasks } = useTaskPolling({
+    history,
+    setHistory,
+    requestHistoryPersist,
+    onCreditsUsed: handleCreditsUsed,
   })
 
-  const taskSnapshots = taskQueries
-    .flatMap((query, index) => {
-      const data = query.data?.data
-      if (!data && query.error) {
-        const taskId = pendingTasks[index]?.taskId ?? 'unknown'
-        const error = query.error as { message?: unknown; status?: unknown; code?: unknown }
-        return [[
-          taskId,
-          'poll-error',
-          typeof error.message === 'string' ? error.message : String(query.error),
-          typeof error.status === 'number' ? error.status : '',
-          typeof error.code === 'number' ? error.code : '',
-        ].join('|')]
-      }
-      if (!data) return []
-      return [
-        [
-          data.taskId,
-          data.state,
-          data.resultUrls?.join(',') ?? '',
-          JSON.stringify(data.media),
-          data.providerStatus ?? '',
-          data.creditsConsumed ?? '',
-          data.failMsg ?? '',
-        ].join('|'),
-      ]
-    })
-    .join(';')
-
-  useEffect(() => {
-    const updates = taskQueries
-      .map((q) => q.data?.data)
-      .filter((d): d is NonNullable<typeof d> => Boolean(d))
-    const pollFailures = taskQueries.flatMap((query, index) => {
-      if (!query.isError || !query.error) return []
-      const pending = pendingTasks[index]
-      if (!pending) return []
-      const candidate = query.error as { message?: unknown; status?: unknown; code?: unknown }
-      return [{
-        taskId: pending.taskId,
-        message: typeof candidate.message === 'string'
-          ? candidate.message
-          : String(query.error),
-        status: typeof candidate.status === 'number' ? candidate.status : undefined,
-        code: typeof candidate.code === 'number' ? candidate.code : undefined,
-      }]
-    })
-
-    if (updates.length === 0 && pollFailures.length === 0) return
-
-    const completedUpdates = updates.filter(
-      (data) =>
-        data.state === 'success' ||
-        data.state === 'fail' ||
-        data.state === 'partial' ||
-        data.state === 'expired' ||
-        data.state === 'unknown',
-    )
-    const latestUsed = completedUpdates.reduce<number | null>(
-      (latest, data) =>
-        data.state === 'success' && typeof data.creditsConsumed === 'number'
-          ? data.creditsConsumed
-          : latest,
-      null,
-    )
-
-    setHistory((prev) => {
-      let next = prev
-      let changed = false
-
-      for (const data of updates) {
-        const existing = next.find((h) => h.taskId === data.taskId)
-        if (!existing) continue
-        if (
-          existing.state === data.state &&
-          (existing.resultUrls?.join(',') ?? '') ===
-            (data.resultUrls?.join(',') ?? '') &&
-          JSON.stringify(existing.media ?? []) === JSON.stringify(data.media) &&
-          existing.providerStatus === data.providerStatus &&
-          existing.creditsConsumed === data.creditsConsumed &&
-          (existing.failMsg ?? '') === (data.failMsg ?? '')
-        ) {
-          continue
-        }
-
-        const item: HistoryItem = {
-          ...existing,
-          state: data.state,
-          provider: data.provider,
-          operation: data.operation,
-          parentTaskId: data.parentTaskId ?? existing.parentTaskId,
-          resultUrls: data.resultUrls,
-          media: data.media,
-          providerStatus: data.providerStatus,
-          partial: data.partial,
-          expiresAt: data.expiresAt,
-          creditsConsumed: data.creditsConsumed,
-          failMsg: data.failMsg,
-          rawParam: data.rawParam,
-          rawResult: data.rawResult,
-          createdAt: normalizeTimestamp(data.createTime, existing.createdAt),
-        }
-        next = upsertInList(next, item)
-        changed = true
-
-      }
-
-      for (const failure of pollFailures) {
-        const existing = next.find((item) => item.taskId === failure.taskId)
-        if (!existing) continue
-        const rawResult = {
-          pollError: {
-            message: failure.message,
-            status: failure.status,
-            code: failure.code,
-            capturedAt: new Date().toISOString(),
-          },
-          previous: existing.rawResult,
-        }
-        next = upsertInList(next, {
-          ...existing,
-          state: 'unknown',
-          providerStatus: 'POLL_ERROR',
-          failMsg: failure.message,
-          rawResult,
-        })
-        changed = true
-      }
-
-      if (!changed) return prev
-      return next
-    })
-
-    if (completedUpdates.length > 0 || pollFailures.length > 0) {
-      requestHistoryPersist('debounced')
-    }
-    if (latestUsed !== null) setLastUsedCredits(latestUsed)
-    if (latestUsed !== null) {
-      void queryClient.invalidateQueries({ queryKey: ['credits'] })
-    }
-    // taskSnapshots drives this effect; taskQueries is read for latest data
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskSnapshots, queryClient, requestHistoryPersist])
-
-  const generate = useMutation({
-    mutationFn: async (vars: GenerateVars) => {
-      if (!hasApiKey) {
-        throw new Error('API キーが未設定です。.env に KIE_API_KEY を設定してください')
-      }
-      setFormError(null)
-
-      // 失敗履歴からのリトライ: 保存済み入力をそのまま再送信
-      if (vars.source === 'retry') {
-        const { item } = vars
-        if (!item.input) {
-          throw new Error('この履歴には入力データが保存されていません')
-        }
-        const provider = item.provider ?? 'market'
-        const operation = item.operation ?? 'generate'
-        const res = await submissionQueue.enqueue({
-          provider,
-          operation,
-          model: item.model,
-          run: () => generateTask({
-            model: item.model,
-            input: item.input as Record<string, unknown>,
-            provider,
-            operation,
-          }),
-        })
-        return {
-          tasks: [{ taskId: res.data.taskId, input: item.input, normalized: res.data.task }],
-          model: item.model,
-          category: item.category,
-          modelId: item.modelId,
-          provider,
-          operation,
-          parentTaskId: item.parentTaskId,
-          failedCount: 0,
-          insufficientCredits: false,
-        }
-      }
-
-      if (!selected) throw new Error('モデルが選択されていません')
-
-      const errors = {
-        ...validateFields(selected.fields, values),
-        ...validateWorkflowInput(selected, values),
-      }
-      if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors)
-        focusFirstFieldError(errors)
-        throw new Error('入力内容を確認してください')
-      }
-      setFieldErrors({})
-
-      let input: Record<string, unknown> = {}
-      for (const field of selected.fields) {
-        const v = values[field.name]
-        if (v === undefined || v === '') continue
-        if (field.type === 'reference' && Array.isArray(v) && v.length === 0) {
-          continue
-        }
-        if (
-          field.type === 'reference' &&
-          field.scalar &&
-          Array.isArray(v)
-        ) {
-          const first = v.find((u) => typeof u === 'string' && u.length > 0)
-          if (typeof first !== 'string') continue
-          input[field.name] = first
-          continue
-        }
-        if (field.type === 'kling_elements' && Array.isArray(v)) {
-          const cleaned = v.filter(
-            (el) =>
-              el &&
-              typeof el === 'object' &&
-              typeof (el as { name?: string }).name === 'string' &&
-              (el as { name: string }).name.trim() &&
-              Array.isArray(
-                (el as { element_input_urls?: string[] }).element_input_urls,
-              ) &&
-              ((el as { element_input_urls: string[] }).element_input_urls
-                ?.length ?? 0) >= 1,
-          )
-          if (cleaned.length === 0) continue
-          input[field.name] = cleaned
-          continue
-        }
-        input[field.name] = v
-      }
-
-      input = sanitizeWorkflowInput(selected, input)
-
-      const model = selected
-      const parentTaskId = parentTaskIdFor(model.operation ?? 'generate', input)
-      delete input._duration
-      delete input._parentTaskId
-      const count = Math.max(1, Math.min(4, batchCount))
-      const segmentInputs = model.id === 'market/elevenlabs-tts' && typeof input.text === 'string'
-        ? input.text
-            .split(/\n\s*\n/g)
-            .map((text) => text.trim())
-            .filter(Boolean)
-            .map((text, index, segments) => ({
-              ...input,
-              text,
-              previous_text: segments[index - 1] ?? input.previous_text,
-              next_text: segments[index + 1] ?? input.next_text,
-            }))
-        : [input]
-      const requestInputs = Array.from(
-        { length: count },
-        () => segmentInputs,
-      ).flat()
-      const settled = await Promise.allSettled(
-        requestInputs.map((requestInput) =>
-          submissionQueue.enqueue({
-            provider: model.provider,
-            operation: model.operation ?? 'generate',
-            model: model.model,
-            run: () => generateTask({
-              model: model.model,
-              input: requestInput,
-              provider: model.provider,
-              operation: model.operation ?? 'generate',
-            }),
-          }),
-        ),
-      )
-      const tasks = settled.flatMap((result, index) =>
-        result.status === 'fulfilled'
-          ? [{
-              taskId: result.value.data.taskId,
-              input: requestInputs[index] as Record<string, unknown>,
-              normalized: result.value.data.task,
-            }]
-          : [],
-      )
-      const creditError = settled.find(
-        (r): r is PromiseRejectedResult =>
-          r.status === 'rejected' && isInsufficientCreditsError(r.reason),
-      )
-      if (tasks.length === 0) {
-        const first = creditError ?? (settled[0] as PromiseRejectedResult)
-        throw first.reason instanceof Error
-          ? first.reason
-          : new Error('生成リクエストに失敗しました')
-      }
-      return {
-        tasks,
-        model: model.model,
-        category: model.category,
-        modelId: model.id,
-        provider: model.provider,
-        operation: model.operation ?? 'generate',
-        parentTaskId,
-        failedCount: requestInputs.length - tasks.length,
-        insufficientCredits: Boolean(creditError),
-      }
-    },
-    onSuccess: ({
-      tasks,
-      model,
-      category,
-      modelId,
-      provider,
-      operation,
-      parentTaskId,
-      failedCount,
-      insufficientCredits,
-    }) => {
-      setMobileView('history')
-      const now = Date.now()
-      setHistory((prev) => {
-        let next = prev
-        for (const task of tasks) {
-          const item: HistoryItem = {
-            taskId: task.taskId,
-            model,
-            category,
-            state: task.normalized?.state ?? 'waiting',
-            createdAt: now,
-            prompt: promptFromInput(task.input),
-            modelId,
-            input: task.input,
-            provider,
-            operation,
-            parentTaskId,
-            resultUrls: task.normalized?.resultUrls,
-            media: task.normalized?.media,
-            providerStatus: task.normalized?.providerStatus,
-            partial: task.normalized?.partial,
-            expiresAt: task.normalized?.expiresAt,
-            creditsConsumed: task.normalized?.creditsConsumed,
-            failMsg: task.normalized?.failMsg,
-            rawParam: task.normalized?.rawParam,
-            rawResult: task.normalized?.rawResult,
-          }
-          next = upsertInList(next, item)
-        }
-        return next
-      })
-      requestHistoryPersist('immediate')
-      if (tasks.length === 1) setViewerTaskId(tasks[0]?.taskId ?? null)
-      if (failedCount > 0) {
-        setFormError(
-          `${tasks.length} 件を送信しました（${failedCount} 件は送信に失敗）${
-            insufficientCredits ? '。クレジットが不足している可能性があります' : ''
-          }`,
-        )
-        if (insufficientCredits) {
-          setCreditPurchaseSheetOpen(true)
-          void queryClient.invalidateQueries({ queryKey: ['credits'] })
-        }
-      }
-    },
-    onError: (e) => {
-      const action = classifyApiError(e)
-      const base = e instanceof Error ? e.message : '生成に失敗しました'
-      setFormError(
-        action === 'refunded'
-          ? `${base}。クレジットは返却済みです。残高を更新しました`
-          : action === 'fix-input'
-            ? `${base}。入力内容を修正してから再送信してください`
-            : base,
-      )
-      if (action === 'purchase' || isInsufficientCreditsError(e)) {
-        setCreditPurchaseSheetOpen(true)
-        void queryClient.invalidateQueries({ queryKey: ['credits'] })
-      }
-      if (action === 'refunded') {
-        void queryClient.invalidateQueries({ queryKey: ['credits'] })
-      }
-    },
+  const generate = useGenerateFlow({
+    hasApiKey,
+    selected,
+    values,
+    batchCount,
+    submissionQueue,
+    setFormError,
+    setFieldErrors,
+    setHistory,
+    requestHistoryPersist,
+    setViewerTaskId,
+    setMobileView,
+    setCreditPurchaseSheetOpen,
   })
   const personasQuery = useQuery({
     queryKey: ['personas'],
@@ -828,111 +300,16 @@ export default function App() {
     generate.mutate({ source: 'retry', item: h })
   }
 
-  function updateHistoryItem(item: HistoryItem) {
-    setHistory((previous) => upsertInList(previous, item))
-    requestHistoryPersist('immediate')
-  }
-
-  function openWorkflow(
-    targetCategory: ModelCategory,
-    targetModelId: string,
-    input: Record<string, unknown>,
-    notice: string,
-  ) {
-    setMobileView('create')
-    setViewerTaskId(null)
-    pendingRestoreRef.current = { modelId: targetModelId, input }
-    setFormError(null)
-    setFormNotice(notice)
-    if (category !== targetCategory) setCategory(targetCategory)
-    setModelId(targetModelId)
-  }
-
-  function quickAction(
-    item: HistoryItem,
-    media: MediaAsset,
-    action: QuickAction,
-    options: Record<string, unknown> = {},
-  ) {
-    const url = media.url ?? media.streamUrl
-    const audioId = media.providerAssetId ?? media.id
-    const metadata = media.metadata ?? {}
-    switch (action) {
-      case 'suno-extend':
-        openWorkflow('audio', 'suno/extend', {
-          taskId: item.taskId,
-          audioId,
-          continueAt: Math.max(0, (media.duration ?? 1) - 1),
-          prompt: '',
-          style: typeof metadata.tags === 'string' ? metadata.tags : '',
-          title: media.title ?? '',
-          model: typeof metadata.modelName === 'string' ? metadata.modelName : 'V5',
-        }, '元の曲を引き継ぎました。内容を確認してから送信してください')
-        break
-      case 'suno-replace-section':
-        openWorkflow('audio', 'suno/replace-section', {
-          taskId: item.taskId,
-          audioId,
-          infillStartS: options.infillStartS ?? 0,
-          infillEndS: options.infillEndS ?? Math.min(12, media.duration ?? 12),
-          prompt: '',
-          tags: typeof metadata.tags === 'string' ? metadata.tags : '',
-          title: media.title ?? 'Edited section',
-          _duration: media.duration ?? 0,
-        }, '選択区間を引き継ぎました。置換内容を入力してから送信してください')
-        break
-      case 'suno-upload-extend':
-        openWorkflow('audio', 'suno/upload-extend', {
-          uploadUrl: url,
-          continueAt: Math.max(0, (media.duration ?? 1) - 1),
-          prompt: '',
-        }, '音源を引き継ぎました。続きを確認してから送信してください')
-        break
-      case 'runway-aleph':
-        openWorkflow('video', 'runway/aleph', { _parentTaskId: item.taskId, videoUrl: url, prompt: '' }, '元動画を引き継ぎました。変更内容を入力してから送信してください')
-        break
-      case 'runway-extend':
-        openWorkflow('video', 'runway/extend', {
-          taskId: item.taskId,
-          videoId: media.providerAssetId ?? '',
-          prompt: '',
-        }, '元動画を引き継ぎました。延長内容を確認してから送信してください')
-        break
-      case 'veo-extend':
-        openWorkflow('video', 'veo/extend', { taskId: item.taskId, prompt: '' }, '元動画を引き継ぎました。延長内容を確認してから送信してください')
-        break
-      case 'veo-1080p':
-        openWorkflow('video', 'veo/1080p', { taskId: item.taskId, index: 0 }, '元タスクを引き継ぎました。確認後に1080p処理を送信してください')
-        break
-      case 'veo-4k':
-        openWorkflow('video', 'veo/4k', { taskId: item.taskId, index: 0 }, '元タスクを引き継ぎました。確認後に4K処理を送信してください')
-        break
-      case 'lip-sync':
-        openWorkflow('video', 'market/volcengine-lip-sync', {
-          video_url: url,
-          audio_url: options.audioUrl,
-        }, '動画と音声を引き継ぎました。尺の扱いを確認してから送信してください')
-        break
-      case 'market-upscale':
-        if (media.kind === 'video') {
-          openWorkflow('video', 'topaz/video-upscale', { video_url: url }, '元動画を引き継ぎました。倍率を確認してから送信してください')
-        } else {
-          openWorkflow('image', 'topaz/image-upscale', { image_url: url }, '元画像を引き継ぎました。倍率を確認してから送信してください')
-        }
-        break
-      case 'market-edit':
-        if (media.kind === 'video') {
-          openWorkflow('video', 'wan/2-7-videoedit', { video_url: url, prompt: '' }, '元動画を引き継ぎました。編集内容を入力してから送信してください')
-        } else {
-          openWorkflow('image', 'google/nano-banana-edit', { image_urls: [url], prompt: '' }, '元画像を引き継ぎました。編集内容を入力してから送信してください')
-        }
-        break
-      default: {
-        const exhaustive: never = action
-        return exhaustive
-      }
-    }
-  }
+  const quickAction = useQuickAction({
+    category,
+    setCategory,
+    setModelId,
+    setMobileView,
+    setViewerTaskId,
+    setFormError,
+    setFormNotice,
+    pendingRestoreRef,
+  })
 
   function sendToInput(url: string) {
     if (!selected) return
@@ -972,43 +349,6 @@ export default function App() {
     handleFieldChange(target.name, [...current, url])
     setFormError(null)
     setMobileView('create')
-  }
-
-  function togglePin(taskId: string) {
-    const result = togglePinInList(history, taskId)
-    if (result.rejected === 'pin-limit') {
-      setFormError(`ピン留めは最大${MAX_PINNED}件までです`)
-      return
-    }
-    setHistory(result.next)
-    requestHistoryPersist('immediate')
-  }
-
-  function exportHistory() {
-    const blob = new Blob([exportHistoryJson(history)], {
-      type: 'application/json',
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `kie-studio-history-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 0)
-  }
-
-  function importHistory(raw: string) {
-    void (async () => {
-      try {
-        const items = parseHistoryJson(raw)
-        const res = await importHistoryApi(items)
-        setHistory(res.data.items)
-        queryClient.setQueryData(['history'], res.data.items)
-      } catch (e) {
-        window.alert(
-          e instanceof Error ? e.message : '履歴のインポートに失敗しました',
-        )
-      }
-    })()
   }
 
   function closeViewer() {
@@ -1061,7 +401,19 @@ export default function App() {
           )}
         </>
       }
-      chromeTrailing={<CreditBadge lastUsed={lastUsedCredits} />}
+      chromeTrailing={
+        <div className="flex items-stretch gap-1.5 sm:gap-2">
+          <CreditBadge lastUsed={lastUsedCredits} />
+          <Pressable
+            onClick={() => setSettingsSheetOpen(true)}
+            className="studio-btn shrink-0 self-stretch px-2.5"
+            aria-label="設定を開く"
+            scaleTo={0.96}
+          >
+            <Settings size={16} strokeWidth={2} aria-hidden />
+          </Pressable>
+        </div>
+      }
       form={
         <>
           <div className="sticky top-0 z-[var(--z-sticky)] -mx-5 -mt-5 mb-2 shrink-0 border-b border-[var(--border)] bg-[var(--surface-raised)] px-5 pt-5 pb-4">
@@ -1196,10 +548,20 @@ export default function App() {
               )}
 
               {!hasApiKey && !healthQuery.isLoading && (
-                <p className="text-sm text-[var(--warning)]" role="status">
-                  API キー未設定のため生成できません。.env に KIE_API_KEY
-                  を設定してください。
-                </p>
+                <div
+                  className="flex flex-wrap items-center gap-2 text-sm text-[var(--warning)]"
+                  role="status"
+                >
+                  <span>API キー未設定のため生成できません。</span>
+                  <Pressable
+                    onClick={() => setSettingsSheetOpen(true)}
+                    className="studio-btn w-auto gap-1 px-3 text-xs"
+                    scaleTo={0.96}
+                  >
+                    <Settings size={13} strokeWidth={2} aria-hidden />
+                    設定画面を開く
+                  </Pressable>
+                </div>
               )}
 
               {pendingCount > 0 && (
@@ -1235,7 +597,7 @@ export default function App() {
                   <span className="shrink-0 tabular-nums">
                     {creditEstimate === null
                       ? 'クレジット推定なし'
-                      : `約${creditEstimate * batchCount} cr`}
+                      : `約${creditEstimate} cr/回`}
                   </span>
                 </div>
                 {formIssues.length > 0 && (
@@ -1289,9 +651,13 @@ export default function App() {
                 >
                   {submitting
                     ? '送信中…'
-                    : batchCount > 1
-                      ? `生成 ×${batchCount}`
-                      : '生成'}
+                    : creditEstimate !== null
+                      ? batchCount > 1
+                        ? `生成 ×${batchCount}（約${creditEstimate * batchCount} cr）`
+                        : `生成（約${creditEstimate} cr）`
+                      : batchCount > 1
+                        ? `生成 ×${batchCount}`
+                        : '生成'}
                 </Pressable>
               </div>
             </>
@@ -1320,8 +686,7 @@ export default function App() {
           onQuickAction={quickAction}
           retryDisabled={generateDisabled}
           onRemove={(taskId) => {
-            setHistory((prev) => removeFromList(prev, taskId))
-            requestHistoryPersist('immediate')
+            removeHistoryItem(taskId)
             if (viewerTaskId === taskId) setViewerTaskId(null)
           }}
           onClear={() => {
@@ -1332,8 +697,7 @@ export default function App() {
             ) {
               return
             }
-            setHistory((prev) => prev.filter((h) => h.pinned))
-            requestHistoryPersist('immediate')
+            clearUnpinned()
             setViewerTaskId(null)
           }}
         />
@@ -1344,6 +708,14 @@ export default function App() {
           <CreditPurchaseSheet
             open={creditPurchaseSheetOpen}
             onClose={() => setCreditPurchaseSheetOpen(false)}
+          />
+        </Suspense>
+      )}
+      {settingsSheetRequested && (
+        <Suspense fallback={null}>
+          <SettingsSheet
+            open={settingsSheetOpen}
+            onClose={() => setSettingsSheetOpen(false)}
           />
         </Suspense>
       )}

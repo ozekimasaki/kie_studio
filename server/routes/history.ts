@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { z } from 'zod'
 import {
   historyCount,
   importHistoryItems,
@@ -7,24 +8,38 @@ import {
   replaceAllFromUnknown,
 } from '../db/history.ts'
 import { getDb } from '../db/open.ts'
+import { validateJson, validateQuery } from './validation.ts'
 
 export const historyRoutes = new Hono()
 
 // Ensure DB is open when routes load
 getDb()
 
-historyRoutes.get('/history', (c) => {
-  return c.json({ data: { items: listHistory(), count: historyCount() } })
+const listQuerySchema = z.object({
+  limit: z.coerce
+    .number({ error: 'limit must be a non-negative integer' })
+    .int('limit must be a non-negative integer')
+    .nonnegative('limit must be a non-negative integer')
+    .optional(),
+  offset: z.coerce
+    .number({ error: 'offset must be a non-negative integer' })
+    .int('offset must be a non-negative integer')
+    .nonnegative('offset must be a non-negative integer')
+    .optional(),
 })
 
-historyRoutes.put('/history', async (c) => {
-  let body: unknown
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-  const items = (body as { items?: unknown })?.items
+// items の要素単位の検証は db 層（replaceAllFromUnknown など）が担う
+const itemsBodySchema = z.object({ items: z.unknown() })
+
+historyRoutes.get('/history', validateQuery(listQuerySchema), (c) => {
+  const { limit, offset } = c.req.valid('query')
+  return c.json({
+    data: { items: listHistory({ limit, offset }), count: historyCount() },
+  })
+})
+
+historyRoutes.put('/history', validateJson(itemsBodySchema), (c) => {
+  const { items } = c.req.valid('json')
   try {
     const stored = replaceAllFromUnknown(items)
     return c.json({ data: { items: stored } })
@@ -36,14 +51,8 @@ historyRoutes.put('/history', async (c) => {
   }
 })
 
-historyRoutes.post('/history/import', async (c) => {
-  let body: unknown
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-  const items = (body as { items?: unknown })?.items
+historyRoutes.post('/history/import', validateJson(itemsBodySchema), (c) => {
+  const { items } = c.req.valid('json')
   try {
     const stored = importHistoryItems(items)
     return c.json({ data: { items: stored } })
@@ -55,14 +64,8 @@ historyRoutes.post('/history/import', async (c) => {
   }
 })
 
-historyRoutes.post('/history/migrate', async (c) => {
-  let body: unknown
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-  const items = (body as { items?: unknown })?.items
+historyRoutes.post('/history/migrate', validateJson(itemsBodySchema), (c) => {
+  const { items } = c.req.valid('json')
   try {
     const stored = migrateHistoryItems(items)
     return c.json({ data: { items: stored } })

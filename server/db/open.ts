@@ -1,14 +1,16 @@
-import Database from 'better-sqlite3'
+import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DB_PATH = resolve(__dirname, '../../data/studio.db')
+// Packaged builds inject STUDIO_DB_PATH (userData dir) so the DB lives in a
+// writable location; dev falls back to the repo-local data/studio.db.
+const DB_PATH = process.env.STUDIO_DB_PATH ?? resolve(__dirname, '../../data/studio.db')
 
-let db: Database.Database | null = null
+let db: Database | null = null
 
-function migrate(database: Database.Database): void {
+function migrate(database: Database): void {
   database.exec(`
     CREATE TABLE IF NOT EXISTS history_items (
       task_id TEXT PRIMARY KEY NOT NULL,
@@ -48,12 +50,19 @@ function migrate(database: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_audio_assets_created
       ON saved_audio_assets(created_at DESC);
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY NOT NULL,
+      value TEXT,
+      updated_at INTEGER NOT NULL
+    );
   `)
 
   const columns = new Set(
-    (database.pragma('table_info(history_items)') as { name: string }[]).map(
-      (column) => column.name,
-    ),
+    (
+      database.prepare('PRAGMA table_info(history_items)').all() as {
+        name: string
+      }[]
+    ).map((column) => column.name),
   )
   const additiveColumns: Record<string, string> = {
     provider: "TEXT NOT NULL DEFAULT 'market'",
@@ -79,12 +88,12 @@ function migrate(database: Database.Database): void {
 }
 
 /** Open (or reuse) the studio SQLite database under data/studio.db. */
-export function getDb(): Database.Database {
+export function getDb(): Database {
   if (db) return db
   mkdirSync(dirname(DB_PATH), { recursive: true })
-  db = new Database(DB_PATH)
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
+  db = new Database(DB_PATH, { strict: true })
+  db.exec('PRAGMA journal_mode = WAL')
+  db.exec('PRAGMA foreign_keys = ON')
   migrate(db)
   return db
 }
