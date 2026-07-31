@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ArrowRight, Check, Download, Music, Pin, Play, RotateCcw, WandSparkles } from 'lucide-react'
+import { ArrowRight, Check, Clock, Download, Music, Pin, Play, RotateCcw, WandSparkles } from 'lucide-react'
 import {
   createPersona,
   downloadArchive,
@@ -9,7 +9,7 @@ import {
   fetchTimestampedLyrics,
 } from '../lib/api.ts'
 import { isAudioUrl, isVideoUrl, mediaKindFromUrl } from '../lib/media.ts'
-import { mediaExpiryAt, mediaExpiryViewerLabel } from '../lib/mediaExpiry.ts'
+import { mediaExpiry, mediaExpiryAt, mediaExpiryViewerLabel } from '../lib/mediaExpiry.ts'
 import type {
   HistoryItem,
   MediaAsset,
@@ -76,6 +76,41 @@ function fullPrompt(item: HistoryItem): string | undefined {
 
 function canReuse(item: HistoryItem): boolean {
   return Boolean(item.input && item.modelId)
+}
+
+/** 詳細ビューアー用の画像。読み込み失敗時に期限切れプレースホルダーを表示する。 */
+function ViewerImage({
+  src,
+  alt,
+  expired,
+}: {
+  src: string
+  alt: string
+  expired: boolean
+}) {
+  const [failed, setFailed] = useState(false)
+  if (failed || expired) {
+    return (
+      <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
+        <span className="grid size-12 place-items-center rounded-full bg-[var(--danger)]/15 text-[var(--danger)]">
+          <Clock size={22} aria-hidden />
+        </span>
+        <p className="text-sm font-semibold text-[var(--danger)]">メディア期限切れ</p>
+        <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
+          kie.ai の保管期限（14日）を過ぎたため、このメディアは取得できません。同じ入力で再生成できます。
+        </p>
+      </div>
+    )
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      decoding="async"
+      className="mx-auto max-h-[55vh] w-full object-contain"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 function mediaFor(item: HistoryItem): MediaAsset[] {
@@ -146,11 +181,12 @@ export function HistorySheets({
     [items],
   )
   const activeExpiry =
-    active?.state === 'success' && activeMedia.length > 0 &&
-    (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt)
-      ? mediaExpiryAt(
-          (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt) as number,
-        )
+    active?.state === 'success' && activeMedia.length > 0
+      ? (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt)
+        ? mediaExpiryAt(
+            (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt) as number,
+          )
+        : mediaExpiry(active.createdAt)
       : null
   const download = useMutation({
     mutationFn: async (url: string) => {
@@ -439,11 +475,10 @@ export function HistorySheets({
                           </Pressable>
                         </div>
                       ) : (
-                        <img
+                        <ViewerImage
                           src={url}
                           alt={active.prompt || '生成結果'}
-                          decoding="async"
-                          className="mx-auto max-h-[55vh] w-full object-contain"
+                          expired={activeExpiry?.status === 'expired'}
                         />
                       )}
                     </SharedMedia>

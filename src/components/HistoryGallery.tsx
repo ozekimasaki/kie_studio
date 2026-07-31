@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import {
+  Clock,
   Ellipsis,
   Pin,
   Plus,
@@ -18,6 +19,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
 import {
+  mediaExpiry,
   mediaExpiryAt,
   mediaExpiryCardLabel,
   type MediaExpiry,
@@ -39,7 +41,8 @@ function successExpiry(item: HistoryItem): MediaExpiry | null {
     !((item.media?.length ?? 0) || (item.resultUrls?.length ?? 0))
   ) return null
   const expiresAt = item.expiresAt ?? item.media?.find((asset) => asset.expiresAt)?.expiresAt
-  return expiresAt ? mediaExpiryAt(expiresAt) : null
+  // 明示的な expiresAt が無い場合は kie.ai 公式の 14 日保持期間から推定する
+  return expiresAt ? mediaExpiryAt(expiresAt) : mediaExpiry(item.createdAt)
 }
 
 function expiryTextClass(status: MediaExpiry['status']): string {
@@ -115,6 +118,47 @@ const MAX_COMPARE = 4
 
 const smallBtnClass = 'studio-btn'
 const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
+
+/** 画像読み込み失敗時に表示する期限切れプレースホルダー。 */
+function ExpiredPlaceholder({ label }: { label?: string }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
+      <span className="grid size-10 place-items-center rounded-full bg-[var(--danger)]/15 text-[var(--danger)]">
+        <Clock size={18} aria-hidden />
+      </span>
+      <span className="text-[11px] font-semibold text-[var(--danger)]">期限切れ</span>
+      <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
+        {label ?? 'kie.ai の保管期限（14日）を過ぎたためメディアを取得できません'}
+      </span>
+    </div>
+  )
+}
+
+/** img の onError で期限切れ表示に切り替えるラッパー。 */
+function GalleryImage({
+  src,
+  alt,
+  className,
+  expired,
+}: {
+  src: string
+  alt: string
+  className: string
+  expired: boolean
+}) {
+  const [failed, setFailed] = useState(false)
+  if (failed || expired) return <ExpiredPlaceholder />
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  )
+}
 
 function DeferredVideo({
   src,
@@ -627,12 +671,11 @@ export function HistoryGallery({
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <img
+                            <GalleryImage
                               src={thumb}
                               alt={h.prompt || shortModel(h.model)}
-                              loading="lazy"
-                              decoding="async"
                               className="h-full w-full object-cover"
+                              expired={expiry?.status === 'expired'}
                             />
                           )
                         ) : isAudio && !busy ? (
@@ -688,10 +731,11 @@ export function HistoryGallery({
                           </div>
                         )}
 
-                        {expiry?.status === 'expired' && (
-                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center studio-tile-scrim px-2">
-                            <span className="rounded-[var(--radius-sm)] bg-[var(--text)] px-2 py-1 text-center text-[10px] font-semibold text-[var(--on-accent)]">
-                              期限切れの可能性
+                        {expiry?.status === 'expired' && !isAudio && (
+                          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-1.5">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--danger)] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                              <Clock size={10} aria-hidden />
+                              期限切れ
                             </span>
                           </div>
                         )}
