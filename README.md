@@ -1,203 +1,205 @@
 # KIE STUDIO
 
-kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う Studio。ブラウザ（Vite + React）でも、**Electrobun でパッケージした単一デスクトップアプリ**（Win/mac/Linux）でも動作する。
+**English** | [日本語](./README.ja.md) | [中文](./README.zh.md)
+
+A Studio for **IMAGE / VIDEO / AUDIO** generation powered by kie.ai's Market API and dedicated workflows. Runs both in the browser (Vite + React) and as a **single desktop app** packaged with Electrobun (Win/mac/Linux).
 
 - Vite + React 19 + Tailwind CSS v4
-- Hono API（Bun ランタイムで起動。API キーはサーバー側のみ）
-- Electrobun デスクトップ版（ネイティブ webview + Bun メインプロセス、差分自動アップデート）
-- docs OpenAPI と専用 workflow を統合したモデルカタログ
-- Reference アップロード / 数値 / チェックボックスの動的フォーム
-- Market / Suno / Veo / Runway の生成・状態を共通形式で管理
-- 履歴ギャラリー（複数メディア・同期歌詞・ピン・再利用・リトライ・JSON 入出力）
-- 会話・ナレーション編集と画面をまたいで再生できる音声プレイヤー
-- プロンプト最適化（Grok CLI）とスニペット
-- `@参照` 挿入・Kling Elements 対応
+- Hono API (runs on Bun runtime; API key stays server-side only)
+- Electrobun desktop edition (native webview + Bun main process, delta auto-update)
+- Model catalog integrating docs OpenAPI and dedicated workflows
+- Dynamic forms for reference upload / numeric / checkbox fields
+- Unified generation & status management across Market / Suno / Veo / Runway
+- History gallery (multi-media, synced lyrics, pin, reuse, retry, JSON import/export)
+- Conversation & narration editing with a persistent audio player
+- Prompt optimization (Grok CLI) and snippets
+- `@reference` insertion & Kling Elements support
 
-> エージェント向けの作業ガイドは [AGENTS.md](./AGENTS.md)、UI/デザイン方針は [DESIGN.md](./DESIGN.md) を参照。
+> For agent working guidelines see [AGENTS.md](./AGENTS.md); for UI/design policy see [DESIGN.md](./DESIGN.md).
 
-## 要件
+## Requirements
 
-- [Bun](https://bun.sh)（サーバー起動 `dev:server` と Electrobun ビルドに必須）
-- Node.js（Vite 8 / React 19 が動作する最近の LTS。目安: 20.19+ または 22.12+）と npm
-- kie.ai の API キー（<https://kie.ai/api-key>）。デスクトップ版はアプリ内の設定画面からも保存可能
-- 任意: プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview)（認証は `grok login` または `XAI_API_KEY`）
+- [Bun](https://bun.sh) (required for `dev:server` and Electrobun builds)
+- Node.js (recent LTS that supports Vite 8 / React 19; recommended 20.19+ or 22.12+) and npm
+- kie.ai API key (<https://kie.ai/api-key>). The desktop app can also save it from the in-app settings panel.
+- Optional: [Grok CLI](https://docs.x.ai/build/overview) for prompt optimization (authenticate via `grok login` or `XAI_API_KEY`)
 
-## セットアップ
+## Setup
 
 ```bash
 cp .env.example .env
-# .env に https://kie.ai/api-key で取得したキーを設定
+# Set your key obtained from https://kie.ai/api-key in .env
 npm install
 npm run dev
 ```
 
 - Web: http://localhost:5173
-- API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）
+- API: http://127.0.0.1:8787 (Vite proxies `/api`)
 
-プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview) を入れ、`grok login` するか `.env` に `XAI_API_KEY` を設定する。
+To use prompt optimization, install [Grok CLI](https://docs.x.ai/build/overview) and run `grok login`, or set `XAI_API_KEY` in `.env`.
 
-## デスクトップ版（Electrobun）
+## Desktop App (Electrobun)
 
-Bun が必要です。ネイティブ webview 上でビルド済み UI をロードし、Hono API を Bun メインプロセス内で起動します。
+Requires Bun. Loads the built UI in a native webview and starts the Hono API inside the Bun main process.
 
 ```bash
-npm run desktop:dev            # 開発（electrobun run --env=dev）
-npm run desktop:build:canary   # canary ビルド（vite build + electrobun build）
-npm run desktop:build:stable   # stable ビルド
+npm run desktop:dev            # Development (electrobun run --env=dev)
+npm run desktop:build:canary   # Canary build (vite build + electrobun build)
+npm run desktop:build:stable   # Stable build
 ```
 
-- **API キー**: 初回は `.env` 不要。アプリ右上の設定アイコンから保存でき、SQLite に永続化されます（保存キーが環境変数より優先）。
-- **データ保存先**: DB はアプリのユーザーデータ領域（`Utils.paths.userData` 配下の `studio.db`）に作成されます。dev は `data/studio.db`。
-- **配布形態**:
-  - **Windows**: Inno Setup 製の `canary-win-x64-KIESTUDIO-Setup.exe`（第一導線）。`npm run desktop:installer:win` で生成します。プログラム追加/削除（ARP）にアイコン・バージョン・発行者付きで登録され、アンインストーラーとスタートメニュー/デスクトップショートカットが付きます。per-user インストール（`%LocalAppData%\ai.kie.studio\<channel>\app`）で管理者権限不要。アンインストールでもユーザー DB（`studio.db`）は削除されません。
-  - **Linux**: tar.gz 自己展開アーカイブ（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）のみ。Electrobun は `.deb` 非対応のため採用していません。
-  - 自動アップデート用（`tar.zst` + `update.json` + patch）は `RELEASE_BASE_URL` 配下へ従来通り配信します（Inno Setup に依存しません）。
-- **アプリアイコン**: `assets/icon-master.svg`（K モノグラムモチーフ）を `npm run icons` で `icon.ico`（Windows・マルチサイズ）/ `icon.png`（Linux・512px）/ `icon.iconset`（macOS・iconutil で .icns に変換）へ変換し `electrobun.config.ts` で指定します。Windows は Electrobun 本体の rcedit パス解決バグを避け、ビルド直後に `scripts/embed-win-icon.mjs` が launcher.exe へ自前でアイコンを埋め込みます（インストーラービルド時にも再埋め込み）。
-- **サポートアーキテクチャ**:
-  - Windows: x64 のみ。ARM Windows は x64 版が OS の自動エミュレーションで動作するため個別ビルドは不要です。
-  - Linux: x64 のみ配布。arm64 は Electrobun 対応ですがクロスビルド不可のため一旦見送り（arm64 ビルド環境/CI 確保後に別対応）。
-- **未署名配布の OS 警告**: コード署名・公証は行っていないため OS 警告が出ます。
-  - macOS: 初回は右クリック→「開く」、または「システム設定 > プライバシーとセキュリティ」で許可。
-  - Windows: SmartScreen で「詳細情報」→「実行」。
-  - Linux: 実行権限を付与。
-- **自動アップデート**: `RELEASE_BASE_URL` に静的ホストを設定すると、起動時に差分（bsdiff + zstd）で自動更新します。未設定時はサイレントにスキップ。日常検証は `canary`、正式配布は `stable` チャネル。
-- 各 OS のビルドはその OS 上で実行します（クロスビルド不可）。CI 例は `.github/workflows/release.yml`（タグ push で 3 OS をマトリクスビルドし GitHub Releases へ公開）。
+- **API Key**: No `.env` needed on first launch. Save from the settings icon (top-right); persisted in SQLite (stored key takes priority over env vars).
+- **Data storage**: DB is created in the app's user-data directory (`studio.db` under `Utils.paths.userData`). Dev uses `data/studio.db`.
+- **Distribution**:
+  - **Windows**: Inno Setup installer `canary-win-x64-KIESTUDIO-Setup.exe` (primary channel). Generated via `npm run desktop:installer:win`. Registered in Add/Remove Programs with icon, version, and publisher; includes uninstaller and Start Menu/Desktop shortcuts. Per-user install (`%LocalAppData%\ai.kie.studio\<channel>\app`), no admin required. User DB (`studio.db`) is never removed on uninstall.
+  - **Linux**: tar.gz self-extracting archive (`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`) only. Electrobun does not support `.deb` natively.
+  - Auto-update artifacts (`tar.zst` + `update.json` + patch) are served from `RELEASE_BASE_URL` as before (independent of Inno Setup).
+- **App icon**: `assets/icon-master.svg` (K monogram motif) is converted via `npm run icons` to `icon.ico` (Windows, multi-size) / `icon.png` (Linux, 512px) / `icon.iconset` (macOS, convert to .icns with iconutil) and referenced in `electrobun.config.ts`. On Windows, `scripts/embed-win-icon.mjs` embeds the icon into launcher.exe post-build to avoid Electrobun's rcedit path-resolution bug (also re-embedded during installer build).
+- **Supported architectures**:
+  - Windows: x64 only. ARM Windows runs the x64 build via OS-level emulation, so no separate build is needed.
+  - Linux: x64 distribution only. arm64 is supported by Electrobun but cross-build is unavailable; deferred until an arm64 build environment/CI is secured.
+- **Unsigned distribution OS warnings**: No code signing or notarization is performed.
+  - macOS: Right-click → "Open" on first launch, or allow via System Settings > Privacy & Security.
+  - Windows: SmartScreen → "More info" → "Run anyway".
+  - Linux: Grant execute permission.
+- **Auto-update**: Set `RELEASE_BASE_URL` to a static host to enable delta updates (bsdiff + zstd) on launch. Silently skipped when unset. Use `canary` for daily testing, `stable` for production.
+- Each OS build must run on that OS (no cross-build). CI example: `.github/workflows/release.yml` (tag push triggers 3-OS matrix build, publishes to GitHub Releases).
 
-## モデルカタログの同期
+## Model Catalog Sync
 
-`npm run dev` 起動時に、カタログが古い場合（既定: 12時間以上）は docs から自動同期します。
+On `npm run dev` startup, the catalog auto-syncs from docs if stale (default: older than 12 hours).
 
-- 新鮮ならスキップ（`tsx watch` の再起動でも毎回フル同期しない）
-- 強制更新: `SYNC_MODELS_FORCE=1 npm run dev` または `npm run sync:models -- --force`
-- 起動時同期オフ: `SYNC_MODELS_ON_START=0`
+- Skipped if fresh (no full sync on every `tsx watch` restart)
+- Force sync: `SYNC_MODELS_FORCE=1 npm run dev` or `npm run sync:models -- --force`
+- Disable startup sync: `SYNC_MODELS_ON_START=0`
 
-手動同期:
+Manual sync:
 
 ```bash
 npm run sync:models
 npm run sync:models -- --force
 ```
 
-[llms.txt](https://docs.kie.ai/llms.txt) と各モデルページの OpenAPI から `src/data/catalog.json` を再生成します。
+Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt) and each model page's OpenAPI spec.
 
-## 主な機能
+## Key Features
 
-| 機能 | 説明 |
-|------|------|
-| 動的フォーム | カタログの OpenAPI スキーマからフィールドを生成 |
-| Reference | 画像/動画/音声のアップロード。単数 `image_url` もファイル添付 UI |
-| `@参照` | プロンプトへリファレンスメンションを挿入（Seedance / Kling 等） |
-| Provider 共通タスク | Market / Suno / Veo / Runway の生成・ポーリング・エラーを正規化 |
-| AUDIO workflow | Suno 楽曲・延長・カバー・歌詞、ナレーション、会話、音声処理 |
-| 音声再生 | 常駐ミニプレイヤー、波形、同期歌詞、Persona・外部音源素材棚 |
-| 履歴 | SQLite 保存。複数メディア、親子関係、ピン、入力復元、リトライ、ZIP/JSON 出力 |
-| プロンプト最適化 | Grok CLI で optimize / generate。モデル別プロファイルあり |
-| スニペット | よく使うフレーズをワンクリック挿入 |
-| バッチ生成 | 同じ入力で複数タスクをまとめて投入 |
+| Feature | Description |
+|---------|-------------|
+| Dynamic forms | Fields generated from catalog OpenAPI schemas |
+| Reference | Image/video/audio upload; single `image_url` also uses file-attach UI |
+| `@reference` | Insert reference mentions into prompts (Seedance / Kling, etc.) |
+| Unified provider tasks | Normalized generation, polling, and errors across Market / Suno / Veo / Runway |
+| AUDIO workflow | Suno songs, extensions, covers, lyrics, narration, conversation, audio processing |
+| Audio playback | Persistent mini-player, waveform, synced lyrics, Persona & external audio asset shelf |
+| History | SQLite storage; multi-media, parent-child relations, pin, input restore, retry, ZIP/JSON export |
+| Prompt optimization | Optimize / generate via Grok CLI with per-model profiles |
+| Snippets | One-click insertion of frequently used phrases |
+| Batch generation | Submit multiple tasks with the same input |
 
-## 主な API（ローカル）
+## Local API Endpoints
 
-| Method | Path | 説明 |
-|--------|------|------|
-| GET | `/api/health` | ヘルスチェック・API キー有無 |
-| GET | `/api/models?category=image\|video\|audio` | Market catalog と専用 workflow を統合 |
-| POST | `/api/upload` | File Upload API へ転送。音源は素材棚へ登録 |
-| GET | `/api/audio-assets` | 外部音源素材棚の一覧 |
-| DELETE | `/api/audio-assets/:id` | 外部音源素材を削除 |
-| POST | `/api/generate` | provider / operation adapter でタスク作成 |
-| GET | `/api/task?provider=&operation=&taskId=` | provider ごとの状態を共通形式へ正規化 |
-| GET | `/api/credits` | 残クレジット |
-| POST | `/api/download-url` | 一時 DL URL（20分） |
-| POST | `/api/archive` | 複数メディアと歌詞を ZIP 出力 |
-| POST | `/api/suno/timestamped-lyrics` | 同期歌詞・波形データを取得 |
-| POST | `/api/suno/style` | Suno の music style を補助 |
-| POST | `/api/suno/persona` | Persona を作成・保存 |
-| GET | `/api/personas` | Persona 素材棚の一覧 |
-| DELETE | `/api/personas/:id` | Persona を削除 |
-| GET | `/api/grok/status` | Grok CLI 利用可否 |
-| GET | `/api/optimize-profile?modelId=` | モデル別最適化プロファイル |
-| POST | `/api/optimize-prompt` | プロンプト最適化 / 生成 |
-| GET | `/api/history` | 履歴一覧（SQLite） |
-| PUT | `/api/history` | 履歴を一括置換 |
-| POST | `/api/history/import` | JSON から履歴をインポート |
-| POST | `/api/history/migrate` | 旧 localStorage 履歴を移行 |
-| GET | `/api/settings` | API キーの保存有無とマスク表示 |
-| PUT | `/api/settings/api-key` | API キーを保存（SQLite に永続化） |
-| DELETE | `/api/settings/api-key` | 保存した API キーを削除 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check & API key presence |
+| GET | `/api/models?category=image\|video\|audio` | Market catalog + dedicated workflows |
+| POST | `/api/upload` | Forwards to File Upload API; audio registered to asset shelf |
+| GET | `/api/audio-assets` | List external audio assets |
+| DELETE | `/api/audio-assets/:id` | Delete an external audio asset |
+| POST | `/api/generate` | Create task via provider / operation adapter |
+| GET | `/api/task?provider=&operation=&taskId=` | Normalize per-provider status to common format |
+| GET | `/api/credits` | Remaining credits |
+| POST | `/api/download-url` | Temporary download URL (20 min) |
+| POST | `/api/archive` | Export multi-media + lyrics as ZIP |
+| POST | `/api/suno/timestamped-lyrics` | Fetch synced lyrics & waveform data |
+| POST | `/api/suno/style` | Assist Suno music style |
+| POST | `/api/suno/persona` | Create & save a Persona |
+| GET | `/api/personas` | List Persona shelf |
+| DELETE | `/api/personas/:id` | Delete a Persona |
+| GET | `/api/grok/status` | Grok CLI availability |
+| GET | `/api/optimize-profile?modelId=` | Per-model optimization profile |
+| POST | `/api/optimize-prompt` | Prompt optimization / generation |
+| GET | `/api/history` | List history (SQLite) |
+| PUT | `/api/history` | Bulk replace history |
+| POST | `/api/history/import` | Import history from JSON |
+| POST | `/api/history/migrate` | Migrate legacy localStorage history |
+| GET | `/api/settings` | API key save status & masked display |
+| PUT | `/api/settings/api-key` | Save API key (persisted in SQLite) |
+| DELETE | `/api/settings/api-key` | Delete saved API key |
 
-## 環境変数
+## Environment Variables
 
-| 変数 | 説明 |
-|------|------|
-| `KIE_API_KEY` | 任意。kie.ai API キー（デスクトップ版は設定画面からも保存可。保存キーが優先） |
-| `PORT` | API ポート（既定 `8787`） |
-| `STUDIO_DB_PATH` | 任意。SQLite の保存先を上書き（デスクトップ版は自動設定、dev は `data/studio.db`） |
-| `RELEASE_BASE_URL` | 任意。Electrobun 自動アップデートの静的ホスト URL（空で無効） |
-| `XAI_API_KEY` | 任意。Grok CLI 未ログイン時の認証 |
-| `SYNC_MODELS_ON_START` | `0` で起動時同期オフ（既定オン） |
-| `SYNC_MODELS_FORCE` | `1` で起動時に強制フル同期 |
-| `SYNC_CONCURRENCY` | モデルページ取得の並列数（既定 `12`、最大 32） |
+| Variable | Description |
+|----------|-------------|
+| `KIE_API_KEY` | Optional. kie.ai API key (desktop app can save via settings; stored key takes priority) |
+| `PORT` | API port (default `8787`) |
+| `STUDIO_DB_PATH` | Optional. Override SQLite path (desktop sets automatically; dev uses `data/studio.db`) |
+| `RELEASE_BASE_URL` | Optional. Static host URL for Electrobun auto-update (empty to disable) |
+| `XAI_API_KEY` | Optional. Auth for Grok CLI when not logged in |
+| `SYNC_MODELS_ON_START` | `0` to disable startup sync (default on) |
+| `SYNC_MODELS_FORCE` | `1` to force full sync on startup |
+| `SYNC_CONCURRENCY` | Concurrency for model page fetching (default `12`, max 32) |
 
-## スクリプト
+## Scripts
 
-| コマンド | 説明 |
-|----------|------|
-| `npm run dev` | API + Web を同時起動（`dev:server` + `dev:web`） |
-| `npm run dev:server` | Hono API のみ（`bun --watch server/index.ts`） |
-| `npm run dev:web` | Vite 開発サーバーのみ |
-| `npm run desktop:dev` | Electrobun デスクトップを開発起動（`electrobun run --env=dev`） |
-| `npm run desktop:build:canary` | canary デスクトップビルド（`vite build` + `electrobun build`） |
-| `npm run desktop:build:stable` | stable デスクトップビルド |
-| `npm run desktop:package:canary` | canary を再パッケージ（`vite build` スキップ。アイコン生成 + `electrobun build` + `release/` 集積） |
-| `npm run desktop:package:stable` | stable を再パッケージ |
-| `npm run desktop:installer:win` | Windows 用 Inno Setup インストーラーを生成（要 Inno Setup 6、`release/` へ出力） |
-| `npm run icons` | `assets/icon-master.svg` から `icon.ico` / `icon.png` / `icon.iconset` を生成 |
-| `npm run build` | 型チェック（`tsc -b`）+ 本番ビルド |
-| `npm run preview` | ビルド成果物をプレビュー |
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start API + Web together (`dev:server` + `dev:web`) |
+| `npm run dev:server` | Hono API only (`bun --watch server/index.ts`) |
+| `npm run dev:web` | Vite dev server only |
+| `npm run desktop:dev` | Launch Electrobun desktop in dev mode (`electrobun run --env=dev`) |
+| `npm run desktop:build:canary` | Canary desktop build (`vite build` + `electrobun build`) |
+| `npm run desktop:build:stable` | Stable desktop build |
+| `npm run desktop:package:canary` | Re-package canary (skip `vite build`; icon gen + `electrobun build` + `release/` collection) |
+| `npm run desktop:package:stable` | Re-package stable |
+| `npm run desktop:installer:win` | Generate Windows Inno Setup installer (requires Inno Setup 6, outputs to `release/`) |
+| `npm run icons` | Generate `icon.ico` / `icon.png` / `icon.iconset` from `assets/icon-master.svg` |
+| `npm run build` | Type check (`tsc -b`) + production build |
+| `npm run preview` | Preview build output |
 | `npm run lint` | oxlint |
-| `npm test` | Vitest を1回実行 |
-| `npm run test:watch` | Vitest を watch モードで実行 |
-| `npm run sync:models` | カタログ手動同期 |
+| `npm test` | Run Vitest once |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run sync:models` | Manual catalog sync |
 
-型チェックのみ実行したい場合は `npx tsc -b`（`npm run build` に含まれる）。
+For type-check only: `npx tsc -b` (included in `npm run build`).
 
-## 構成
+## Project Structure
 
 ```text
-src/            # フロント（Vite + React 19 + Tailwind v4）
-  App.tsx       # フォーム・キュー・履歴・ポーリング・Quick Action の調停
-  components/   # 画面 UI（audio/ ・ shell/ ・ motion/ を含む、SettingsSheet など）
-  lib/          # API・履歴・キュー・検証・メディア・models
-  bun/          # Electrobun メインプロセス（index.ts: Bun.serve + BrowserWindow）
-  data/catalog.json  # 同期で再生成されるモデルカタログ
-server/         # Hono API（Bun ランタイム、127.0.0.1:8787）
-  app.ts        # createApp（CORS・onError・全ルート登録を共通化）
-  index.ts      # dev エントリ（Bun.serve 起動・起動時カタログ同期）
-  routes/       # HTTP 境界（generate / task / Suno / archive / history / settings 等）
-  kie/adapters/ # Market / Suno / Veo / Runway の共通化
-  settings/     # API キー取得（永続ストア→環境変数）
-  db/           # bun:sqlite（履歴・Persona・音源素材・app_settings）
-  grok/         # Grok CLI 連携（プロンプト最適化）
-  catalog/      # docs OpenAPI と専用 workflow の統合
-electrobun.config.ts    # Electrobun ビルド・配布設定（win/linux のアイコン指定を含む）
-assets/icon-master.svg  # アプリアイコンのベクターマスター（→ icon.ico / icon.png）
-installer/win/kie-studio.iss   # Inno Setup インストーラー定義（ARP・アンインストーラー・ショートカット）
-scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png（sharp + png-to-ico）
-scripts/embed-win-icon.mjs     # ビルド後に launcher.exe へアイコン埋め込み + tar.zst 再パッケージ
-scripts/build-win-installer.mjs # tar.zst 展開 → launcher.exe へアイコン埋め込み → Inno Setup コンパイル
-scripts/collect-release.mjs    # ビルド成果物を永続的な release/ へ集積
-scripts/sync-models.ts  # カタログ同期 CLI
-.github/workflows/release.yml  # 3 OS マトリクスビルド + Releases 公開
-.indexion/wiki/         # プロジェクト知識ベース（indexion wiki）
+src/            # Frontend (Vite + React 19 + Tailwind v4)
+  App.tsx       # Orchestrates form, queue, history, polling, Quick Actions
+  components/   # UI (audio/ · shell/ · motion/, SettingsSheet, etc.)
+  lib/          # API, history, queue, validation, media, models
+  bun/          # Electrobun main process (index.ts: Bun.serve + BrowserWindow)
+  data/catalog.json  # Model catalog regenerated by sync
+server/         # Hono API (Bun runtime, 127.0.0.1:8787)
+  app.ts        # createApp (CORS, onError, route registration)
+  index.ts      # Dev entry (Bun.serve startup, catalog sync on boot)
+  routes/       # HTTP boundary (generate / task / Suno / archive / history / settings, etc.)
+  kie/adapters/ # Market / Suno / Veo / Runway normalization
+  settings/     # API key retrieval (persistent store → env fallback)
+  db/           # bun:sqlite (history, Persona, audio assets, app_settings)
+  grok/         # Grok CLI integration (prompt optimization)
+  catalog/      # docs OpenAPI + dedicated workflow integration
+electrobun.config.ts    # Electrobun build & distribution config (win/linux icon paths)
+assets/icon-master.svg  # Vector master for app icon (→ icon.ico / icon.png)
+installer/win/kie-studio.iss   # Inno Setup installer definition (ARP, uninstaller, shortcuts)
+scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png (sharp + png-to-ico)
+scripts/embed-win-icon.mjs     # Post-build icon embed into launcher.exe + tar.zst repackage
+scripts/build-win-installer.mjs # tar.zst extract → icon embed → Inno Setup compile
+scripts/collect-release.mjs    # Collect build artifacts into persistent release/
+scripts/sync-models.ts  # Catalog sync CLI
+.github/workflows/release.yml  # 3-OS matrix build + Releases publish
+.indexion/wiki/         # Project knowledge base (indexion wiki)
 ```
 
-## 注意
+## Notes
 
-- アップロードファイルは一時保管（docs 上は短期間で削除）
-- 生成メディアは約14日で削除（ギャラリーに残日数表示）。必要なら早めにダウンロード
-- 対応 provider / operation はカタログに定義された workflow に限る
-- エージェント向けの作業メモは [AGENTS.md](./AGENTS.md) を参照
+- Uploaded files are temporary (deleted after a short period per docs)
+- Generated media is deleted after ~14 days (remaining days shown in gallery). Download early if needed.
+- Supported providers / operations are limited to workflows defined in the catalog
+- For agent working notes see [AGENTS.md](./AGENTS.md)
 
-## ライセンス
+## License
 
-ライセンスは未指定です。`package.json` は `private: true` で、npm publish は無効化されています。
+No license specified. `package.json` is `private: true`; npm publish is disabled.
