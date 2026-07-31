@@ -1,4 +1,10 @@
-# 🎬 Seedance 2.0 — 完全プロンプト作成マスターガイド 日本語版
+// Seedance_2.0_Complete_Prompting_Guide_JA.md から生成した埋め込みガイド。
+// デスクトップ版はバンドル後のファイルパス解決に依存できないため、ガイド本文はコードに埋め込む。
+// 内容を更新するときは scripts/embed-seedance-guide.mjs を再実行すること。
+
+export const SEEDANCE_GUIDE_FILE_NAME = 'Seedance_2.0_Complete_Prompting_Guide_JA.md'
+
+export const SEEDANCE_GUIDE_CONTENT = `# 🎬 Seedance 2.0 — 完全プロンプト作成マスターガイド 日本語版
 
 > EvoLinkAI公式ガイド、Seedance公式プロンプト資料、主要コミュニティ資料をもとにまとめた、Seedance 2.0で本番品質のプロンプトを書くための総合リファレンスです。  
 > ※日本語版では、Seedanceでそのまま使いやすい英語キーワード・タグ構文・プロンプト例は必要に応じて原語を残しています。
@@ -53,10 +59,10 @@ Seedance 2.0は、**画像・動画・音声・テキストを同時に扱える
 - **Edit** = 既存動画そのものを直接変更する（キャラクターを差し替える、物を消す、展開を変えるなど）
 - **Reference** = 動画から特定の性質だけを取り出し、新しい内容に適用する（カメラワーク、動きのスタイル、リズムなど）
 
-```
+\`\`\`
 Edit:      "In @Video1, replace the woman with @Image1..."
 Reference: "Reference @Video1's camera movement for a new scene..."
-```
+\`\`\`
 
 ---
 
@@ -64,9 +70,9 @@ Reference: "Reference @Video1's camera movement for a new scene..."
 
 公式に推奨されている標準構造です。
 
-```
+\`\`\`
 [Subject], [Action], in [Environment], camera [Camera Movement], style [Style], avoid [Constraints]
-```
+\`\`\`
 
 | Step | 要素 | 必要な内容 | 例 |
 |------|------|------------|----|
@@ -82,17 +88,17 @@ Reference: "Reference @Video1's camera movement for a new scene..."
 ### 良い例／悪い例
 
 **✅ 良い例:**
-```
+\`\`\`
 A skateboarder lands a clean trick in an empty dawn parking lot,
 camera low tracking shot then subtle rise, modern cinematic contrast,
 6 seconds, 16:9, avoid jitter and bent limbs.
-```
+\`\`\`
 
 **❌ 悪い例:**
-```
+\`\`\`
 cool skateboard video, cinematic, fast, amazing tricks,
 lots of movement, epic style
-```
+\`\`\`
 
 ---
 
@@ -102,7 +108,7 @@ lots of movement, epic style
 
 ### 構造
 
-```
+\`\`\`
 【Style】具体的なスタイルの基準（監督名／映画スタイル／アートムーブメントなど）
 【Duration】合計尺
 
@@ -118,7 +124,7 @@ lots of movement, epic style
 ...
 
 一貫性の制約。物理挙動の条件。色調メモ。
-```
+\`\`\`
 
 ### なぜ効果が高いのか
 
@@ -128,7 +134,7 @@ lots of movement, epic style
 
 ### ショットスクリプト完全例
 
-```
+\`\`\`
 【Style】Denis Villeneuve Sci-Fi Epic, IMAX 70mm, desaturated teal-orange palette.
 【Duration】10 seconds
 
@@ -151,7 +157,7 @@ boots. Camera holds steady as the figure descends. Cut to black.
 
 Consistent spacesuit design. Realistic Mars dust physics. Epic
 orchestral audio swell on final shot.
-```
+\`\`\`
 
 ---
 
@@ -172,50 +178,50 @@ orchestral audio swell on final shot.
 
 | 種類 | タグ | 上限 |
 |------|------|------|
-| **Images** | `@Image1` 〜 `@Image9` | 最大9枚 |
-| **Videos** | `@Video1` 〜 `@Video3` | 最大3本 |
-| **Audio** | `@Audio1` 〜 `@Audio3` | 最大3本 |
+| **Images** | \`@Image1\` 〜 \`@Image9\` | 最大9枚 |
+| **Videos** | \`@Video1\` 〜 \`@Video3\` | 最大3本 |
+| **Audio** | \`@Audio1\` 〜 \`@Audio3\` | 最大3本 |
 | **Total** | — | 合計12ファイル以下 |
 
 タグ番号は、各ファイル種別ごとの**アップロード順**で決まります。
 
 > 🔑 **参照の黄金ルール:** どのファイルから、どの要素を抽出するのかを必ず明確にします。単にファイル名を出すだけでは不十分です。1つの参照動画からでも、動き、スタイル、カメラワーク、キャラクター外見、音声リズム、エフェクトなど複数の性質を抽出できます。何を使いたいのかを指定してください。
 >
-> ```
+> \`\`\`
 > ❌ Use @Video1 for the scene
 > ✅ Reference @Video1 for camera movement only. Character appearance references @Image1.
-> ```
+> \`\`\`
 
 ### 画像参照の5つの使い方
 
 | 用途 | プロンプト構文 | 効果 |
 |------|----------------|------|
-| 最初のフレーム | `@Image1 as first frame` | 動画がこの画像から始まる |
-| 最後のフレーム | `@Image1 as last frame` | 動画がこの画像で終わる |
-| キャラクター参照 | `@Image1 as character reference` | キャラクターの見た目を維持する |
-| 環境参照 | `@Image1 as background environment` | 画像をシーン設定として使う |
-| スタイル参照 | `@Image1 as style reference` | 色調、質感、ムードを合わせる |
+| 最初のフレーム | \`@Image1 as first frame\` | 動画がこの画像から始まる |
+| 最後のフレーム | \`@Image1 as last frame\` | 動画がこの画像で終わる |
+| キャラクター参照 | \`@Image1 as character reference\` | キャラクターの見た目を維持する |
+| 環境参照 | \`@Image1 as background environment\` | 画像をシーン設定として使う |
+| スタイル参照 | \`@Image1 as style reference\` | 色調、質感、ムードを合わせる |
 
 ### 動画参照の4つの使い方
 
 | 用途 | プロンプト構文 | 効果 |
 |------|----------------|------|
-| カメラ再現 | `follow @Video1 camera movement` | パン、チルト、ズームなどのパターンをコピー |
-| 動きの模倣 | `character moves like @Video1` | 振付やモーションを転写 |
-| エフェクト再現 | `apply @Video1 transition effects` | 視覚効果やトランジションを合わせる |
-| リズム参照 | `match @Video1 pacing and cuts` | タイミングやカット割りを同期 |
+| カメラ再現 | \`follow @Video1 camera movement\` | パン、チルト、ズームなどのパターンをコピー |
+| 動きの模倣 | \`character moves like @Video1\` | 振付やモーションを転写 |
+| エフェクト再現 | \`apply @Video1 transition effects\` | 視覚効果やトランジションを合わせる |
+| リズム参照 | \`match @Video1 pacing and cuts\` | タイミングやカット割りを同期 |
 
 ### 音声参照の3つの使い方
 
 | 用途 | プロンプト構文 | 効果 |
 |------|----------------|------|
-| BGM | `@Audio1 as background soundtrack` | アップロード音源でムードを作る |
-| 効果音 | `@Audio1 as ambient sound` | 特定の環境音・効果音を追加 |
-| 声のスタイル | `@Audio1 as voice style reference` | 声質や話し方のテンポを合わせる |
+| BGM | \`@Audio1 as background soundtrack\` | アップロード音源でムードを作る |
+| 効果音 | \`@Audio1 as ambient sound\` | 特定の環境音・効果音を追加 |
+| 声のスタイル | \`@Audio1 as voice style reference\` | 声質や話し方のテンポを合わせる |
 
 ### よく使う@Tag記述パターン
 
-```
+\`\`\`
 # 最初のフレームを指定
 Use @Image1 as the first frame of the scene, ...
 
@@ -235,7 +241,7 @@ Extend @Video1 by 5s, [content description]
 
 # 動画の効果音を参照
 Background BGM references sound effects from @Video1
-```
+\`\`\`
 
 ### ファイル割り当て戦略
 
@@ -269,29 +275,29 @@ Background BGM references sound effects from @Video1
 ### 🚨 カメラ指示の重要ルール3つ
 
 **Rule 1: 主要なカメラ指示は1つだけ。**
-```
+\`\`\`
 ✅ camera slow push-in
 ❌ camera push-in, then pan left, zoom out, orbit around
-```
+\`\`\`
 
 複合的な動きが必要な場合は、主動作と副動作を分けて書きます。
-```
+\`\`\`
 ✅ camera low tracking shot then subtle rise
-```
+\`\`\`
 
 **Rule 2: 技術仕様ではなく、リズムで説明する。**
-```
+\`\`\`
 ✅ slow, smooth, stable, gradual, gentle
 ❌ 24fps, f/2.8, ISO 800, focal length 85mm
-```
+\`\`\`
 
 「編集者に話すようにリズムを説明する」と考えると書きやすいです。
 
 **Rule 3: カメラの動きと被写体の動きを分ける。**
-```
+\`\`\`
 ✅ The dancer spins slowly. Camera holds fixed framing.
 ❌ spinning camera around a dancing person
-```
+\`\`\`
 
 この2つを混ぜるのは最も多い失敗です。制御不能で揺れた動画になりやすくなります。
 
@@ -338,10 +344,10 @@ Background BGM references sound effects from @Video1
 
 | 欲しい効果 | 推奨表現 |
 |------------|----------|
-| ヒッチコックズーム | `protagonist in panic with Hitchcock zoom` |
-| 円形カメラ | `robotic arm multi-angle circular movement` |
-| 加速感 | `speed accelerates like a roller coaster` |
-| パーティクル | `golden sand particles scatter` / `particle dispersion effect` |
+| ヒッチコックズーム | \`protagonist in panic with Hitchcock zoom\` |
+| 円形カメラ | \`robotic arm multi-angle circular movement\` |
+| 加速感 | \`speed accelerates like a roller coaster\` |
+| パーティクル | \`golden sand particles scatter\` / \`particle dispersion effect\` |
 
 ---
 
@@ -351,21 +357,21 @@ Background BGM references sound effects from @Video1
 
 | Negative Prompt | 除外するもの | 使う場面 |
 |-----------------|--------------|----------|
-| `avoid jitter` | 画面の揺れ | すべての動画 |
-| `avoid bent limbs` | 曲がった手足・破綻した関節 | キャラクター動画 |
-| `avoid temporal flicker` | 時間方向のちらつき | 長めの動画 |
-| `avoid identity drift` | 被写体の特徴の変化 | キャラクター一貫性 |
-| `avoid chaotic composition` | 散らかった構図 | 複雑なシーン |
+| \`avoid jitter\` | 画面の揺れ | すべての動画 |
+| \`avoid bent limbs\` | 曲がった手足・破綻した関節 | キャラクター動画 |
+| \`avoid temporal flicker\` | 時間方向のちらつき | 長めの動画 |
+| \`avoid identity drift\` | 被写体の特徴の変化 | キャラクター一貫性 |
+| \`avoid chaotic composition\` | 散らかった構図 | 複雑なシーン |
 
 ### 品質を壊しやすい言葉
 
 | 危険な言葉 | なぜ危険か | 代わりに使う表現 |
 |------------|------------|------------------|
-| `fast` 単体 | 全体が混乱しやすい | 速くする要素を1つに絞る |
-| `cinematic` 単体 | あいまいすぎる | “cinematic film tone, 35mm, warm” |
-| `epic` | モデルが具体化しづらい | 見せたい視覚効果を具体的に書く |
-| `amazing` / `beautiful` | 実用的な指示にならない | 具体的な光・構図を書く |
-| `lots of movement` | ジッターの原因になる | 1つの具体的な動きに絞る |
+| \`fast\` 単体 | 全体が混乱しやすい | 速くする要素を1つに絞る |
+| \`cinematic\` 単体 | あいまいすぎる | “cinematic film tone, 35mm, warm” |
+| \`epic\` | モデルが具体化しづらい | 見せたい視覚効果を具体的に書く |
+| \`amazing\` / \`beautiful\` | 実用的な指示にならない | 具体的な光・構図を書く |
+| \`lots of movement\` | ジッターの原因になる | 1つの具体的な動きに絞る |
 
 ---
 
@@ -375,31 +381,31 @@ Background BGM references sound effects from @Video1
 
 6ステップ公式をすべて使います。画面内の要素をきちんと説明します。
 
-```
+\`\`\`
 A lone astronaut walks across an amber desert under twin moons,
 camera slow lateral tracking, cinematic sci-fi tone, 8 seconds,
 16:9, avoid temporal flicker.
-```
+\`\`\`
 
 ### Image-to-Video
 
 画像内にすでに写っているものを再説明しすぎないこと。**動きとカメラ**に集中します。
 
-```
+\`\`\`
 Animate the provided image, preserve composition and colors,
 add gentle wind motion to the leaves, camera slowly pushes in,
 keep consistent lighting, 6 seconds.
-```
+\`\`\`
 
 ### Video-to-Video
 
 元の動きを保ちながら、**スタイル変換**を説明します。
 
-```
+\`\`\`
 Transform source clip to anime watercolor style,
 preserve core motion and timing, adjust color palette to pastel,
 keep identity consistent, avoid identity drift.
-```
+\`\`\`
 
 | 要素 | Text-to-Video | Image-to-Video |
 |------|---------------|----------------|
@@ -414,62 +420,62 @@ keep identity consistent, avoid identity drift.
 
 ### 長い動画（10秒以上）: タイムライン分割を使う
 
-```
+\`\`\`
 0-3s: [冒頭の説明]
 3-6s: [中盤の動き]
 6-10s: [クライマックス／終わり]
-```
+\`\`\`
 
 ### アクションと感情は具体的にする
 
-```
+\`\`\`
 ❌ character is very sad
 ✅ tears slide down cheeks, mouth trembles slightly
-```
+\`\`\`
 
 ### ワンカット動画
 
 プロンプトの最後に次を入れます。
 
-```
+\`\`\`
 No scene cuts throughout, one continuous shot.
-```
+\`\`\`
 
 完全例:
 
-```
+\`\`\`
 @Image1 @Image2 @Image3, first-person one continuous tracking camera,
 movement trajectory: from street through alley to rooftop,
 speed gradually accelerates then slows at the peak.
 No scene cuts throughout, one continuous shot.
-```
+\`\`\`
 
 ### 複数動画にまたがるキャラクター一貫性
 
-1. 毎回**同じ参照画像**を `@Image1 as character reference` として使う
+1. 毎回**同じ参照画像**を \`@Image1 as character reference\` として使う
 2. 画像参照があっても、見た目の記述を明示する: “same red jacket, short black hair”
 3. 動画Nの最後のフレームを、動画N+1の最初のフレーム画像として使う
 
 ### カメラワーク再現
 
-```
+\`\`\`
 Reference all camera movement effects from @Video1,
 but use the character appearance from @Image1
-```
+\`\`\`
 
 再現が弱い場合は、次のように強めます。
 
-```
+\`\`\`
 completely reference all camera movement effects from @Video1
-```
+\`\`\`
 
 ### 動画延長
 
-```
+\`\`\`
 Extend @Video1 forward by 5s.
 0-2s: [continuing scene description].
 2-5s: [new action/ending].
-```
+\`\`\`
 
 注意: Durationは合計尺ではなく、**新しく生成する秒数**です。
 
@@ -477,47 +483,47 @@ Extend @Video1 forward by 5s.
 
 音声をアップロードして、映像を同期させます。
 
-```
+\`\`\`
 Background music references @Audio1. Visuals sync to the beat rhythm.
 Camera cuts and movement changes align with musical beats.
-```
+\`\`\`
 
 ### 動画結合（2つのクリップの間に挿入）
 
 既存の2本の動画の間に、新しいシーンを挿入できます。
 
-```
+\`\`\`
 I want to add a scene between @Video1 and @Video2, with the content 
 being [description of the bridging scene].
-```
+\`\`\`
 
 ### 連続アクションチェーン
 
 複雑な複数ステップの物理アクションでは、遷移を明示します。
 
-```
+\`\`\`
 The character transitions directly from jumping to rolling, 
 maintaining smooth and fluid motion throughout.
-```
+\`\`\`
 
 ### マルチカメラ・ナラティブ（自動ショットカバー）
 
 Seedance 2.0は、1回の生成内で複数カメラアングルを作れます。会話やシーンを説明すると、ショット・リバースショット、ワイドの状況説明、キャラクターのクローズアップ、ミディアムショットなどを自動で構成できます。
 
-```
+\`\`\`
 A conversation between two characters sitting across from each other 
 at a cafe table. They discuss the plan with increasing tension. 
 Natural multi-camera coverage with shot-reverse-shot editing.
 Character details stay consistent across cuts.
-```
+\`\`\`
 
 ### 音声参照がない場合: 動画の音を使う
 
 個別の音声ファイルがない場合は、既存動画の音を参照できます。
 
-```
+\`\`\`
 Background BGM references the sound effects from @Video1.
-```
+\`\`\`
 
 ---
 
@@ -525,46 +531,46 @@ Background BGM references the sound effects from @Video1.
 
 ### Template 1: 商品360°ショーケース
 
-```
+\`\`\`
 @Image1 [product name] as the main subject,
 camera movement references @Video1,
 zoom in to close-up of [specific part],
 camera rotates and [product] flips to show full view,
 [product feature details] clearly visible,
 surrounding environment [atmosphere description]
-```
+\`\`\`
 
 ### Template 2: 広告比較
 
-```
+\`\`\`
 This is a [product] advertisement, @Image1 as the first frame,
 [character A] in [state A, e.g.: elegant],
 camera quickly pans right, shooting @Image2 [character B] [state B, e.g.: disheveled],
 camera pans left and zooms in shooting [product],
 [product] references @Image3, [product] in [working state].
-```
+\`\`\`
 
 ### Template 3: 動画延長スクリプト
 
-```
+\`\`\`
 [N]s
 Extend @Video1 [forward/backward] by [N] seconds.
 [0-X]s: [scene description].
 [X-Y]s: [scene description].
 [Y-N]s: [ending scene/subtitles].
-```
+\`\`\`
 
 ### Template 4: ワンカット
 
-```
+\`\`\`
 @Image1 @Image2 @Image3..., [perspective] one continuous shot [movement type] camera,
 [movement trajectory: from A through B to C], [speed/rhythm changes].
 No scene cuts throughout, one continuous shot.
-```
+\`\`\`
 
 ### Template 5: 映画的なレースシーン（ショットスクリプト）
 
-```
+\`\`\`
 【Style】Hollywood Professional Racing Movie (Le Mans Style), Cinematic Night, Rain, High Stakes.
 【Duration】10 seconds
 
@@ -587,11 +593,11 @@ the camera lens. Motion blur turns stadium lights into long golden streaks.
 
 Consistent car designs. Realistic rain physics, water reflections.
 Tension-building audio.
-```
+\`\`\`
 
 ### Template 6: アニメキャラクターの感情表現
 
-```
+\`\`\`
 【Style】High-quality anime, Studio Ghibli-inspired, detailed facial expressions.
 【Duration】12 seconds
 
@@ -612,11 +618,11 @@ past the window behind her.
 
 Consistent anime character design. Detailed emotional facial animation.
 Natural lighting transitions.
-```
+\`\`\`
 
 ### Template 7: 商品CM（Image-to-Video）
 
-```
+\`\`\`
 @Image1 as first frame.
 【Style】Premium product keynote, clean minimal aesthetic.
 【Duration】15 seconds
@@ -635,11 +641,11 @@ Brand text elegantly fades in at bottom.
 
 Maintain exact product proportions from @Image1.
 Commercial-grade lighting. Clean, premium aesthetic throughout.
-```
+\`\`\`
 
 ### Template 8: ASMR / 感覚系コンテンツ
 
-```
+\`\`\`
 Create a vertical ASMR video with no music, focusing on macro details.
 A light blue skincare gel bottle sits on glass. A pale, elegant hand
 gently taps the glass, producing crisp fingernail tapping sounds.
@@ -649,7 +655,7 @@ drops it onto the glass with a soft "plop," showing dense gel with
 tiny air bubbles. Dramatic cool lighting from behind makes the gel
 glow like a gemstone. The hand presses onto the gel, spreading it
 in circular motions, causing tiny bubbles to swirl.
-```
+\`\`\`
 
 ---
 
@@ -685,7 +691,7 @@ EvoLinkAI公式ガイドに基づくと、Seedance 2.0は次の10領域を得意
 | 7 | 実写の顔写真をアップロード | コンプライアンスフィルターで止まりやすい | イラスト調、スタイライズキャラを使う |
 | 8 | ファイル上限超過 | リクエストが拒否される | 画像≤9、動画≤3、音声≤3、合計≤12 |
 | 9 | スタイルアンカーなし | 汎用的な出力になる | 監督名、映画、アートスタイルなどで固定 |
-| 10 | タイムコードなし | アクションのタイミングが不安定 | `[00:00-00:05]` 形式を使う |
+| 10 | タイムコードなし | アクションのタイミングが不安定 | \`[00:00-00:05]\` 形式を使う |
 | 11 | fast + fast + 複雑 | 高確率でジッターが出る | 速い要素は1つだけ |
 | 12 | カメラと被写体の動きを混ぜる | 揺れて破綻しやすい | それぞれ別々に説明 |
 
@@ -813,43 +819,43 @@ Seedance 2.0の生成ウィンドウは**1クリップあたり4〜15秒**です
 
 ### チェーンのワークフロー
 
-```
+\`\`\`
 CLIP 1: 初回生成（text-to-video または image-to-video）→ 15s
 CLIP 2: Clip 1の出力を @Video1 としてアップロード → "Continue from @Video1..." → +10s
 CLIP 3: Clip 2の出力を @Video1 としてアップロード → "Continue from @Video1..." → +10s
 CLIP 4: Clip 3の出力を @Video1 としてアップロード → "Continue from @Video1..." → +10s
 = 45秒の連続動画
-```
+\`\`\`
 
 ### チェーンの重要ルール
 
 **Rule 1: 延長プロンプトは「次に起きることだけ」を書く。**  
 すでに起きたことを再説明しないでください。次のシーンを監督する感覚で書きます。
 
-```
+\`\`\`
 ❌ "The man was walking through the city and now he enters a cafe..."
 ✅ "Continue from @Video1. The man pushes open the cafe door and steps inside. Warm interior lighting replaces the cool street light. Camera follows him to a table."
-```
+\`\`\`
 
 **Rule 2: すべての延長プロンプトは継続コマンドから始める。**
 
-```
+\`\`\`
 Continue from @Video1. [new scene description]
-```
+\`\`\`
 または
-```
+\`\`\`
 Extend @Video1 forward by [N] seconds. [new scene description]
-```
+\`\`\`
 
 **Rule 3: すべての延長で連続性指示を明示する。**
 
 チェーンが長くなるほどモデルはドリフトします。視覚アンカーを毎回補強します。
 
-```
+\`\`\`
 Continue from @Video1. Maintain the exact same lighting angle, color 
 temperature, and character appearance from the previous clip. [then 
 describe the new action]
-```
+\`\`\`
 
 **Rule 4: すべてのクリップで同じアスペクト比を使う。**  
 比率が違うと自然につながりません。Clip 1が16:9なら、すべての延長も16:9にします。
@@ -859,18 +865,18 @@ describe the new action]
 
 ### 延長プロンプト公式
 
-```
+\`\`\`
 Continue from @Video1.
 [次に起きること — 新しいアクション、新しいカメラ指示、新要素]
 [連続性アンカー — "maintain same lighting/character/style"]
 [Duration: Ns]
-```
+\`\`\`
 
 ### 長尺スクリプト形式（複数クリップを書く場合）
 
 15秒を超える動画を依頼された場合は、次のように番号付きクリップで書くと管理しやすいです。
 
-```
+\`\`\`
 ════════════════════════════════════════
 CLIP 1 — INITIAL GENERATION (15s)
 Mode: Text-to-Video (or Image-to-Video with @Image1)
@@ -895,7 +901,7 @@ Continue from @Video1. [new scene description]
 Maintain exact same [lighting/character/style] from previous clip.
 
 ... and so on
-```
+\`\`\`
 
 ### 作業手順
 
@@ -912,20 +918,20 @@ Maintain exact same [lighting/character/style] from previous clip.
 **Reference-Guided Extension:**  
 継続元の動画に加え、新しい参照動画でカメラワークを指定できます。
 
-```
+\`\`\`
 Continue from @Video1. Use @Video2 as a reference for the camera 
 movement in this extension — replicate the spiral descent from @Video2 
 while continuing the scene from @Video1.
-```
+\`\`\`
 
 **Style Evolution Through Extension:**  
 チェーン全体で意図的にムードを変化させる方法です。
 
-```
+\`\`\`
 Continue from @Video1. The lighting gradually transitions from warm 
 daylight to cool blue twilight as the camera pushes forward. The 
 atmosphere becomes more mysterious. Maintain character appearance.
-```
+\`\`\`
 
 **A/B Branching:**  
 Clip 1を生成したあと、そこから2つの異なる方向に延長します。片方はドラマチック、もう片方は控えめなど。同じ出発点から別エンディングを試し、良い方を採用します。
@@ -933,41 +939,41 @@ Clip 1を生成したあと、そこから2つの異なる方向に延長しま�
 **Seamless Looping:**  
 Webサイト背景動画などでは、最初の構図へ戻るように延長してループを作れます。
 
-```
+\`\`\`
 Continue from @Video1. The camera completes the full orbit, returning 
 to the exact same angle, lighting, and composition as the first frame 
 of the original video to create a seamless loop.
-```
+\`\`\`
 
 ### 動画編集（再生成せずに変更）
 
 延長だけでなく、既存クリップを最初から作り直さずに編集できます。
 
 **キャラクター差し替え:**
-```
+\`\`\`
 In @Video1, replace the woman with @Image1. Keep all camera movement, 
 lighting, background, and timing exactly the same. Only the character 
 identity changes.
-```
+\`\`\`
 
 **要素追加:**
-```
+\`\`\`
 In @Video1, add @Image1 (a coffee cup) to the right side of the desk. 
 It should be lit consistently with the existing scene. Everything else 
 unchanged.
-```
+\`\`\`
 
 **要素削除:**
-```
+\`\`\`
 In @Video1, remove the plant from the left corner. Fill the area with 
 a continuation of the wall. Keep everything else unchanged.
-```
+\`\`\`
 
 **展開の反転／サブバート:**
-```
+\`\`\`
 Subvert the plot in @Video1. [describe the new narrative direction 
 along a timeline: 0-3s / 3-6s / 6-9s...]
-```
+\`\`\`
 
 ### 延長尺のルール
 
@@ -990,7 +996,7 @@ along a timeline: 0-3s / 3-6s / 6-9s...]
 
 ## クイックリファレンスカード
 
-```
+\`\`\`
 FORMULA:  Subject + Action + Environment + Camera + Style + Constraints
 LENGTH:   60-100 words
 CAMERA:   ONE primary instruction + pacing words (slow/smooth/gentle)
@@ -1008,7 +1014,7 @@ EXTEND:   "Continue from @Video1." + new scene + continuity anchors
 CHAIN:    Max 15s per clip → chain 3-6 extensions for 30-90s total
 DURATION: Extension duration = NEW seconds only, not total
 DRIFT:    Re-anchor character/lighting/style every 2-3 extensions
-```
+\`\`\`
 
 ---
 
@@ -1020,7 +1026,7 @@ DRIFT:    Re-anchor character/lighting/style every 2-3 extensions
 
 ショットスクリプト形式の代替です。コンパクトで機械可読性があり、テンプレート化したり、文章的な装飾を削ったりしたい場合に便利です。VFX寄り、POV寄りのプロンプトに強いです。
 
-```json
+\`\`\`json
 {
   "location": "Tokyo Cityscape (Night)",
   "duration": "10s",
@@ -1031,26 +1037,26 @@ DRIFT:    Re-anchor character/lighting/style every 2-3 extensions
     "Extremely high-speed camera motion with light streaks"
   ]
 }
-```
+\`\`\`
 
-**使いどころ:** VFXの多いプロンプト、POV表現、モデルに特定の技術的効果を集中させたい場合。`vfx_focus` 配列は強調レイヤーとして機能します。モデルに優先してほしい効果を2〜4個だけ書きます。
+**使いどころ:** VFXの多いプロンプト、POV表現、モデルに特定の技術的効果を集中させたい場合。\`vfx_focus\` 配列は強調レイヤーとして機能します。モデルに優先してほしい効果を2〜4個だけ書きます。
 
-### 16.2 `<<<Image1>>>` 構文 — `@Image1` の代替
+### 16.2 \`<<<Image1>>>\` 構文 — \`@Image1\` の代替
 
-Seedance 2.0では、どちらの構文も使えます。`<<<Image1>>>` 形式は日本語圏のコミュニティプロンプトでよく見られ、とくにモーフィングや変身テンプレートのように、長いプロンプト内で参照マーカーを視覚的に目立たせたい場合によく使われます。
+Seedance 2.0では、どちらの構文も使えます。\`<<<Image1>>>\` 形式は日本語圏のコミュニティプロンプトでよく見られ、とくにモーフィングや変身テンプレートのように、長いプロンプト内で参照マーカーを視覚的に目立たせたい場合によく使われます。
 
-```
+\`\`\`
 Start from <<<Image1>>>.
 The footage transforms in order: <<<Image1>>> -> <<<Image2>>> -> <<<Image3>>>...
-```
+\`\`\`
 
-読みやすい方を使えばOKです。ただし、1つの生成内で `@Image1` と `<<<Image1>>>` を混在させないでください。
+読みやすい方を使えばOKです。ただし、1つの生成内で \`@Image1\` と \`<<<Image1>>>\` を混在させないでください。
 
 ### 16.3 複数チャプターの長尺構造
 
-**Section 15の延長チェーンとは別物です。** 複数チャプター構造では、1つのマスタースクリプト内に `Chapter 1 / Chapter 2 / Chapter 3` のブロックを書きます。各チャプターは**独立した15秒クリップ**として生成されます。チャプター間で連続性の言葉は共有しますが、必ずしもSeedanceの動画延長パイプラインで作る必要はありません。全体45秒の物語を先に設計し、それぞれを共有キャラ・スタイルアンカーで個別生成し、後で編集でつなぐ方法です。
+**Section 15の延長チェーンとは別物です。** 複数チャプター構造では、1つのマスタースクリプト内に \`Chapter 1 / Chapter 2 / Chapter 3\` のブロックを書きます。各チャプターは**独立した15秒クリップ**として生成されます。チャプター間で連続性の言葉は共有しますが、必ずしもSeedanceの動画延長パイプラインで作る必要はありません。全体45秒の物語を先に設計し、それぞれを共有キャラ・スタイルアンカーで個別生成し、後で編集でつなぐ方法です。
 
-```
+\`\`\`
 Chapter 1 (0–15 seconds): [Title]. Style: [...]. Camera: [...]. 
 Sound effects: [...]. [Visual reference / character description]. 
 [Timeline per second: 0–4s / 4–9s / 9–15s].
@@ -1059,7 +1065,7 @@ Chapter 2 (0–15 seconds): [Title]. Continuing from Video 1 and
 extending by 15 seconds. [Same structure].
 
 Chapter 3 (0–15 seconds): [Title]. [Same structure].
-```
+\`\`\`
 
 **延長チェーンとどちらを使うか:** 物語全体を最初から設計しているなら複数チャプター方式が向いています。前のクリップの動きの軌跡を文字通り継続させながら、作りながら物語を発見したい場合はSection 15の延長チェーンを使います。
 
@@ -1084,25 +1090,25 @@ Chapter 3 (0–15 seconds): [Title]. [Same structure].
 
 Seedanceのカット処理や、激しいカット下でのアイデンティティ一貫性を検証するための特殊形式です。
 
-```
+\`\`\`
 Anime high-speed cut test — 20 hard cuts in 10 seconds 
 (0.5 seconds per cut, no fade-in/fade-out, no transitions).
 
 [0.0s–0.5s]: Cut 1 — Close-up. Character A: [description]. [action].
 [0.5s–1.0s]: Cut 2 — Wide shot. Character B: [description]. [action].
 [1.0s–1.5s]: Cut 3 — ...
-```
+\`\`\`
 
-**重要な制約文:** `"no fade-in/fade-out, no transitions"` です。これによりハードカットを強制しやすくなります。MV風の高速カットや、キャラクター記述が激しいカット頻度に耐えられるかをテストするのに有効です。
+**重要な制約文:** \`"no fade-in/fade-out, no transitions"\` です。これによりハードカットを強制しやすくなります。MV風の高速カットや、キャラクター記述が激しいカット頻度に耐えられるかをテストするのに有効です。
 
 ### 16.6 サブ秒タイムコードによるマイクロタイミング
 
-コミュニティプロンプトでは、`0.3s`、`0.5s`、`1.5s`、`0.4 seconds` のような小数秒マーカーが使われます。1秒単位では粗すぎる場合に有効です。とくによく使われるのは次の場面です。
+コミュニティプロンプトでは、\`0.3s\`、\`0.5s\`、\`1.5s\`、\`0.4 seconds\` のような小数秒マーカーが使われます。1秒単位では粗すぎる場合に有効です。とくによく使われるのは次の場面です。
 
-- 感情ビート: `"shyly lowers her head for 0.3 seconds, gently biting her lower lip"`
-- リアクションショット: `"he is stunned for 0.4 seconds"`
-- ハードカット列: `[0.0s–0.5s]`, `[1.5s–3.0s]`
-- 間やホールド: `"natural short pauses between 200–400 milliseconds"`
+- 感情ビート: \`"shyly lowers her head for 0.3 seconds, gently biting her lower lip"\`
+- リアクションショット: \`"he is stunned for 0.4 seconds"\`
+- ハードカット列: \`[0.0s–0.5s]\`, \`[1.5s–3.0s]\`
+- 間やホールド: \`"natural short pauses between 200–400 milliseconds"\`
 
 **目安:** 1秒未満のビートで、かつタイミング精度がショットの意味を変える場合だけ使います。細かく分けすぎるとノイズになります。
 
@@ -1110,7 +1116,7 @@ Anime high-speed cut test — 20 hard cuts in 10 seconds
 
 N枚の静止画を1本の連続モーフィングショットに変換するための再利用テンプレートです。ポイントは、カメラ挙動の**許可リスト／禁止リスト**を明示することです。Seedanceは、このような負の制約空間に比較的よく反応します。
 
-```
+\`\`\`
 [Basic Settings]
 structure: Single continuous shot (no cuts)
 progression: Morphing N images sequentially
@@ -1155,13 +1161,13 @@ Prohibited:
 dynamic camera movement, cinematic motion flow, smooth continuous morphing,
 temporal coherence, high detail preservation, consistent subject identity,
 seamless transformation flow
-```
+\`\`\`
 
-**なぜ許可／禁止リストが効くのか:** 望むことを書いて、望まない挙動をモデルが避けてくれることを期待するより、行動空間そのものを制限できるからです。モーフィング以外でも、失敗パターンが予測できるプロンプトでは `Prohibited:` ブロックが役立ちます。
+**なぜ許可／禁止リストが効くのか:** 望むことを書いて、望まない挙動をモデルが避けてくれることを期待するより、行動空間そのものを制限できるからです。モーフィング以外でも、失敗パターンが予測できるプロンプトでは \`Prohibited:\` ブロックが役立ちます。
 
 ### 16.8 プロダクションデザイン言語のアンカー
 
-高評価のコミュニティプロンプトでは、`cinematic` や `high quality` のような一般語ではなく、非常に具体的なスタイルアンカーがよく使われています。以下の表現は注目プロンプトで繰り返し見られ、結果が強くなりやすいものです。
+高評価のコミュニティプロンプトでは、\`cinematic\` や \`high quality\` のような一般語ではなく、非常に具体的なスタイルアンカーがよく使われています。以下の表現は注目プロンプトで繰り返し見られ、結果が強くなりやすいものです。
 
 | Anchor | 何を引き起こしやすいか | 使いどころ |
 |--------|------------------------|------------|
@@ -1174,7 +1180,7 @@ seamless transformation flow
 | **Cold documentary style, natural light on a cloudy day** | 彩度低め、均質な光、ドラマチックすぎない影 | トゥルークライム、調査もの、Drift Protocolのオープニング |
 | **8K cinematic, ultra-fine detail, HDR glow, no artifacts** | 品質上限の強制 | 最終フレーム、ヒーローショット |
 
-**Drift Protocolとの関連:** desaturated teal-blue / amber のGibney-Fincher風パレットに寄せるなら、`35mm handheld film camera, natural grain, subtle organic shake + DaVinci industrial-grade color grading + cold documentary style, natural light + Naturalistic Film Print Emulation` の組み合わせが効きやすいです。1つのプロンプトに全部を詰め込まず、2〜3個だけ重ねます。
+**Drift Protocolとの関連:** desaturated teal-blue / amber のGibney-Fincher風パレットに寄せるなら、\`35mm handheld film camera, natural grain, subtle organic shake + DaVinci industrial-grade color grading + cold documentary style, natural light + Naturalistic Film Print Emulation\` の組み合わせが効きやすいです。1つのプロンプトに全部を詰め込まず、2〜3個だけ重ねます。
 
 **8つのアンカーに共通する傾向:** 形容詞で見た目を説明するのではなく、フィルムストック、カラーグレーディングツール、監督、フォーマットなど、**具体的な伝統や技術体系**を名指ししています。Seedanceはこれらの参照点を強く学習しているようです。迷ったら、汎用的なスタイル語を、あなたが知っている最も具体的な業界標準表現に置き換えます。
 
@@ -1185,3 +1191,4 @@ seamless transformation flow
 ---
 
 *ガイド原文は2026年4月に編集。出典: EvoLinkAI/awesome-seedance-2-guide（GitHub）、Seedance2API blog、APIYI official prompt interpretation、WeShop AI guide、ImagineArt prompt collection、SeaArt community guide、Opus.pro extension & editing guide、WaveSpeedAI complete guide、Dreamina/CapCut official tutorial、Digen.ai quick guide、seedancetwo.com official user manual（Feishu doc mirror）、Volcengine Seedance公式ドキュメント、EvoLinkAI/awesome-seedance-2.0-prompts community repository（2026年4月11日収集の164件のプロンプト）。*
+`

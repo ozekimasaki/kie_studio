@@ -1,8 +1,7 @@
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = resolve(__dirname, '../..')
+import {
+  SEEDANCE_GUIDE_CONTENT,
+  SEEDANCE_GUIDE_FILE_NAME,
+} from './guides/seedance.ts'
 
 export type OptimizeFamily =
   | 'seedance'
@@ -27,8 +26,8 @@ export type OptimizeProfile = {
   family: OptimizeFamily
   label: string
   modality: 'image' | 'video'
-  /** Relative path from repo root; copied into workdir when set */
-  guideFile?: string
+  /** 埋め込みガイド。設定時は workdir に書き出して Grok CLI に提示する */
+  guide?: { fileName: string; content: string }
   formula: string
   mention: MentionHint
   rules: string[]
@@ -36,14 +35,17 @@ export type OptimizeProfile = {
   targetLength: string
 }
 
-const SEEDANCE_GUIDE = 'Seedance_2.0_Complete_Prompting_Guide_JA.md'
+const SEEDANCE_GUIDE = {
+  fileName: SEEDANCE_GUIDE_FILE_NAME,
+  content: SEEDANCE_GUIDE_CONTENT,
+}
 
 const PROFILES: Record<OptimizeFamily, OptimizeProfile> = {
   seedance: {
     family: 'seedance',
     label: 'Seedance',
     modality: 'video',
-    guideFile: SEEDANCE_GUIDE,
+    guide: SEEDANCE_GUIDE,
     formula:
       '[Subject], [Action], in [Environment], camera [Camera Movement], style [Style], avoid [Constraints]',
     mention: 'at-image',
@@ -308,11 +310,6 @@ export function resolveOptimizeFamily(modelId?: string): OptimizeFamily {
 
 export function getOptimizeProfile(modelId?: string): OptimizeProfile {
   return PROFILES[resolveOptimizeFamily(modelId)]
-}
-
-export function guideAbsolutePath(profile: OptimizeProfile): string | null {
-  if (!profile.guideFile) return null
-  return resolve(REPO_ROOT, profile.guideFile)
 }
 
 export function formatProfileRulesMarkdown(profile: OptimizeProfile): string {

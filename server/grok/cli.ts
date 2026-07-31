@@ -1,11 +1,10 @@
 import { spawn } from 'node:child_process'
-import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import {
   formatProfileRulesMarkdown,
   getOptimizeProfile,
-  guideAbsolutePath,
   type OptimizeProfile,
 } from './optimize-profiles.ts'
 
@@ -256,19 +255,12 @@ export async function optimizePromptWithGrok(params: {
   const profile = getOptimizeProfile(params.modelId)
   const workDir = await mkdtemp(join(tmpdir(), 'kie-optimize-'))
   const requestPath = join(workDir, 'optimize-request.md')
-  const guideSrc = guideAbsolutePath(profile)
-  let guideFileName: string | undefined
+  const guide = profile.guide
+  const guideFileName = guide?.fileName
 
   try {
-    if (guideSrc) {
-      guideFileName = basename(guideSrc)
-      const guideDest = join(workDir, guideFileName)
-      try {
-        await copyFile(guideSrc, guideDest)
-      } catch {
-        const guide = await readFile(guideSrc, 'utf8')
-        await writeFile(guideDest, guide, 'utf8')
-      }
+    if (guide) {
+      await writeFile(join(workDir, guide.fileName), guide.content, 'utf8')
     }
 
     await writeFile(
