@@ -1,0 +1,103 @@
+KIE STUDIO — PROPRIETARY LICENSE
+=================================
+
+Copyright (c) 2025 KIE STUDIO contributors. All rights reserved.
+
+------------------------------------------------------------------------
+1. NATURE OF THIS PROJECT
+------------------------------------------------------------------------
+
+KIE STUDIO is a 100% unofficial, private fan-made tool. It is NOT
+affiliated with, endorsed by, sponsored by, or in any way officially
+connected with kie.ai or any of its subsidiaries or affiliates.
+
+All product names, logos, brands, trademarks, and registered trademarks
+mentioned in this repository are the property of their respective owners.
+Their use herein does not imply any affiliation with or endorsement of
+this project.
+
+------------------------------------------------------------------------
+2. GRANT OF RIGHTS
+------------------------------------------------------------------------
+
+NONE. No license, express or implied, is granted by this notice.
+
+All rights in and to this software, including but not limited to
+copyright, trade secret, and any other intellectual property rights,
+are exclusively reserved by the author(s).
+
+------------------------------------------------------------------------
+3. PROHIBITED ACTIVITIES
+------------------------------------------------------------------------
+
+Without the prior written consent of the author(s), you may NOT:
+
+  (a) Copy, reproduce, or duplicate any portion of this repository,
+      in whole or in part, by any means;
+
+  (b) Modify, adapt, translate, reverse-engineer, decompile, or
+      create derivative works based on this software;
+
+  (c) Redistribute, publish, sublicense, lend, or otherwise make
+      available this software or any portion thereof to any third party;
+
+  (d) Use this software or any portion thereof for any commercial
+      purpose, including but not limited to selling, renting, or
+      offering it as a service;
+
+  (e) Remove, alter, or obscure any copyright notice, proprietary
+      legend, or other identifying markings contained in this software;
+
+  (f) Claim this software, or any derivative thereof, as your own work.
+
+------------------------------------------------------------------------
+4. LIMITED PERSONAL USE
+------------------------------------------------------------------------
+
+You may clone this repository solely for the purpose of viewing the
+source code for personal, non-commercial, educational reference.
+This does NOT grant any right to use, execute, modify, or distribute
+the software.
+
+------------------------------------------------------------------------
+5. THIRD-PARTY DEPENDENCIES
+------------------------------------------------------------------------
+
+This project makes use of open-source libraries listed in package.json.
+Those libraries are governed by their own respective licenses. This
+proprietary notice applies exclusively to the original code, assets,
+and configuration authored for KIE STUDIO itself.
+
+------------------------------------------------------------------------
+6. DISCLAIMER OF WARRANTY
+------------------------------------------------------------------------
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THIS SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THIS SOFTWARE.
+
+USE OF THIS SOFTWARE IS ENTIRELY AT YOUR OWN RISK.
+
+------------------------------------------------------------------------
+7. TERMINATION
+------------------------------------------------------------------------
+
+Any unauthorized use automatically terminates whatever limited
+permissions may have been implied. Upon termination, you must
+immediately destroy all copies of this software in your possession.
+
+------------------------------------------------------------------------
+8. GOVERNING LAW
+------------------------------------------------------------------------
+
+This license shall be governed by and construed in accordance with
+the laws of Japan, without regard to its conflict of law provisions.
+
+------------------------------------------------------------------------
+
+For licensing inquiries, contact the repository owner.

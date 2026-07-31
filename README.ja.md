@@ -206,4 +206,4 @@ scripts/sync-models.ts  # カタログ同期 CLI
 
 **All Rights Reserved.** © 2025 KIE STUDIO contributors.
 
-本プロジェクトは非公式のプライベートファンツールです。本リポジトリのコード・リソースの無断複製・改変・再配布・商用利用を禁じます。`package.json` は `private: true` で、npm publish は無効化されています。
+本プロジェクトは非公式のプライベートファンツールです。本リポジトリのコード・リソースの無断複製・改変・再配布・商用利用を禁じます。詳細は [LICENSE](./LICENSE) を参照。`package.json` は `private: true` で、npm publish は無効化されています。

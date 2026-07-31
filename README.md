@@ -206,4 +206,4 @@ scripts/sync-models.ts  # Catalog sync CLI
 
 **All Rights Reserved.** © 2025 KIE STUDIO contributors.
 
-This project is a private, unofficial fan tool. No part of this repository may be copied, modified, redistributed, or used commercially without prior written permission from the author. `package.json` is `private: true`; npm publish is disabled.
+This project is a private, unofficial fan tool. No part of this repository may be copied, modified, redistributed, or used commercially without prior written permission from the author. See [LICENSE](./LICENSE) for full terms. `package.json` is `private: true`; npm publish is disabled.
