@@ -5,12 +5,15 @@ import {
   asNumber,
   asRecord,
   asString,
+  failOrPartial,
+  type KieResponse,
   normalizeEpoch,
   parseJson,
+  taskIdFrom,
   uniqueUrls,
+  unknownOrPartial,
+  unwrapKiePayload,
 } from './utils.ts'
-
-type KieResponse = { code?: number; msg?: string; data?: unknown }
 
 function runwayState(value: unknown, mediaCount: number, expired: boolean): TaskState {
   if (expired) return 'expired'
@@ -19,14 +22,14 @@ function runwayState(value: unknown, mediaCount: number, expired: boolean): Task
     case 'queueing': return 'queuing'
     case 'generating': return 'generating'
     case 'success': return 'success'
-    case 'fail': return mediaCount > 0 ? 'partial' : 'fail'
+    case 'fail': return failOrPartial(mediaCount)
     case 0:
     case '0': return 'generating'
     case 1:
     case '1': return 'success'
     case 2:
-    case '2': return mediaCount > 0 ? 'partial' : 'fail'
-    default: return mediaCount > 0 ? 'partial' : 'unknown'
+    case '2': return failOrPartial(mediaCount)
+    default: return unknownOrPartial(mediaCount)
   }
 }
 
@@ -35,9 +38,7 @@ export function normalizeRunwayTask(
   operation: Operation,
   payload: unknown,
 ): NormalizedTask {
-  const envelope = asRecord(payload) ?? {}
-  const data = asRecord(envelope.data) ?? envelope
-  const response = asRecord(data.response) ?? data
+  const { data, response } = unwrapKiePayload(payload)
   const videoInfo = asRecord(data.videoInfo) ?? asRecord(response.videoInfo)
   const videoUrl = asString(response.resultVideoUrl)
     ?? asString(videoInfo?.videoUrl)
@@ -104,7 +105,7 @@ export const runwayAdapter: ProviderAdapter = {
     })
     assertKieOk(response.code, response.msg, 'Failed to create Runway task')
     const data = asRecord(response.data)
-    const taskId = asString(data?.taskId) ?? asString(data?.id)
+    const taskId = taskIdFrom(data)
     if (!taskId) throw new KieApiError('Runway did not return a taskId', 502)
     return { taskId }
   },

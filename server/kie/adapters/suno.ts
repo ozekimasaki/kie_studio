@@ -11,11 +11,13 @@ import {
   asNumber,
   asRecord,
   asString,
+  failOrPartial,
+  type KieResponse,
   normalizeEpoch,
   uniqueUrls,
+  unknownOrPartial,
+  unwrapKiePayload,
 } from './utils.ts'
-
-type KieResponse = { code?: number; msg?: string; data?: unknown }
 
 const CREATE_PATHS: Partial<Record<Operation, string>> = {
   generate: '/api/v1/generate',
@@ -42,9 +44,9 @@ function sunoState(value: unknown, mediaCount: number): TaskState {
     case 'CALLBACK_EXCEPTION':
     case 'SENSITIVE_WORD_ERROR':
     case 'FAILED':
-      return mediaCount > 0 ? 'partial' : 'fail'
+      return failOrPartial(mediaCount)
     default:
-      return mediaCount > 0 ? 'partial' : 'unknown'
+      return unknownOrPartial(mediaCount)
   }
 }
 
@@ -82,9 +84,7 @@ export function normalizeSunoTask(
   operation: Operation,
   payload: unknown,
 ): NormalizedTask {
-  const envelope = asRecord(payload) ?? {}
-  const data = asRecord(envelope.data) ?? envelope
-  const response = asRecord(data.response) ?? data
+  const { data, response } = unwrapKiePayload(payload)
   const media = mediaFromSunoData(response.sunoData ?? data.sunoData)
   if (operation === 'lyrics') {
     const lyrics = asString(response.lyrics)
