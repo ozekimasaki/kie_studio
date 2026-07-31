@@ -48,6 +48,7 @@ bun.lock
 .claude/
 .cursor/
 .kiro/
+.qoder/
 skills-lock.json
 
 # indexion: keep wiki, ignore generated local cache
