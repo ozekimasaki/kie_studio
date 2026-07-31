@@ -9,6 +9,8 @@ import {
   setStoredApiKey,
 } from '../settings/apiKey.ts'
 import { getDb } from '../db/open.ts'
+import { z } from 'zod'
+import { validateJson } from './validation.ts'
 
 export const settingsRoutes = new Hono()
 
@@ -16,6 +18,14 @@ export const settingsRoutes = new Hono()
 getDb()
 
 const PLACEHOLDER = 'your_api_key_here'
+
+const apiKeySchema = z.object({
+  apiKey: z
+    .string({ error: 'apiKey is required' })
+    .trim()
+    .min(1, 'apiKey is required')
+    .refine((v) => v !== PLACEHOLDER, 'apiKey is required'),
+})
 
 settingsRoutes.get('/settings', (c) => {
   const key = getStoredApiKey()
@@ -29,18 +39,8 @@ settingsRoutes.get('/settings', (c) => {
   })
 })
 
-settingsRoutes.put('/settings/api-key', async (c) => {
-  let body: unknown
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-  const raw = (body as { apiKey?: unknown })?.apiKey
-  const apiKey = typeof raw === 'string' ? raw.trim() : ''
-  if (!apiKey || apiKey === PLACEHOLDER) {
-    return c.json({ error: 'apiKey is required' }, 400)
-  }
+settingsRoutes.put('/settings/api-key', validateJson(apiKeySchema), (c) => {
+  const { apiKey } = c.req.valid('json')
   setStoredApiKey(apiKey)
   return c.json({
     data: { hasApiKey: true, apiKeyMasked: maskApiKey(apiKey) },

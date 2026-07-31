@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { HTTPException } from 'hono/http-exception'
 import { uploadRoutes } from './routes/upload.ts'
 import { generateRoutes } from './routes/generate.ts'
 import { taskRoutes } from './routes/task.ts'
@@ -51,6 +52,11 @@ export function createApp(): Hono {
   app.route('/api', settingsRoutes)
 
   app.onError((err, c) => {
+    // zValidator（JSON パース失敗など）は HTTPException を投げるため
+    // 既存の `{ error: string }` 形式へ変換して返す
+    if (err instanceof HTTPException) {
+      return c.json({ error: err.message || 'Bad Request' }, err.status)
+    }
     if (err instanceof KieApiError) {
       console.error('[kie]', err.message, { status: err.status, code: err.code })
       const status =

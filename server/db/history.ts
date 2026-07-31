@@ -121,8 +121,20 @@ function itemToParams(item: HistoryItem) {
   }
 }
 
-/** Newest first. */
-export function listHistory(): HistoryItem[] {
+/** Newest first. limit/offset 未指定時は全件返す（後方互換）。 */
+export function listHistory(options?: { limit?: number; offset?: number }): HistoryItem[] {
+  const limit = options?.limit
+  const offset = options?.offset ?? 0
+  if (limit !== undefined) {
+    const rows = getDb()
+      .prepare(
+        `SELECT * FROM history_items
+         ORDER BY pinned DESC, created_at DESC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(limit, offset) as HistoryRow[]
+    return rows.map(rowToItem)
+  }
   const rows = getDb()
     .prepare(
       `SELECT * FROM history_items
