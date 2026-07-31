@@ -5,7 +5,7 @@ export default {
   app: {
     name: 'KIE STUDIO',
     identifier: 'ai.kie.studio',
-    version: '0.1.3',
+    version: '0.1.4',
   },
   build: {
     useAsar: true,
@@ -27,6 +27,8 @@ export default {
       notarize: false,
       bundleCEF: false,
       entitlements: {},
+      // App icon (iconset folder → .icns via iconutil on macOS builder).
+      icons: 'assets/icon.iconset',
     },
     linux: {
       bundleCEF: false,

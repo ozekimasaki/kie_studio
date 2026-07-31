@@ -52,7 +52,7 @@ npm run desktop:build:stable   # stable ビルド
   - **Windows**: Inno Setup 製の `canary-win-x64-KIESTUDIO-Setup.exe`（第一導線）。`npm run desktop:installer:win` で生成します。プログラム追加/削除（ARP）にアイコン・バージョン・発行者付きで登録され、アンインストーラーとスタートメニュー/デスクトップショートカットが付きます。per-user インストール（`%LocalAppData%\ai.kie.studio\<channel>\app`）で管理者権限不要。アンインストールでもユーザー DB（`studio.db`）は削除されません。
   - **Linux**: tar.gz 自己展開アーカイブ（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）のみ。Electrobun は `.deb` 非対応のため採用していません。
   - 自動アップデート用（`tar.zst` + `update.json` + patch）は `RELEASE_BASE_URL` 配下へ従来通り配信します（Inno Setup に依存しません）。
-- **アプリアイコン**: `assets/icon-master.svg`（プリズムモチーフ）を `npm run icons` で `icon.ico`（Windows・マルチサイズ）/ `icon.png`（Linux・512px）へ変換し `electrobun.config.ts` で指定します。Windows は Electrobun 本体の rcedit パス解決バグを避け、インストーラービルド時に launcher.exe へ自前でアイコンを埋め込みます。
+- **アプリアイコン**: `assets/icon-master.svg`（K モノグラムモチーフ）を `npm run icons` で `icon.ico`（Windows・マルチサイズ）/ `icon.png`（Linux・512px）/ `icon.iconset`（macOS・iconutil で .icns に変換）へ変換し `electrobun.config.ts` で指定します。Windows は Electrobun 本体の rcedit パス解決バグを避け、ビルド直後に `scripts/embed-win-icon.mjs` が launcher.exe へ自前でアイコンを埋め込みます（インストーラービルド時にも再埋め込み）。
 - **サポートアーキテクチャ**:
   - Windows: x64 のみ。ARM Windows は x64 版が OS の自動エミュレーションで動作するため個別ビルドは不要です。
   - Linux: x64 のみ配布。arm64 は Electrobun 対応ですがクロスビルド不可のため一旦見送り（arm64 ビルド環境/CI 確保後に別対応）。
@@ -151,7 +151,7 @@ npm run sync:models -- --force
 | `npm run desktop:package:canary` | canary を再パッケージ（`vite build` スキップ。アイコン生成 + `electrobun build` + `release/` 集積） |
 | `npm run desktop:package:stable` | stable を再パッケージ |
 | `npm run desktop:installer:win` | Windows 用 Inno Setup インストーラーを生成（要 Inno Setup 6、`release/` へ出力） |
-| `npm run icons` | `assets/icon-master.svg` から `icon.ico` / `icon.png` を生成 |
+| `npm run icons` | `assets/icon-master.svg` から `icon.ico` / `icon.png` / `icon.iconset` を生成 |
 | `npm run build` | 型チェック（`tsc -b`）+ 本番ビルド |
 | `npm run preview` | ビルド成果物をプレビュー |
 | `npm run lint` | oxlint |
@@ -183,6 +183,7 @@ electrobun.config.ts    # Electrobun ビルド・配布設定（win/linux のア
 assets/icon-master.svg  # アプリアイコンのベクターマスター（→ icon.ico / icon.png）
 installer/win/kie-studio.iss   # Inno Setup インストーラー定義（ARP・アンインストーラー・ショートカット）
 scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png（sharp + png-to-ico）
+scripts/embed-win-icon.mjs     # ビルド後に launcher.exe へアイコン埋め込み + tar.zst 再パッケージ
 scripts/build-win-installer.mjs # tar.zst 展開 → launcher.exe へアイコン埋め込み → Inno Setup コンパイル
 scripts/collect-release.mjs    # ビルド成果物を永続的な release/ へ集積
 scripts/sync-models.ts  # カタログ同期 CLI

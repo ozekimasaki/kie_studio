@@ -1,52 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2b2072"/>
-      <stop offset="0.55" stop-color="#241a5e"/>
-      <stop offset="1" stop-color="#140d36"/>
+      <stop offset="0" stop-color="#2e2280"/>
+      <stop offset="0.5" stop-color="#231a62"/>
+      <stop offset="1" stop-color="#130c34"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.47" cy="0.44" r="0.6">
-      <stop offset="0" stop-color="#7c6cf0" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#7c6cf0" stop-opacity="0"/>
+    <radialGradient id="glow" cx="0.42" cy="0.38" r="0.65">
+      <stop offset="0" stop-color="#8b7cf8" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#8b7cf8" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="glass" x1="0.2" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#f6f3ff" stop-opacity="0.96"/>
-      <stop offset="0.5" stop-color="#cbc3f6" stop-opacity="0.88"/>
-      <stop offset="1" stop-color="#9a8fe0" stop-opacity="0.92"/>
+    <linearGradient id="kBody" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#e8e4fc"/>
+      <stop offset="1" stop-color="#c9c0f8"/>
     </linearGradient>
-    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.15"/>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#7c5cfc"/>
+    </linearGradient>
+    <linearGradient id="spark1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c4b5fd"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
     </linearGradient>
   </defs>
 
   <!-- squircle background -->
-  <rect width="1024" height="1024" rx="232" ry="232" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="232" ry="232" fill="url(#glow)"/>
+  <rect width="1024" height="1024" rx="228" ry="228" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="228" ry="228" fill="url(#glow)"/>
 
-  <!-- incoming white beam -->
-  <line x1="118" y1="468" x2="412" y2="504" stroke="#ffffff" stroke-width="26" stroke-linecap="round" opacity="0.28"/>
-  <line x1="118" y1="468" x2="412" y2="504" stroke="#ffffff" stroke-width="13" stroke-linecap="round" opacity="0.92"/>
+  <!-- Bold geometric K monogram -->
+  <!-- Vertical stem -->
+  <rect x="272" y="218" width="128" height="588" rx="18" fill="url(#kBody)"/>
+  <!-- Upper diagonal arm -->
+  <path d="M400 512 L400 448 L648 218 L748 218 L748 262 L472 512 Z" fill="url(#kBody)"/>
+  <!-- Lower diagonal arm -->
+  <path d="M400 512 L472 512 L748 762 L748 806 L648 806 L400 576 Z" fill="url(#kBody)"/>
 
-  <!-- spectrum rays: soft glow layer -->
-  <g stroke-linecap="round" fill="none" opacity="0.30" stroke-width="30">
-    <line x1="520" y1="498" x2="912" y2="322" stroke="#8b5cf6"/>
-    <line x1="520" y1="504" x2="924" y2="436" stroke="#ff4d9d"/>
-    <line x1="520" y1="510" x2="928" y2="552" stroke="#ffb347"/>
-    <line x1="520" y1="516" x2="912" y2="666" stroke="#35e0e6"/>
+  <!-- Creative accent: media-generation spark at K junction -->
+  <circle cx="436" cy="512" r="42" fill="url(#accent)" opacity="0.9"/>
+  <circle cx="436" cy="512" r="22" fill="#ffffff" opacity="0.95"/>
+
+  <!-- Radiating creation rays (subtle, top-right) -->
+  <g stroke-linecap="round" fill="none" opacity="0.7">
+    <line x1="770" y1="196" x2="836" y2="156" stroke="url(#spark1)" stroke-width="14"/>
+    <line x1="790" y1="248" x2="868" y2="228" stroke="url(#spark1)" stroke-width="12"/>
+    <line x1="780" y1="300" x2="852" y2="306" stroke="url(#spark1)" stroke-width="10"/>
   </g>
-  <!-- spectrum rays: crisp layer -->
-  <g stroke-linecap="round" fill="none" stroke-width="15">
-    <line x1="520" y1="498" x2="912" y2="322" stroke="#a78bfa"/>
-    <line x1="520" y1="504" x2="924" y2="436" stroke="#ff5fa8"/>
-    <line x1="520" y1="510" x2="928" y2="552" stroke="#ffc25e"/>
-    <line x1="520" y1="516" x2="912" y2="666" stroke="#43e6ec"/>
-  </g>
 
-  <!-- glass prism -->
-  <path d="M470 282 L622 722 L318 722 Z" fill="url(#glass)" stroke="url(#edge)" stroke-width="7" stroke-linejoin="round"/>
-  <!-- left facet highlight -->
-  <path d="M470 282 L318 722 L470 722 Z" fill="#ffffff" opacity="0.12"/>
-  <!-- apex sparkle -->
-  <circle cx="470" cy="300" r="10" fill="#ffffff" opacity="0.85"/>
+  <!-- Small diamond sparkle accent (bottom-right) -->
+  <path d="M808 740 L824 764 L808 788 L792 764 Z" fill="#a78bfa" opacity="0.6"/>
 </svg>
