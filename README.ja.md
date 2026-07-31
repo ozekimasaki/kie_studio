@@ -4,6 +4,8 @@
 
 kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う Studio。ブラウザ（Vite + React）でも、**Electrobun でパッケージした単一デスクトップアプリ**（Win/mac/Linux）でも動作する。
 
+> **免責事項**: KIE STUDIO は 100% 非公式のファンツールです。kie.ai とは一切の提携・承認・スポンサー関係はありません。記載されている製品名・ロゴ・ブランドは各権利者に帰属します。利用は自己責任でお願いします。
+
 - Vite + React 19 + Tailwind CSS v4
 - Hono API（Bun ランタイムで起動。API キーはサーバー側のみ）
 - Electrobun デスクトップ版（ネイティブ webview + Bun メインプロセス、差分自動アップデート）
@@ -202,4 +204,6 @@ scripts/sync-models.ts  # カタログ同期 CLI
 
 ## ライセンス
 
-ライセンスは未指定です。`package.json` は `private: true` で、npm publish は無効化されています。
+**All Rights Reserved.** © 2025 KIE STUDIO contributors.
+
+本プロジェクトは非公式のプライベートファンツールです。本リポジトリのコード・リソースの無断複製・改変・再配布・商用利用を禁じます。`package.json` は `private: true` で、npm publish は無効化されています。

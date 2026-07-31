@@ -4,6 +4,8 @@
 
 A Studio for **IMAGE / VIDEO / AUDIO** generation powered by kie.ai's Market API and dedicated workflows. Runs both in the browser (Vite + React) and as a **single desktop app** packaged with Electrobun (Win/mac/Linux).
 
+> **Disclaimer**: KIE STUDIO is a 100% unofficial fan-made tool. It is not affiliated with, endorsed by, or sponsored by kie.ai. All product names, logos, and brands are property of their respective owners. Use at your own risk.
+
 - Vite + React 19 + Tailwind CSS v4
 - Hono API (runs on Bun runtime; API key stays server-side only)
 - Electrobun desktop edition (native webview + Bun main process, delta auto-update)
@@ -202,4 +204,6 @@ scripts/sync-models.ts  # Catalog sync CLI
 
 ## License
 
-No license specified. `package.json` is `private: true`; npm publish is disabled.
+**All Rights Reserved.** © 2025 KIE STUDIO contributors.
+
+This project is a private, unofficial fan tool. No part of this repository may be copied, modified, redistributed, or used commercially without prior written permission from the author. `package.json` is `private: true`; npm publish is disabled.
