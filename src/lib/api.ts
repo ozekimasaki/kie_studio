@@ -386,3 +386,14 @@ export async function openMediaFolder() {
   })
   return parseJson<{ data: { path: string } }>(res)
 }
+
+export interface UpdateCheckResult {
+  available: boolean
+  version?: string
+  downloaded?: boolean
+}
+
+export async function checkForUpdate() {
+  const res = await fetch(apiUrl('/api/update/check'), { method: 'POST' })
+  return parseJson<{ data: UpdateCheckResult }>(res)
+}

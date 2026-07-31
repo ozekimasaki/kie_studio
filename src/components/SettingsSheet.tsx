@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
-import { clearApiKey, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
+import { clearApiKey, checkForUpdate, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
 import { Pressable } from './motion/Pressable.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 
@@ -106,6 +106,73 @@ function ApiKeyForm({
         </p>
       )}
     </form>
+  )
+}
+
+/**
+ * アップデート確認ボタン。デスクトップ版の Updater API を叩き、
+ * 確認中 → 結果（最新 / 新バージョンDL済み / エラー）を表示する。
+ */
+function UpdateCheckButton() {
+  const [status, setStatus] = useState<
+    'idle' | 'checking' | 'up-to-date' | 'downloaded' | 'error'
+  >('idle')
+  const [detail, setDetail] = useState<string | null>(null)
+
+  async function handleCheck() {
+    setStatus('checking')
+    setDetail(null)
+    try {
+      const { data } = await checkForUpdate()
+      if (data.available && data.downloaded) {
+        setStatus('downloaded')
+        setDetail(data.version ? `v${data.version}` : null)
+      } else {
+        setStatus('up-to-date')
+      }
+    } catch (err) {
+      setStatus('error')
+      setDetail(
+        err instanceof Error ? err.message : '確認に失敗しました',
+      )
+    }
+  }
+
+  const checking = status === 'checking'
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Pressable
+        onClick={() => void handleCheck()}
+        disabled={checking}
+        className="studio-btn w-auto gap-1 px-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+        scaleTo={0.96}
+        aria-busy={checking || undefined}
+      >
+        <RefreshCw
+          size={13}
+          strokeWidth={2}
+          aria-hidden
+          className={checking ? 'animate-spin' : undefined}
+        />
+        {checking ? '確認中…' : 'アップデートを確認'}
+      </Pressable>
+      {status === 'up-to-date' && (
+        <p className="text-xs text-[var(--text-muted)]" role="status">
+          最新のバージョンです
+        </p>
+      )}
+      {status === 'downloaded' && (
+        <p className="text-xs text-[var(--success,var(--accent))]" role="status">
+          {detail ?? '新しいバージョン'} をダウンロード済み — 次回起動時に適用
+        </p>
+      )}
+      {status === 'error' && (
+        <p className="text-xs text-[var(--danger)]" role="alert">
+          {detail}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -260,16 +327,7 @@ export function SettingsSheet({
                 <span className="text-[var(--text-muted)]">v{APP_VERSION}</span>
               </p>
             </div>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noreferrer"
-              className="studio-btn w-auto gap-1 px-3 text-xs"
-              aria-label="アップデートを確認"
-            >
-              <RefreshCw size={13} strokeWidth={2} aria-hidden />
-              アップデートを確認
-            </a>
+            <UpdateCheckButton />
           </div>
           <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
             デスクトップ版は起動時に自動でアップデートを確認します。新しい版がある場合は次回起動時に適用されます。

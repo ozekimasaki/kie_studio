@@ -33,6 +33,7 @@ const { createApp } = await import('../../server/app.ts')
 const { getDb, getDbPath } = await import('../../server/db/open.ts')
 const { syncCatalog } = await import('../../server/catalog/sync.ts')
 const { startBackfill } = await import('../../server/media/backfill.ts')
+const { registerUpdateHandler } = await import('../../server/routes/update.ts')
 
 const app = createApp()
 
@@ -84,13 +85,16 @@ new BrowserWindow({
 
 // Non-blocking, best-effort update check. Silently skipped when no baseUrl is
 // configured (local builds) or when the updater API is unavailable.
+// Downloads the update so it is applied on next startup.
 async function checkForUpdatesQuietly() {
   try {
     const local = await Electrobun.Updater.getLocal()
     if (!local?.baseUrl) return
     const info = await Electrobun.Updater.checkForUpdate()
     if (info?.updateAvailable) {
-      console.log(`[updater] update available: ${info.version ?? 'unknown'}`)
+      console.log(`[updater] update available: ${info.version ?? 'unknown'} — downloading…`)
+      await Electrobun.Updater.downloadUpdate()
+      console.log('[updater] download complete; will apply on next startup')
     }
   } catch (err) {
     console.warn('[updater] update check skipped', err)
@@ -98,6 +102,21 @@ async function checkForUpdatesQuietly() {
 }
 
 void checkForUpdatesQuietly()
+
+// Register the /api/update/check handler so the frontend SettingsSheet can
+// trigger an explicit update check + download from the UI.
+registerUpdateHandler(async () => {
+  const local = await Electrobun.Updater.getLocal()
+  if (!local?.baseUrl) {
+    return { available: false }
+  }
+  const info = await Electrobun.Updater.checkForUpdate()
+  if (!info?.updateAvailable) {
+    return { available: false, version: info?.version }
+  }
+  await Electrobun.Updater.downloadUpdate()
+  return { available: true, version: info.version, downloaded: true }
+})
 
 process.on('exit', () => {
   try {
