@@ -204,6 +204,6 @@ scripts/sync-models.ts  # 目录同步 CLI
 
 ## 许可证
 
-**All Rights Reserved.** © 2025 KIE STUDIO contributors.
+[GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html) — © 2025 KIE STUDIO contributors.
 
-本项目为非官方私人粉丝工具。未经作者事先书面许可，禁止复制、修改、再分发本仓库的代码及资源，或将其用于商业用途。详见 [LICENSE](./LICENSE)。`package.json` 设为 `private: true`，npm publish 已禁用。
+本项目为非官方粉丝工具。您可以根据 GNU General Public License v3 或更高版本的条款自由使用、修改和再分发。详见 [LICENSE](./LICENSE)。`package.json` 设为 `private: true`，npm publish 已禁用。

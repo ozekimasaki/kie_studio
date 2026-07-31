@@ -204,6 +204,6 @@ scripts/sync-models.ts  # カタログ同期 CLI
 
 ## ライセンス
 
-**All Rights Reserved.** © 2025 KIE STUDIO contributors.
+[GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html) — © 2025 KIE STUDIO contributors.
 
-本プロジェクトは非公式のプライベートファンツールです。本リポジトリのコード・リソースの無断複製・改変・再配布・商用利用を禁じます。詳細は [LICENSE](./LICENSE) を参照。`package.json` は `private: true` で、npm publish は無効化されています。
+本プロジェクトは非公式のファンツールです。GNU General Public License v3 以降の条件のもと、自由に使用・改変・再配布できます。詳細は [LICENSE](./LICENSE) を参照。`package.json` は `private: true` で、npm publish は無効化されています。

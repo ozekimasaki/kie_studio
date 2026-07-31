@@ -204,6 +204,6 @@ scripts/sync-models.ts  # Catalog sync CLI
 
 ## License
 
-**All Rights Reserved.** © 2025 KIE STUDIO contributors.
+[GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html) — © 2025 KIE STUDIO contributors.
 
-This project is a private, unofficial fan tool. No part of this repository may be copied, modified, redistributed, or used commercially without prior written permission from the author. See [LICENSE](./LICENSE) for full terms. `package.json` is `private: true`; npm publish is disabled.
+This project is an unofficial fan tool. You are free to use, modify, and redistribute it under the terms of the GNU General Public License v3 or later. See [LICENSE](./LICENSE) for full terms. `package.json` is `private: true`; npm publish is disabled.
