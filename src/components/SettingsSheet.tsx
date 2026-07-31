@@ -2,6 +2,7 @@ import { useActionState, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
+  Database,
   FolderOpen,
   KeyRound,
   RefreshCw,
@@ -9,7 +10,8 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
-import { clearApiKey, checkForUpdate, fetchHealth, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
+import { clearApiKey, checkForUpdate, fetchHealth, fetchSettings, openMediaFolder, saveApiKey, syncModels } from '../lib/api.ts'
+import type { QueryClient } from '@tanstack/react-query'
 import { Pressable } from './motion/Pressable.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 
@@ -176,6 +178,64 @@ function UpdateCheckButton() {
   )
 }
 
+/**
+ * モデルカタログ手動同期ボタン。force sync を実行し、成功時に models クエリを失効する。
+ */
+function SyncModelsButton({ queryClient }: { queryClient: QueryClient }) {
+  const mutation = useMutation({
+    mutationFn: () => syncModels(),
+    onSuccess: (data) => {
+      if (data.data.synced) {
+        queryClient.invalidateQueries({ queryKey: ['models'] })
+      }
+    },
+  })
+
+  const syncing = mutation.isPending
+  const synced = mutation.isSuccess && mutation.data.data.synced
+  const skipped = mutation.isSuccess && !mutation.data.data.synced
+  const error = mutation.isError
+    ? mutation.error instanceof Error
+      ? mutation.error.message
+      : '同期に失敗しました'
+    : null
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Pressable
+        onClick={() => mutation.mutate()}
+        disabled={syncing}
+        className="studio-btn w-auto gap-1 px-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+        scaleTo={0.96}
+        aria-busy={syncing || undefined}
+      >
+        <Database
+          size={13}
+          strokeWidth={2}
+          aria-hidden
+          className={syncing ? 'animate-spin' : undefined}
+        />
+        {syncing ? '同期中…' : 'モデルを更新'}
+      </Pressable>
+      {synced && (
+        <p className="text-xs text-[var(--success,var(--accent))]" role="status">
+          {mutation.data.data.modelCount ?? 0} モデルを更新しました
+        </p>
+      )}
+      {skipped && (
+        <p className="text-xs text-[var(--text-muted)]" role="status">
+          {mutation.data.data.reason ?? 'スキップされました'}
+        </p>
+      )}
+      {error && (
+        <p className="text-xs text-[var(--danger)]" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function SettingsSheet({
   open,
   onClose,
@@ -322,6 +382,18 @@ export function SettingsSheet({
               <FolderOpen size={13} strokeWidth={2} aria-hidden />
               フォルダを開く
             </Pressable>
+          </div>
+        </section>
+
+        <section className="mt-6 border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="studio-label">モデルカタログ</div>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+                docs.kie.ai から最新モデル一覧を取得します
+              </p>
+            </div>
+            <SyncModelsButton queryClient={queryClient} />
           </div>
         </section>
 

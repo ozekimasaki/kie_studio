@@ -1,7 +1,7 @@
 {
-  "syncedAt": "2026-07-31T02:19:01.934Z",
+  "syncedAt": "2026-07-31T16:19:17.682Z",
   "source": "docs.kie.ai/llms.txt",
-  "sourceHash": "7400ad9825cc4d9d94e5cb5fdbaec72241d04638170364a90594376b90be4b48",
+  "sourceHash": "28d0bbd00f86c2cea957414a3b3b2250c36c6de97ea32ec119cbd05628ce0d31",
   "models": [
     {
       "id": "elevenlabs/audio-isolation",
@@ -2736,13 +2736,6 @@
             "jpeg",
             "png"
           ]
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -2980,13 +2973,6 @@
           "description": "Random seed to control the stochasticity of image generation.",
           "required": false,
           "step": 1
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -3509,8 +3495,7 @@
           "enum": [
             "1",
             "2",
-            "4",
-            "8"
+            "4"
           ]
         }
       ]
@@ -3822,13 +3807,6 @@
           "type": "boolean",
           "label": "Enable Safety Checker",
           "description": "The safety checker is always enabled in Playground. It can only be disabled by setting false through the API. (Boolean value (true/false))",
-          "required": false
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
           "required": false
         }
       ]
@@ -5002,13 +4980,6 @@
             "768P",
             "1080P"
           ]
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -5213,13 +5184,6 @@
           "type": "boolean",
           "label": "Prompt Optimizer",
           "description": "Whether to use the model's prompt optimizer (Boolean value (true/false))",
-          "required": false
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
           "required": false
         }
       ]
@@ -6548,6 +6512,180 @@
       ]
     },
     {
+      "id": "minimax-h3/image-to-video",
+      "model": "minimax-h3/image-to-video",
+      "title": "MiniMax H3 Image-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/minimax-h3/image-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Video generation prompt, length is between 1 and 7000 characters.",
+          "required": true,
+          "maxLength": 7000
+        },
+        {
+          "name": "first_frame_url",
+          "type": "reference",
+          "label": "First Frame Url",
+          "description": "First frame image URL. Note: Either first_frame_url or last_frame_url must be provided. Supports HTTP, HTTPS, and OSS addresses; supports JPG, JPEG, PNG, WEBP, HEIC, HEIF formats; single image size not exceeding 30 MB, image side length between 256 and 5760 pixels, aspect ratio between 0.4 and 2.5.",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "last_frame_url",
+          "type": "reference",
+          "label": "Last Frame Url",
+          "description": "Last frame image URL. Note: Either first_frame_url or last_frame_url must be provided. Image restrictions are the same as first_frame_url.",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Generated video duration, supporting integer values from 4 to 15 seconds.",
+          "required": true,
+          "default": 6,
+          "enum": [],
+          "min": 4,
+          "max": 15,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "minimax-h3/reference-to-video",
+      "model": "minimax-h3/reference-to-video",
+      "title": "MiniMax H3 Reference-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/minimax-h3/reference-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Video generation prompt, length is between 1 and 7000 characters.",
+          "required": true,
+          "maxLength": 7000
+        },
+        {
+          "name": "reference_image_urls",
+          "type": "reference",
+          "label": "Reference Image Urls",
+          "description": "Array of reference image URLs. Supports up to 9 images. Supports HTTP, HTTPS, and OSS addresses; supported image formats include JPG, JPEG, PNG, WEBP, HEIC, and HEIF; a single image size cannot exceed 30 MB; the side length of the image must be between 256 and 5760 pixels, and the aspect ratio must be between 0.4 and 2.5.",
+          "required": false,
+          "maxItems": 9,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "reference_video_urls",
+          "type": "reference",
+          "label": "Reference Video Urls",
+          "description": "Array of reference video URLs. Supports up to 3 videos. Supports MP4, MOV; video encoding supports H.264, H.265, audio encoding supports AAC, MP3; a single file size cannot exceed 50 MB; the duration of a single segment is 2 to 15 seconds, and the total duration of all reference videos cannot exceed 15 seconds; the video side length must be between 256 and 5760 pixels, the aspect ratio must be between 0.4 and 2.5, and the frame rate must be between 23.976 and 60.",
+          "required": false,
+          "maxItems": 3,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
+        },
+        {
+          "name": "reference_audio_urls",
+          "type": "reference",
+          "label": "Reference Audio Urls",
+          "description": "Array of reference audio URLs. Supports up to 3 audios. Supports WAV, MP3; a single file size cannot exceed 15 MB; the duration of a single segment is 2 to 15 seconds, and the total duration of all reference audios cannot exceed 15 seconds. reference_audio cannot be used alone, it must be accompanied by reference_image or reference_video.",
+          "required": false,
+          "maxItems": 3,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio"
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Video aspect ratio. The default is adaptive, or a specific ratio can be specified.",
+          "required": false,
+          "default": "adaptive",
+          "enum": [
+            "adaptive",
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "The duration of the generated video, supporting integer values from 4 to 15 seconds.",
+          "required": true,
+          "default": 6,
+          "enum": [],
+          "min": 4,
+          "max": 15,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "minimax-h3/text-to-video",
+      "model": "minimax-h3/text-to-video",
+      "title": "MiniMax H3 Text-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/minimax-h3/text-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Video generation prompt, length is between 1 and 7000 characters.",
+          "required": true,
+          "maxLength": 7000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Video aspect ratio. Required for text-to-video, adaptive is not supported.",
+          "required": true,
+          "enum": [
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Generated video duration, supports integer values from 4 to 15 seconds.",
+          "required": true,
+          "default": 6,
+          "enum": [],
+          "min": 4,
+          "max": 15,
+          "step": 1
+        }
+      ]
+    },
+    {
       "id": "omnihuman-1-5",
       "model": "omnihuman-1-5",
       "title": "Omnihuman 1.5",
@@ -6593,7 +6731,7 @@
           "label": "Prompt",
           "description": "Optional prompt text. Limited to Chinese, English, Japanese, Korean, Spanish, and Indonesian. Recommended 300 characters or less. Maximum length: 1000 characters.",
           "required": false,
-          "maxLength": 1000
+          "maxLength": 300
         },
         {
           "name": "output_resolution",
@@ -7646,13 +7784,6 @@
             "none",
             "regular"
           ]
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -7809,13 +7940,6 @@
           "description": "Random seed for reproducibility. If omitted, a random seed is chosen.",
           "required": false,
           "step": 1
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -8237,13 +8361,6 @@
           "min": 0,
           "max": 2147483647,
           "step": 1
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },
@@ -8471,13 +8588,6 @@
           "min": 0,
           "max": 2147483647,
           "step": 1
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. You can set it to false based on your needs. If set to false, our content filtering will be disabled, and all results will be returned directly by the model itself.",
-          "required": false
         }
       ]
     },

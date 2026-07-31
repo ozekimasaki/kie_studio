@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { FieldSchema, ModelCategory, ModelDefinition } from '../kie/types.ts'
-import { readCatalog } from '../catalog/sync.ts'
+import { readCatalog, syncCatalog } from '../catalog/sync.ts'
 import { DEDICATED_MODELS } from '../catalog/dedicated.ts'
 
 const VALID_CATEGORIES = new Set<ModelCategory>(['image', 'video', 'audio'])
@@ -67,6 +67,28 @@ function hydrateDedicatedModel(
     fields,
   }
 }
+
+modelsRoutes.post('/models/sync', async (c) => {
+  try {
+    const result = await syncCatalog({ force: true, quiet: true })
+    if (result.skipped) {
+      return c.json({ data: { synced: false, reason: result.reason } })
+    }
+    return c.json({
+      data: {
+        synced: true,
+        modelCount: result.catalog?.models.length ?? 0,
+        syncedAt: result.catalog?.syncedAt ?? null,
+      },
+    })
+  } catch (err) {
+    console.error('[models] manual sync failed', err)
+    return c.json(
+      { error: err instanceof Error ? err.message : 'Sync failed' },
+      500,
+    )
+  }
+})
 
 modelsRoutes.get('/models', async (c) => {
   const catalog = await readCatalog()

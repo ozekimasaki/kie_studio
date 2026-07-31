@@ -96,6 +96,18 @@ export async function fetchModels(category?: ModelCategory) {
   }>(res)
 }
 
+export async function syncModels() {
+  const res = await fetch(apiUrl('/api/models/sync'), { method: 'POST' })
+  return parseJson<{
+    data: {
+      synced: boolean
+      modelCount?: number
+      syncedAt?: string | null
+      reason?: string
+    }
+  }>(res)
+}
+
 export async function fetchCredits() {
   const res = await fetch(apiUrl('/api/credits'))
   return parseJson<{ data: { credits: number } }>(res)
