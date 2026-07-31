@@ -4,6 +4,11 @@ import type { QueryClient } from '@tanstack/react-query'
 import { migrateHistory } from './api.ts'
 import { mergeHistory } from './history.ts'
 import type { HistoryItem } from './models/types.ts'
+import {
+  readPersistedRaw,
+  removePersisted,
+  writePersistedRaw,
+} from './usePersistedState.ts'
 
 const LS_HISTORY_KEY = 'kie-studio-history'
 const LS_MIGRATED_KEY = 'kie-studio-history-migrated'
@@ -45,17 +50,17 @@ export function useHistoryMigration({
     void (async () => {
       let items = data ?? []
       try {
-        if (localStorage.getItem(LS_MIGRATED_KEY) !== '1') {
-          const raw = localStorage.getItem(LS_HISTORY_KEY)
+        if (readPersistedRaw(LS_MIGRATED_KEY) !== '1') {
+          const raw = readPersistedRaw(LS_HISTORY_KEY)
           if (raw) {
             const parsed = JSON.parse(raw) as unknown
             if (Array.isArray(parsed) && parsed.length > 0) {
               const res = await migrateHistory(parsed)
               items = res.data.items
-              localStorage.removeItem(LS_HISTORY_KEY)
+              removePersisted(LS_HISTORY_KEY)
             }
           }
-          localStorage.setItem(LS_MIGRATED_KEY, '1')
+          writePersistedRaw(LS_MIGRATED_KEY, '1')
         }
       } catch (e) {
         if (!cancelled) onErrorRef.current(e)

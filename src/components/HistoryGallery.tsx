@@ -15,6 +15,7 @@ import {
   Video,
   X,
 } from 'lucide-react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
 import {
   mediaExpiryAt,
@@ -111,7 +112,6 @@ type StateFilter = 'all' | 'success' | 'fail' | 'busy'
 type CategoryFilter = 'context' | 'all' | 'image' | 'video' | 'audio'
 
 const MAX_COMPARE = 4
-const HISTORY_PAGE_SIZE = 48
 
 const smallBtnClass = 'studio-btn'
 const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
@@ -247,8 +247,23 @@ export function HistoryGallery({
   const [compareMode, setCompareMode] = useState(false)
   const [compareIds, setCompareIds] = useState<string[]>([])
   const [showCompare, setShowCompare] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE)
   const [sheetsRequested, setSheetsRequested] = useState(false)
+  const scrollParentRef = useRef<HTMLDivElement>(null)
+  // Tailwind の sm / xl ブレークポイントと同じ列数を追跡する
+  const [columns, setColumns] = useState(2)
+
+  useEffect(() => {
+    const sm = window.matchMedia('(min-width: 640px)')
+    const xl = window.matchMedia('(min-width: 1280px)')
+    const update = () => setColumns(xl.matches ? 4 : sm.matches ? 3 : 2)
+    update()
+    sm.addEventListener('change', update)
+    xl.addEventListener('change', update)
+    return () => {
+      sm.removeEventListener('change', update)
+      xl.removeEventListener('change', update)
+    }
+  }, [])
 
   const effectiveCategory = categoryFilter === 'context'
     ? activeCategory
@@ -322,10 +337,16 @@ export function HistoryGallery({
     () => new Set(validCompareIds),
     [validCompareIds],
   )
-  const visibleItems = useMemo(
-    () => filtered.slice(0, visibleCount),
-    [filtered, visibleCount],
-  )
+  // 行単位の仮想化（列数で区切った行を measureElement で実測）
+  const rowCount = Math.ceil(filtered.length / columns)
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollParentRef.current,
+    estimateSize: () => 280,
+    overscan: 3,
+    // 初回測定前（SSR / jsdom 含む）でも先頭行を描画するための初期矩形
+    initialRect: { width: 800, height: 600 },
+  })
 
   useEffect(() => {
     if (!showCompare) return
@@ -450,7 +471,7 @@ export function HistoryGallery({
             value={categoryFilter}
             onChange={(e) => {
               setCategoryFilter(e.target.value as CategoryFilter)
-              setVisibleCount(HISTORY_PAGE_SIZE)
+              scrollParentRef.current?.scrollTo({ top: 0 })
             }}
             aria-label="カテゴリで絞り込み"
             className={filterSelectClass}
@@ -467,7 +488,7 @@ export function HistoryGallery({
             value={stateFilter}
             onChange={(e) => {
               setStateFilter(e.target.value as StateFilter)
-              setVisibleCount(HISTORY_PAGE_SIZE)
+              scrollParentRef.current?.scrollTo({ top: 0 })
             }}
             aria-label="状態で絞り込み"
             className={filterSelectClass}
@@ -481,7 +502,7 @@ export function HistoryGallery({
             value={effectiveModelFilter}
             onChange={(e) => {
               setModelFilter(e.target.value)
-              setVisibleCount(HISTORY_PAGE_SIZE)
+              scrollParentRef.current?.scrollTo({ top: 0 })
             }}
             aria-label="モデルで絞り込み"
             className={`${filterSelectClass} max-w-44`}
@@ -536,9 +557,25 @@ export function HistoryGallery({
           </p>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
-            {visibleItems.map((h) => {
+        <div ref={scrollParentRef} className="min-h-0 flex-1 overflow-y-auto">
+          <div
+            className="relative w-full"
+            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+            <div
+              key={virtualRow.key}
+              ref={rowVirtualizer.measureElement}
+              data-index={virtualRow.index}
+              className="absolute left-0 top-0 grid w-full grid-cols-2 gap-2.5 pb-2.5 sm:grid-cols-3 xl:grid-cols-4"
+              style={{ transform: `translateY(${virtualRow.start}px)` }}
+            >
+            {filtered
+              .slice(
+                virtualRow.index * columns,
+                (virtualRow.index + 1) * columns,
+              )
+              .map((h) => {
               const selected = h.taskId === activeTaskId
               const comparing = compareIdSet.has(h.taskId)
               const primaryMedia = h.media?.[0]
@@ -775,20 +812,9 @@ export function HistoryGallery({
                 </div>
               )
             })}
-          </div>
-          {visibleItems.length < filtered.length && (
-            <div className="flex justify-center py-4">
-              <button
-                type="button"
-                className="studio-btn"
-                onClick={() =>
-                  setVisibleCount((count) => count + HISTORY_PAGE_SIZE)
-                }
-              >
-                さらに表示（残り {filtered.length - visibleItems.length} 件）
-              </button>
             </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 

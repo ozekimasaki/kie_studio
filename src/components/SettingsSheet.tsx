@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
@@ -15,6 +15,99 @@ import { SpringSheet } from './motion/SpringSheet.tsx'
 const APP_VERSION =
   (import.meta.env.VITE_APP_VERSION as string | undefined) ?? 'dev'
 
+interface SaveKeyState {
+  error: string | null
+  saved: boolean
+}
+
+/**
+ * API キー保存フォーム。useActionState で pending / error を宣言的に管理する。
+ * シートを開くたびに key で再マウントされ、入力と結果表示がリセットされる。
+ */
+function ApiKeyForm({
+  hasApiKey,
+  onSaved,
+}: {
+  hasApiKey: boolean
+  onSaved: () => Promise<void>
+}) {
+  const [apiKey, setApiKey] = useState('')
+  const [state, formAction, isPending] = useActionState<SaveKeyState, FormData>(
+    async (_prev, formData) => {
+      const key = String(formData.get('api-key') ?? '').trim()
+      if (!key) return { error: null, saved: false }
+      try {
+        await saveApiKey(key)
+        setApiKey('')
+        await onSaved()
+        return { error: null, saved: true }
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error ? error.message : 'キーの保存に失敗しました',
+          saved: false,
+        }
+      }
+    },
+    { error: null, saved: false },
+  )
+
+  const trimmed = apiKey.trim()
+  const canSave = trimmed.length > 0 && !isPending
+  const showSaved = state.saved && trimmed.length === 0
+
+  return (
+    <form action={formAction}>
+      <div className="mt-3 flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <KeyRound
+            size={14}
+            strokeWidth={2}
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--text-muted)]"
+          />
+          <input
+            id="settings-api-key"
+            name="api-key"
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            data-sheet-initial-focus="true"
+            className="studio-input w-full py-2 pr-3 pl-9"
+            placeholder={hasApiKey ? '新しいキーで上書き…' : 'sk-... を貼り付け'}
+            value={apiKey}
+            disabled={isPending}
+            onChange={(event) => setApiKey(event.target.value)}
+          />
+        </div>
+        <Pressable
+          type="submit"
+          disabled={!canSave}
+          className="studio-btn-primary w-auto shrink-0 gap-1 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          scaleTo={0.96}
+          aria-busy={isPending || undefined}
+        >
+          {showSaved ? (
+            <>
+              <Check size={14} strokeWidth={2} aria-hidden />
+              保存済み
+            </>
+          ) : isPending ? (
+            '保存中…'
+          ) : (
+            '保存'
+          )}
+        </Pressable>
+      </div>
+      {state.error && (
+        <p className="studio-field-error mt-2" role="alert">
+          {state.error}
+        </p>
+      )}
+    </form>
+  )
+}
+
 export function SettingsSheet({
   open,
   onClose,
@@ -23,8 +116,6 @@ export function SettingsSheet({
   onClose: () => void
 }) {
   const queryClient = useQueryClient()
-  const [apiKey, setApiKey] = useState('')
-  const [saved, setSaved] = useState(false)
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -32,14 +123,6 @@ export function SettingsSheet({
     enabled: open,
     staleTime: 30_000,
   })
-
-  // 入力欄はシートを開くたびに空へ戻す（キー実体は保持しない）。
-  useEffect(() => {
-    if (open) {
-      setApiKey('')
-      setSaved(false)
-    }
-  }, [open])
 
   async function refreshDependentQueries() {
     await Promise.all([
@@ -49,32 +132,16 @@ export function SettingsSheet({
     ])
   }
 
-  const save = useMutation({
-    mutationFn: (key: string) => saveApiKey(key),
-    onSuccess: async () => {
-      setApiKey('')
-      setSaved(true)
-      await refreshDependentQueries()
-    },
-  })
-
   const remove = useMutation({
     mutationFn: () => clearApiKey(),
     onSuccess: async () => {
-      setSaved(false)
       await refreshDependentQueries()
     },
   })
 
-  const trimmed = apiKey.trim()
-  const canSave = trimmed.length > 0 && !save.isPending
   const settings = settingsQuery.data
-  const mutationError =
-    save.error instanceof Error
-      ? save.error.message
-      : remove.error instanceof Error
-        ? remove.error.message
-        : null
+  const removeError =
+    remove.error instanceof Error ? remove.error.message : null
 
   return (
     <SpringSheet
@@ -137,58 +204,11 @@ export function SettingsSheet({
                 </p>
               )}
 
-              <div className="mt-3 flex items-center gap-2">
-                <div className="relative min-w-0 flex-1">
-                  <KeyRound
-                    size={14}
-                    strokeWidth={2}
-                    aria-hidden
-                    className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--text-muted)]"
-                  />
-                  <input
-                    id="settings-api-key"
-                    type="password"
-                    autoComplete="off"
-                    spellCheck={false}
-                    data-sheet-initial-focus="true"
-                    className="studio-input w-full py-2 pr-3 pl-9"
-                    placeholder={
-                      settings?.hasApiKey
-                        ? '新しいキーで上書き…'
-                        : 'sk-... を貼り付け'
-                    }
-                    value={apiKey}
-                    disabled={save.isPending}
-                    onChange={(event) => {
-                      setApiKey(event.target.value)
-                      setSaved(false)
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' && canSave) {
-                        save.mutate(trimmed)
-                      }
-                    }}
-                  />
-                </div>
-                <Pressable
-                  disabled={!canSave}
-                  onClick={() => save.mutate(trimmed)}
-                  className="studio-btn-primary w-auto shrink-0 gap-1 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                  scaleTo={0.96}
-                  aria-busy={save.isPending || undefined}
-                >
-                  {saved ? (
-                    <>
-                      <Check size={14} strokeWidth={2} aria-hidden />
-                      保存済み
-                    </>
-                  ) : save.isPending ? (
-                    '保存中…'
-                  ) : (
-                    '保存'
-                  )}
-                </Pressable>
-              </div>
+              <ApiKeyForm
+                key={String(open)}
+                hasApiKey={Boolean(settings?.hasApiKey)}
+                onSaved={refreshDependentQueries}
+              />
 
               {settings?.hasApiKey && settings.apiKeyFromStore && (
                 <Pressable
@@ -202,9 +222,9 @@ export function SettingsSheet({
                 </Pressable>
               )}
 
-              {mutationError && (
+              {removeError && (
                 <p className="studio-field-error mt-2" role="alert">
-                  {mutationError}
+                  {removeError}
                 </p>
               )}
             </>

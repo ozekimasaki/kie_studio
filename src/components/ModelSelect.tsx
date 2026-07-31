@@ -2,6 +2,7 @@ import { Check, ChevronDown, Clock3, Search, Star } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ModelDefinition, Provider } from '../lib/models/types.ts'
 import { modelInputSummary } from '../lib/studioPresentation.ts'
+import { usePersistedState } from '../lib/usePersistedState.ts'
 import { Pressable } from './motion/Pressable.tsx'
 
 const FAVORITES_KEY = 'kie-studio-model-favorites:v1'
@@ -9,17 +10,10 @@ const RECENTS_KEY = 'kie-studio-model-recents:v1'
 const LEGACY_FAVORITES_KEY = 'kie-studio-model-favorites'
 const LEGACY_RECENTS_KEY = 'kie-studio-model-recents'
 
-function readIds(key: string, legacyKey: string): string[] {
-  try {
-    const parsed = JSON.parse(
-      localStorage.getItem(key) ?? localStorage.getItem(legacyKey) ?? '[]',
-    ) as unknown
-    return Array.isArray(parsed)
-      ? parsed.filter((value): value is string => typeof value === 'string')
-      : []
-  } catch {
-    return []
-  }
+function validateIds(parsed: unknown): string[] | undefined {
+  return Array.isArray(parsed)
+    ? parsed.filter((value): value is string => typeof value === 'string')
+    : undefined
 }
 
 export function ModelSelect({
@@ -37,17 +31,15 @@ export function ModelSelect({
   const [provider, setProvider] = useState<'all' | Provider>('all')
   const [useCase, setUseCase] = useState('all')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
-  const [favorites, setFavorites] = useState<string[]>(() => readIds(FAVORITES_KEY, LEGACY_FAVORITES_KEY))
-  const [recents, setRecents] = useState<string[]>(() => readIds(RECENTS_KEY, LEGACY_RECENTS_KEY))
+  const [favorites, setFavorites] = usePersistedState<string[]>(FAVORITES_KEY, [], {
+    legacyKey: LEGACY_FAVORITES_KEY,
+    validate: validateIds,
+  })
+  const [recents, setRecents] = usePersistedState<string[]>(RECENTS_KEY, [], {
+    legacyKey: LEGACY_RECENTS_KEY,
+    validate: validateIds,
+  })
   const detailsRef = useRef<HTMLDetailsElement>(null)
-
-  useEffect(() => {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
-  }, [favorites])
-
-  useEffect(() => {
-    localStorage.setItem(RECENTS_KEY, JSON.stringify(recents))
-  }, [recents])
 
   useEffect(() => {
     const closeOnOutsidePress = (event: PointerEvent) => {

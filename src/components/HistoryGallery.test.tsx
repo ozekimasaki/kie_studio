@@ -1,8 +1,21 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { HistoryGallery } from './HistoryGallery.tsx'
 import { AudioPlayerProvider } from './audio/AudioPlayer.tsx'
 import type { HistoryItem } from '../lib/models/types.ts'
+
+beforeAll(() => {
+  // jsdom は要素寸法を持たないため、仮想化スクロール領域に寸法を与えて行を描画させる
+  // （TanStack Virtual は offsetWidth / offsetHeight でスクロール要素を測定する）
+  Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+    configurable: true,
+    value: 800,
+  })
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    value: 600,
+  })
+})
 
 function imageItem(overrides: Partial<HistoryItem> = {}): HistoryItem {
   return {

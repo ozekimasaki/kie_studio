@@ -1,3 +1,5 @@
+import { readPersistedJson, writePersistedJson } from './usePersistedState.ts'
+
 export interface PromptSnippet {
   id: string
   title: string
@@ -9,22 +11,13 @@ const KEY = 'kie-studio-snippets'
 const MAX_ITEMS = 50
 
 export function loadSnippets(): PromptSnippet[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as PromptSnippet[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  return readPersistedJson<PromptSnippet[]>(KEY, [], (parsed) =>
+    Array.isArray(parsed) ? (parsed as PromptSnippet[]) : undefined)
 }
 
 function save(items: PromptSnippet[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(items))
-  } catch {
-    // 容量超過などで保存できない場合は諦める（UI 側の state は維持される）
-  }
+  // 容量超過などで保存できない場合は諦める（UI 側の state は維持される）
+  writePersistedJson(KEY, items)
 }
 
 export function addSnippet(title: string, text: string): PromptSnippet[] {

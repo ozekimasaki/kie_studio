@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react'
-import { useQueries } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import { useQueries, useQueryClient } from '@tanstack/react-query'
 import type { Dispatch, SetStateAction } from 'react'
 import { fetchTask } from './api.ts'
 import {
@@ -50,6 +50,25 @@ export function useTaskPolling({
   requestHistoryPersist: (mode?: HistoryPersistMode) => void
   onCreditsUsed: (credits: number) => void
 }): { pendingCount: number; pendingTasks: HistoryItem[] } {
+  const queryClient = useQueryClient()
+  const [isPageVisible, setIsPageVisible] = useState(
+    () => typeof document === 'undefined' || document.visibilityState === 'visible',
+  )
+
+  // 非表示中はポーリングを止め、復帰時に即時 refetch する。
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      const visible = document.visibilityState === 'visible'
+      setIsPageVisible(visible)
+      if (visible) {
+        void queryClient.invalidateQueries({ queryKey: ['task'] })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () =>
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [queryClient])
+
   const pendingTasks = useMemo(
     () => history.filter((item) => isPendingState(item)),
     [history],
@@ -68,7 +87,9 @@ export function useTaskPolling({
         item.provider ?? 'market',
         item.operation ?? 'generate',
       ),
-      refetchInterval: () => taskPollInterval(item.createdAt),
+      refetchInterval: isPageVisible
+        ? () => taskPollInterval(item.createdAt)
+        : false as const,
       refetchIntervalInBackground: false,
       retry: 2,
     })),

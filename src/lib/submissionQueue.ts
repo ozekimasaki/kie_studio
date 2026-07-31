@@ -25,6 +25,9 @@ export type ApiErrorAction =
   | 'refunded'
   | 'failed'
 
+const INSUFFICIENT_CREDITS_PATTERN =
+  /(?:insufficient|not enough|low)\s+(?:credit|balance)|(?:credit|balance).*?(?:insufficient|not enough|low)|クレジット.*(?:不足|足りない|切れ)|(?:不足|足りない).*(?:クレジット|credit)/i
+
 export function classifyApiError(error: unknown): ApiErrorAction {
   const candidate = error as { status?: unknown; code?: unknown; message?: unknown }
   const code = typeof candidate.code === 'number'
@@ -34,7 +37,7 @@ export function classifyApiError(error: unknown): ApiErrorAction {
       : undefined
   const message = typeof candidate.message === 'string' ? candidate.message : ''
   if (code === 429) return 'retry'
-  if (code === 402 || /insufficient|not enough.*credit/i.test(message)) return 'purchase'
+  if (code === 402 || INSUFFICIENT_CREDITS_PATTERN.test(message)) return 'purchase'
   if (code === 531) return 'refunded'
   if (code === 400 || code === 413 || /copyright|existing work/i.test(message)) {
     return 'fix-input'

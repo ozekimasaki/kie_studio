@@ -40,4 +40,12 @@ describe('SubmissionQueue', () => {
     expect(classifyApiError({ code: 413 })).toBe('fix-input')
     expect(classifyApiError({ code: 531 })).toBe('refunded')
   })
+
+  it('classifies insufficient credits messages as purchase', () => {
+    expect(classifyApiError(new Error('Insufficient credits'))).toBe('purchase')
+    expect(classifyApiError(new Error('not enough balance to run'))).toBe('purchase')
+    expect(classifyApiError(new Error('クレジットが不足しています'))).toBe('purchase')
+    expect(classifyApiError(new Error('残高不足のため credit を追加してください'))).toBe('purchase')
+    expect(classifyApiError(new Error('some other failure'))).toBe('failed')
+  })
 })
