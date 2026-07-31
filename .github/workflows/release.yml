@@ -62,23 +62,25 @@ jobs:
           bun scripts/build-linux-deb.mjs ${{ steps.channel.outputs.channel }}
           cp release/*.deb artifacts/
 
-      - name: Extract Windows installer (.exe)
+      - name: Install Inno Setup
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # Electrobun emits a real *-Setup.exe inside a *-Setup.zip. Expand it
-          # to a temp dir and copy just the exe next to the other artifacts so
-          # end users can download the installer directly.
-          $zip = Get-ChildItem -Path artifacts -Filter '*-Setup*.zip' | Select-Object -First 1
-          if ($null -ne $zip) {
-            $dest = Join-Path $env:RUNNER_TEMP 'win-setup'
-            Expand-Archive -Path $zip.FullName -DestinationPath $dest -Force
-            Get-ChildItem -Path $dest -Recurse -Filter '*-Setup*.exe' | ForEach-Object {
-              Copy-Item $_.FullName -Destination (Join-Path artifacts $_.Name) -Force
-            }
-          } else {
-            Write-Host 'No Windows Setup zip found; skipping exe extraction.'
+          # Inno Setup 6 is pre-installed on GitHub-hosted Windows runners.
+          # Verify ISCC.exe is reachable; install via winget as a fallback.
+          $iscc = Get-ChildItem 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' -ErrorAction SilentlyContinue
+          if ($null -eq $iscc) {
+            winget install --id JRSoftware.InnoSetup --accept-package-agreements --accept-source-agreements --silent
           }
+
+      - name: Build Windows installer (Inno Setup)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Build the proper Inno Setup installer (ARP-registered, full uninstaller)
+          # instead of shipping Electrobun's bare Setup.exe.
+          bun scripts/build-win-installer.mjs ${{ steps.channel.outputs.channel }}
+          Copy-Item -Path "release\*-Setup.exe" -Destination artifacts\ -Force
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v3
