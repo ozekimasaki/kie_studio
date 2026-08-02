@@ -5,11 +5,13 @@ export function FloatingChrome({
   title,
   subtitle,
   meta,
+  center,
   trailing,
 }: {
   title: ReactNode
   subtitle?: ReactNode
   meta?: ReactNode
+  center?: ReactNode
   trailing?: ReactNode
 }) {
   return (
@@ -24,6 +26,11 @@ export function FloatingChrome({
         {subtitle && <p className="studio-subtitle hidden sm:block">{subtitle}</p>}
         {meta && <div className="hidden sm:block">{meta}</div>}
       </div>
+      {center && (
+        <div className="mx-auto flex min-w-0 shrink-0 justify-center px-1 sm:px-2">
+          {center}
+        </div>
+      )}
       <div className="ml-auto min-w-0">{trailing}</div>
     </Material>
   )

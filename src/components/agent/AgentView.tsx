@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  ArrowLeft,
-  Bot,
-  MessageSquarePlus,
-  PanelLeft,
-  Trash2,
-} from 'lucide-react'
+import { Bot, MessageSquarePlus, PanelLeft, Trash2 } from 'lucide-react'
 import {
   createAgentConversation,
   deleteAgentConversation,
@@ -75,7 +69,7 @@ function NewConversationPanel({
   )
 }
 
-export function AgentView({ onBack }: { onBack: () => void }) {
+export function AgentView() {
   const queryClient = useQueryClient()
   const conversationsQuery = useQuery({
     queryKey: ['agent-conversations'],
@@ -129,16 +123,8 @@ export function AgentView({ onBack }: { onBack: () => void }) {
   )
 
   return (
-    <div className="flex h-dvh flex-col bg-[var(--surface-raised)] text-[var(--text)]">
+    <div className="flex h-full min-h-0 flex-col text-[var(--text)]">
       <header className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
-        <button
-          type="button"
-          onClick={onBack}
-          className="studio-btn flex items-center gap-1.5 px-2.5 py-1.5 text-sm"
-        >
-          <ArrowLeft size={15} aria-hidden />
-          Studio
-        </button>
         <button
           type="button"
           onClick={() => setSidebarOpen((v) => !v)}
