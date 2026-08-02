@@ -31,6 +31,11 @@ export default defineConfig(() => ({
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
       },
+      // Agent server (Flue sidecar, dev:agent). SSE streams pass through.
+      '/agents': {
+        target: 'http://127.0.0.1:8789',
+        changeOrigin: true,
+      },
     },
   },
 }))

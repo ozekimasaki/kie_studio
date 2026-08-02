@@ -12,6 +12,9 @@ import { historyRoutes } from './routes/history.ts'
 import { sunoRoutes } from './routes/suno.ts'
 import { archiveRoutes } from './routes/archive.ts'
 import { settingsRoutes } from './routes/settings.ts'
+import { llmSettingsRoutes } from './routes/llmSettings.ts'
+import { agentConversationsRoutes } from './routes/agentConversations.ts'
+import { agentInternalRoutes } from './routes/agentInternal.ts'
 import { updateRoutes, isUpdateHandlerRegistered } from './routes/update.ts'
 import { mediaRoutes } from './routes/media.ts'
 import { backfillRoutes } from './media/backfill.ts'
@@ -64,6 +67,9 @@ export function createApp(): Hono {
   app.route('/api', sunoRoutes)
   app.route('/api', archiveRoutes)
   app.route('/api', settingsRoutes)
+  app.route('/api', llmSettingsRoutes)
+  app.route('/api', agentConversationsRoutes)
+  app.route('/api', agentInternalRoutes)
   app.route('/api', updateRoutes)
   app.route('/api', backfillRoutes)
   app.route('/', mediaRoutes)

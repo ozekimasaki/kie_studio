@@ -1,0 +1,1774 @@
+diff --git a/electrobun.config.ts b/electrobun.config.ts
+index 1a5f82c..e61d48d 100644
+--- a/electrobun.config.ts
++++ b/electrobun.config.ts
+@@ -5,7 +5,7 @@ export default {
+   app: {
+     name: 'KIE STUDIO',
+     identifier: 'ai.kie.studio',
+-    version: '1.0.1'
++    version: '1.0.5'
+   },
+   build: {
+     useAsar: true,
+diff --git a/package.json b/package.json
+index ef0089d..75a9659 100644
+--- a/package.json
++++ b/package.json
+@@ -2,7 +2,7 @@
+   "name": "kie_studio",
+   "private": true,
+   "license": "GPL-3.0-or-later",
+-  "version": "1.0.1",
++  "version": "1.0.5",
+   "type": "module",
+   "scripts": {
+     "dev": "concurrently -n server,web -c blue,green \"npm run dev:server\" \"npm run dev:web\"",
+diff --git a/server/app.ts b/server/app.ts
+index e74b8c9..259bf21 100644
+--- a/server/app.ts
++++ b/server/app.ts
+@@ -12,6 +12,9 @@ import { historyRoutes } from './routes/history.ts'
+ import { sunoRoutes } from './routes/suno.ts'
+ import { archiveRoutes } from './routes/archive.ts'
+ import { settingsRoutes } from './routes/settings.ts'
++import { updateRoutes, isUpdateHandlerRegistered } from './routes/update.ts'
++import { mediaRoutes } from './routes/media.ts'
++import { backfillRoutes } from './media/backfill.ts'
+ import { KieApiError } from './kie/client.ts'
+ import { hasUsableApiKey } from './settings/apiKey.ts'
+ 
+@@ -46,6 +49,7 @@ export function createApp(): Hono {
+     c.json({
+       ok: true,
+       hasKey: hasUsableApiKey(),
++      isDesktop: isUpdateHandlerRegistered(),
+     }),
+   )
+ 
+@@ -60,6 +64,9 @@ export function createApp(): Hono {
+   app.route('/api', sunoRoutes)
+   app.route('/api', archiveRoutes)
+   app.route('/api', settingsRoutes)
++  app.route('/api', updateRoutes)
++  app.route('/api', backfillRoutes)
++  app.route('/', mediaRoutes)
+ 
+   app.onError((err, c) => {
+     // zValidator（JSON パース失敗など）は HTTPException を投げるため
+diff --git a/server/db/history.test.ts b/server/db/history.test.ts
+index 329190b..bdc37b4 100644
+--- a/server/db/history.test.ts
++++ b/server/db/history.test.ts
+@@ -16,8 +16,10 @@ const {
+   historyCount,
+   importHistoryItems,
+   listHistory,
++  listUnarchivedMedia,
+   migrateHistoryItems,
+   replaceAllFromUnknown,
++  updateMediaLocalPaths,
+ } = await import('./history.ts')
+ 
+ function makeItem(
+@@ -106,4 +108,120 @@ describe('server/db/history', () => {
+     expect(merged.find((i) => i.taskId === 't-a')?.prompt).toBeUndefined()
+     expect(merged.some((i) => i.taskId === 't-b')).toBe(true)
+   })
++
++  describe('updateMediaLocalPaths', () => {
++    it('merges localPath into existing media JSON by URL match', () => {
++      replaceAllFromUnknown([
++        makeItem('t-ml', Date.now(), {
++          media: [
++            { kind: 'image', url: 'https://cdn.example.com/a.png' },
++            { kind: 'image', url: 'https://cdn.example.com/b.png' },
++          ],
++        }),
++      ])
++      updateMediaLocalPaths('t-ml', [
++        { kind: 'image', url: 'https://cdn.example.com/a.png', localPath: 'media/t-ml/0.png' },
++        { kind: 'image', url: 'https://cdn.example.com/b.png' },
++      ])
++      const item = listHistory().find((i) => i.taskId === 't-ml')
++      expect(item?.media?.[0]?.localPath).toBe('media/t-ml/0.png')
++      expect(item?.media?.[1]?.localPath).toBeUndefined()
++    })
++
++    it('matches by URL even when array order differs', () => {
++      replaceAllFromUnknown([
++        makeItem('t-ord', Date.now(), {
++          media: [
++            { kind: 'image', url: 'https://cdn.example.com/first.png' },
++            { kind: 'video', url: 'https://cdn.example.com/second.mp4' },
++          ],
++        }),
++      ])
++      // Archived result in reverse order
++      updateMediaLocalPaths('t-ord', [
++        { kind: 'video', url: 'https://cdn.example.com/second.mp4', localPath: 'media/t-ord/1.mp4' },
++        { kind: 'image', url: 'https://cdn.example.com/first.png', localPath: 'media/t-ord/0.png' },
++      ])
++      const item = listHistory().find((i) => i.taskId === 't-ord')
++      expect(item?.media?.[0]?.localPath).toBe('media/t-ord/0.png')
++      expect(item?.media?.[1]?.localPath).toBe('media/t-ord/1.mp4')
++    })
++
++    it('does nothing for a non-existent taskId', () => {
++      replaceAllFromUnknown([makeItem('t-x', Date.now())])
++      expect(() =>
++        updateMediaLocalPaths('no-such', [{ kind: 'image', localPath: 'x' }]),
++      ).not.toThrow()
++    })
++  })
++
++  describe('replaceAllHistory preserves localPath', () => {
++    it('retains server-managed localPath across client full-replace', () => {
++      const now = Date.now()
++      replaceAllFromUnknown([
++        makeItem('t-preserve', now, {
++          media: [{ kind: 'image', url: 'https://cdn.example.com/p.png' }],
++        }),
++      ])
++      // Simulate server archiving
++      updateMediaLocalPaths('t-preserve', [
++        { kind: 'image', url: 'https://cdn.example.com/p.png', localPath: 'media/t-preserve/0.png' },
++      ])
++      // Client PUT without localPath (as it would from polling)
++      replaceAllFromUnknown([
++        makeItem('t-preserve', now, {
++          media: [{ kind: 'image', url: 'https://cdn.example.com/p.png' }],
++        }),
++      ])
++      const item = listHistory().find((i) => i.taskId === 't-preserve')
++      expect(item?.media?.[0]?.localPath).toBe('media/t-preserve/0.png')
++    })
++  })
++
++  describe('listUnarchivedMedia', () => {
++    it('returns only success/partial items without localPath', () => {
++      const now = Date.now()
++      replaceAllFromUnknown([
++        makeItem('t-archived', now, {
++          media: [{ kind: 'image', url: 'https://x.com/a.png', localPath: 'media/t/0.png' }],
++        }),
++        makeItem('t-unarchived', now - 1_000, {
++          media: [{ kind: 'image', url: 'https://x.com/b.png' }],
++        }),
++        makeItem('t-failed', now - 2_000, {
++          state: 'fail',
++          media: [{ kind: 'image', url: 'https://x.com/c.png' }],
++        }),
++      ])
++      const result = listUnarchivedMedia()
++      expect(result).toHaveLength(1)
++      expect(result[0].taskId).toBe('t-unarchived')
++    })
++
++    it('excludes items older than 13 days', () => {
++      const now = Date.now()
++      const old = now - 14 * 24 * 60 * 60 * 1000 // 14 days ago
++      replaceAllFromUnknown([
++        makeItem('t-old', old, {
++          media: [{ kind: 'image', url: 'https://x.com/old.png' }],
++        }),
++        makeItem('t-recent', now, {
++          media: [{ kind: 'image', url: 'https://x.com/new.png' }],
++        }),
++      ])
++      const result = listUnarchivedMedia()
++      expect(result).toHaveLength(1)
++      expect(result[0].taskId).toBe('t-recent')
++    })
++
++    it('respects the limit parameter', () => {
++      const now = Date.now()
++      replaceAllFromUnknown([
++        makeItem('t-u1', now - 1_000, { media: [{ kind: 'image', url: 'https://x.com/1.png' }] }),
++        makeItem('t-u2', now - 2_000, { media: [{ kind: 'image', url: 'https://x.com/2.png' }] }),
++        makeItem('t-u3', now - 3_000, { media: [{ kind: 'image', url: 'https://x.com/3.png' }] }),
++      ])
++      expect(listUnarchivedMedia(2)).toHaveLength(2)
++    })
++  })
+ })
+diff --git a/server/db/history.ts b/server/db/history.ts
+index ebed57a..80f8cf6 100644
+--- a/server/db/history.ts
++++ b/server/db/history.ts
+@@ -1,4 +1,4 @@
+-import type { HistoryItem } from '../../src/lib/models/types.ts'
++import type { HistoryItem, MediaAsset } from '../../src/lib/models/types.ts'
+ import {
+   capItems,
+   mergeHistory,
+@@ -157,6 +157,37 @@ export function replaceAllHistory(items: HistoryItem[]): HistoryItem[] {
+     items.toSorted((a, b) => b.createdAt - a.createdAt),
+   )
+   const db = getDb()
++
++  // Preserve server-managed localPath values across client full-replace
++  const existingRows = db.prepare(
++    `SELECT task_id, media FROM history_items WHERE media LIKE '%"localPath"%'`,
++  ).all() as { task_id: string; media: string }[]
++  const localPathMap = new Map<string, Map<string, string>>()
++  for (const row of existingRows) {
++    const media = parseJsonColumn<MediaAsset[]>(row.media)
++    if (!media) continue
++    const urlMap = new Map<string, string>()
++    for (const asset of media) {
++      if (asset.localPath) {
++        const key = asset.url ?? asset.streamUrl ?? ''
++        if (key) urlMap.set(key, asset.localPath)
++      }
++    }
++    if (urlMap.size > 0) localPathMap.set(row.task_id, urlMap)
++  }
++
++  const preserved = capped.map((item) => {
++    const urlMap = localPathMap.get(item.taskId)
++    if (!urlMap || !item.media?.length) return item
++    const merged = item.media.map((asset) => {
++      if (asset.localPath) return asset
++      const key = asset.url ?? asset.streamUrl ?? ''
++      const existing = key ? urlMap.get(key) : undefined
++      return existing ? { ...asset, localPath: existing } : asset
++    })
++    return { ...item, media: merged }
++  })
++
+   const insert = insertStmt()
+   const tx = db.transaction((list: HistoryItem[]) => {
+     db.prepare('DELETE FROM history_items').run()
+@@ -164,7 +195,7 @@ export function replaceAllHistory(items: HistoryItem[]): HistoryItem[] {
+       insert.run(itemToParams(item))
+     }
+   })
+-  tx(capped)
++  tx(preserved)
+   return listHistory()
+ }
+ 
+@@ -212,3 +243,59 @@ export function migrateHistoryItems(raw: unknown): HistoryItem[] {
+     return replaceAllHistory(mergeHistory(current, incoming))
+   })()
+ }
++
++/** Merge localPath values from archived media into the stored media JSON. */
++export function updateMediaLocalPaths(taskId: string, media: MediaAsset[]): void {
++  const db = getDb()
++  const row = db
++    .prepare('SELECT media FROM history_items WHERE task_id = ?')
++    .get(taskId) as { media: string | null } | null
++  if (!row) return
++
++  const existing = parseJsonColumn<MediaAsset[]>(row.media)
++  if (!existing?.length) {
++    // No existing media column — write the full archived media
++    db.prepare('UPDATE history_items SET media = ? WHERE task_id = ?')
++      .run(JSON.stringify(media), taskId)
++    return
++  }
++
++  // Merge: match by URL (not index) to avoid misattribution
++  const byUrl = new Map(
++    media.filter((m) => m.localPath).map((m) => [m.url ?? m.streamUrl ?? '', m.localPath!]),
++  )
++  const merged = existing.map((asset) => {
++    if (asset.localPath) return asset
++    const key = asset.url ?? asset.streamUrl ?? ''
++    const lp = key ? byUrl.get(key) : undefined
++    return lp ? { ...asset, localPath: lp } : asset
++  })
++
++  db.prepare('UPDATE history_items SET media = ? WHERE task_id = ?')
++    .run(JSON.stringify(merged), taskId)
++}
++
++/** List success/partial items that have media assets still lacking localPath (for backfill). */
++const MEDIA_RETENTION_MS = 13 * 24 * 60 * 60 * 1000 // 13 days (margin from kie.ai's 14-day retention)
++
++export function listUnarchivedMedia(limit?: number): { taskId: string; media: MediaAsset[] }[] {
++  const cutoff = Date.now() - MEDIA_RETENTION_MS
++  const rows = getDb()
++    .prepare(
++      `SELECT task_id, media FROM history_items
++       WHERE state IN ('success', 'partial')
++         AND media IS NOT NULL
++         AND created_at > ?
++       ORDER BY created_at DESC
++       ${limit !== undefined ? 'LIMIT ?' : ''}`,
++    )
++    .all(cutoff, ...(limit !== undefined ? [limit] : [])) as { task_id: string; media: string }[]
++
++  return rows.flatMap((row) => {
++    const media = parseJsonColumn<MediaAsset[]>(row.media)
++    if (!media?.length) return []
++    // Only include items that have at least one downloadable URL without localPath
++    const needsArchive = media.some((asset) => (asset.url ?? asset.streamUrl) && !asset.localPath)
++    return needsArchive ? [{ taskId: row.task_id, media }] : []
++  })
++}
+diff --git a/server/index.ts b/server/index.ts
+index 9e01780..b1fdd25 100644
+--- a/server/index.ts
++++ b/server/index.ts
+@@ -1,6 +1,7 @@
+ import { createApp } from './app.ts'
+ import { syncCatalog } from './catalog/sync.ts'
+ import { getDb, getDbPath } from './db/open.ts'
++import { startBackfill } from './media/backfill.ts'
+ 
+ // Bun auto-loads `.env` from the project root, so no explicit dotenv step is
+ // needed here. This entry is intentionally thin: it starts the shared Hono app
+@@ -46,3 +47,6 @@ if (syncEnabled) {
+ } else {
+   console.log('[catalog] startup sync disabled (SYNC_MODELS_ON_START=0)')
+ }
++
++// Backfill: download media for existing history items that lack localPath.
++startBackfill()
+diff --git a/server/media/archiver.test.ts b/server/media/archiver.test.ts
+new file mode 100644
+index 0000000..4987647
+--- /dev/null
++++ b/server/media/archiver.test.ts
+@@ -0,0 +1,141 @@
++// @vitest-environment node
++import { existsSync, mkdtempSync, rmSync } from 'node:fs'
++import { tmpdir } from 'node:os'
++import { join } from 'node:path'
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
++import type { MediaAsset } from '../../src/lib/models/types.ts'
++
++const tmpDir = mkdtempSync(join(tmpdir(), 'kie-archiver-'))
++process.env.STUDIO_DB_PATH = join(tmpDir, 'studio.db')
++
++vi.mock('../kie/common.ts', () => ({
++  getDownloadUrl: vi.fn(),
++}))
++
++const { getDownloadUrl } = await import('../kie/common.ts')
++const { archiveTaskMedia, getMediaRoot, resolveMediaPath } = await import('./archiver.ts')
++
++const mockedGetDownloadUrl = vi.mocked(getDownloadUrl)
++
++describe('server/media/archiver', () => {
++  beforeEach(() => {
++    vi.clearAllMocks()
++  })
++
++  afterEach(() => {
++    // Clean up downloaded files between tests
++    const mediaRoot = getMediaRoot()
++    if (existsSync(mediaRoot)) rmSync(mediaRoot, { recursive: true, force: true })
++  })
++
++  it('getMediaRoot resolves relative to STUDIO_DB_PATH', () => {
++    expect(getMediaRoot()).toBe(join(tmpDir, 'media'))
++  })
++
++  it('resolveMediaPath joins parent of mediaRoot with localPath', () => {
++    const resolved = resolveMediaPath('media/task-1/0.png')
++    expect(resolved).toBe(join(tmpDir, 'media/task-1/0.png'))
++  })
++
++  it('downloads and stores media, returning localPath', async () => {
++    const fakeBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer
++    mockedGetDownloadUrl.mockResolvedValue('https://temp.example.com/dl')
++    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
++      new Response(fakeBytes, { status: 200 }),
++    )
++
++    const media: MediaAsset[] = [
++      { kind: 'image', url: 'https://cdn.example.com/img.png' },
++    ]
++    const result = await archiveTaskMedia('task-dl', media)
++
++    expect(result[0].localPath).toBe('media/task-dl/0.png')
++    const absPath = resolveMediaPath(result[0].localPath!)
++    expect(existsSync(absPath)).toBe(true)
++  })
++
++  it('skips download when localPath already exists on disk', async () => {
++    const fakeBytes = new Uint8Array([1, 2, 3]).buffer
++    mockedGetDownloadUrl.mockResolvedValue('https://temp.example.com/dl')
++    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
++      new Response(fakeBytes, { status: 200 }),
++    )
++
++    const media: MediaAsset[] = [
++      { kind: 'image', url: 'https://cdn.example.com/x.mp4' },
++    ]
++    // First call downloads
++    const first = await archiveTaskMedia('task-skip', media)
++    expect(first[0].localPath).toBe('media/task-skip/0.mp4')
++
++    vi.clearAllMocks()
++    // Second call with localPath set — should skip
++    const second = await archiveTaskMedia('task-skip', first)
++    expect(second[0].localPath).toBe('media/task-skip/0.mp4')
++    expect(mockedGetDownloadUrl).not.toHaveBeenCalled()
++  })
++
++  it('returns asset without localPath on download failure', async () => {
++    mockedGetDownloadUrl.mockRejectedValue(new Error('network error'))
++
++    const media: MediaAsset[] = [
++      { kind: 'video', url: 'https://cdn.example.com/vid.mp4' },
++    ]
++    const result = await archiveTaskMedia('task-fail', media)
++
++    expect(result[0].localPath).toBeUndefined()
++    expect(result[0].url).toBe('https://cdn.example.com/vid.mp4')
++  })
++
++  it('handles assets without url gracefully', async () => {
++    const media: MediaAsset[] = [{ kind: 'image' }]
++    const result = await archiveTaskMedia('task-nourl', media)
++    expect(result[0].localPath).toBeUndefined()
++    expect(mockedGetDownloadUrl).not.toHaveBeenCalled()
++  })
++
++  it('rejects unsafe taskId with path traversal characters', async () => {
++    const media: MediaAsset[] = [
++      { kind: 'image', url: 'https://cdn.example.com/img.png' },
++    ]
++    const result = await archiveTaskMedia('../../evil', media)
++    expect(result).toEqual(media)
++    expect(mockedGetDownloadUrl).not.toHaveBeenCalled()
++  })
++
++  it('deduplicates concurrent calls for the same taskId', async () => {
++    const fakeBytes = new Uint8Array([1, 2, 3]).buffer
++    mockedGetDownloadUrl.mockResolvedValue('https://temp.example.com/dl')
++    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
++      new Response(fakeBytes, { status: 200 }),
++    )
++
++    const media: MediaAsset[] = [
++      { kind: 'image', url: 'https://cdn.example.com/dup.png' },
++    ]
++    // Fire two concurrent calls
++    const [r1, r2] = await Promise.all([
++      archiveTaskMedia('task-dedup', media),
++      archiveTaskMedia('task-dedup', media),
++    ])
++    // Both should resolve to the same result
++    expect(r1[0].localPath).toBe('media/task-dedup/0.png')
++    expect(r2[0].localPath).toBe('media/task-dedup/0.png')
++    // getDownloadUrl should only be called once (deduplication)
++    expect(mockedGetDownloadUrl).toHaveBeenCalledTimes(1)
++  })
++
++  it('falls back to kind-based extension when URL has none', async () => {
++    const fakeBytes = new Uint8Array([1]).buffer
++    mockedGetDownloadUrl.mockResolvedValue('https://temp.example.com/dl')
++    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
++      new Response(fakeBytes, { status: 200 }),
++    )
++
++    const media: MediaAsset[] = [
++      { kind: 'audio', url: 'https://cdn.example.com/stream-no-ext' },
++    ]
++    const result = await archiveTaskMedia('task-ext', media)
++    expect(result[0].localPath).toBe('media/task-ext/0.mp3')
++  })
++})
+diff --git a/server/media/archiver.ts b/server/media/archiver.ts
+new file mode 100644
+index 0000000..beb7404
+--- /dev/null
++++ b/server/media/archiver.ts
+@@ -0,0 +1,137 @@
++import { createWriteStream, existsSync, mkdirSync, renameSync } from 'node:fs'
++import { dirname, extname, join, resolve } from 'node:path'
++import { pipeline } from 'node:stream/promises'
++import { fileURLToPath } from 'node:url'
++import type { MediaAsset } from '../../src/lib/models/types.ts'
++import { getDownloadUrl } from '../kie/common.ts'
++
++const __dirname = dirname(fileURLToPath(import.meta.url))
++
++const SAFE_TASK_ID = /^[A-Za-z0-9_-]{1,128}$/
++
++/**
++ * Media root lives alongside the SQLite DB:
++ * - dev: <repo>/data/media/
++ * - desktop: <userData>/media/ (STUDIO_DB_PATH points to <userData>/studio.db)
++ */
++export function getMediaRoot(): string {
++  const dbPath = process.env.STUDIO_DB_PATH ?? resolve(__dirname, '../../data/studio.db')
++  return join(dirname(dbPath), 'media')
++}
++
++/** Resolve a relative localPath (e.g. "media/{taskId}/0.mp4") to an absolute path. */
++export function resolveMediaPath(localPath: string): string {
++  return join(getMediaRoot(), '..', localPath)
++}
++
++function extensionFromUrl(url: string): string {
++  try {
++    const pathname = new URL(url).pathname
++    const ext = extname(pathname)
++    // Limit to reasonable media extensions
++    if (/^\.[a-z0-9]{2,5}$/i.test(ext)) return ext.toLowerCase()
++  } catch { /* ignore */ }
++  return ''
++}
++
++const MIME_EXT_MAP: Record<string, string> = {
++  'video/mp4': '.mp4',
++  'video/webm': '.webm',
++  'audio/mpeg': '.mp3',
++  'audio/mp4': '.m4a',
++  'audio/wav': '.wav',
++  'audio/ogg': '.ogg',
++  'image/png': '.png',
++  'image/jpeg': '.jpg',
++  'image/webp': '.webp',
++  'image/gif': '.gif',
++}
++
++const KIND_DEFAULT_EXT: Record<string, string> = {
++  video: '.mp4',
++  audio: '.mp3',
++  image: '.png',
++}
++
++function extensionForAsset(asset: MediaAsset, url: string): string {
++  const fromUrl = extensionFromUrl(url)
++  if (fromUrl) return fromUrl
++  if (asset.mimeType && MIME_EXT_MAP[asset.mimeType]) return MIME_EXT_MAP[asset.mimeType]
++  return KIND_DEFAULT_EXT[asset.kind] ?? ''
++}
++
++// In-flight deduplication: prevents concurrent archives for the same taskId
++const inflight = new Map<string, Promise<MediaAsset[]>>()
++
++/**
++ * Download media assets for a completed task to local filesystem.
++ * Returns the media array with `localPath` populated for successfully downloaded assets.
++ * Failed downloads retain the original remote URL without localPath.
++ * Deduplicates concurrent calls for the same taskId.
++ */
++export function archiveTaskMedia(
++  taskId: string,
++  media: MediaAsset[],
++): Promise<MediaAsset[]> {
++  if (!SAFE_TASK_ID.test(taskId)) {
++    console.warn('[media-archive] unsafe taskId, skipped', taskId)
++    return Promise.resolve(media)
++  }
++  const existing = inflight.get(taskId)
++  if (existing) return existing
++  const run = doArchive(taskId, media).finally(() => inflight.delete(taskId))
++  inflight.set(taskId, run)
++  return run
++}
++
++async function doArchive(taskId: string, media: MediaAsset[]): Promise<MediaAsset[]> {
++  const mediaRoot = getMediaRoot()
++  const taskDir = join(mediaRoot, taskId)
++
++  const results: MediaAsset[] = []
++
++  for (const [index, asset] of media.entries()) {
++    // Already archived and file exists — skip
++    if (asset.localPath) {
++      const absPath = resolveMediaPath(asset.localPath)
++      if (existsSync(absPath)) {
++        results.push(asset)
++        continue
++      }
++    }
++
++    const sourceUrl = asset.url ?? asset.streamUrl
++    if (!sourceUrl) {
++      results.push(asset)
++      continue
++    }
++
++    try {
++      const temporaryUrl = await getDownloadUrl(sourceUrl)
++      const response = await fetch(temporaryUrl)
++      if (!response.ok || !response.body) {
++        throw new Error(`download failed (${response.status})`)
++      }
++
++      const ext = extensionForAsset(asset, sourceUrl)
++      const fileName = `${index}${ext}`
++      const relativePath = `media/${taskId}/${fileName}`
++
++      mkdirSync(taskDir, { recursive: true })
++      // Atomic write: stream to .part file then rename
++      const tmpPath = join(taskDir, `${fileName}.part`)
++      await pipeline(response.body, createWriteStream(tmpPath))
++      renameSync(tmpPath, join(taskDir, fileName))
++
++      results.push({ ...asset, localPath: relativePath })
++    } catch (error) {
++      console.error(
++        '[media-archive] failed to download asset',
++        { taskId, index, url: sourceUrl, error: error instanceof Error ? error.message : error },
++      )
++      results.push(asset)
++    }
++  }
++
++  return results
++}
+diff --git a/server/media/backfill.test.ts b/server/media/backfill.test.ts
+new file mode 100644
+index 0000000..aa86ef1
+--- /dev/null
++++ b/server/media/backfill.test.ts
+@@ -0,0 +1,73 @@
++// @vitest-environment node
++import { describe, expect, it, vi, beforeEach } from 'vitest'
++import type { MediaAsset } from '../../src/lib/models/types.ts'
++
++vi.mock('./archiver.ts', () => ({
++  archiveTaskMedia: vi.fn(),
++}))
++
++vi.mock('../db/history.ts', () => ({
++  listUnarchivedMedia: vi.fn(),
++  updateMediaLocalPaths: vi.fn(),
++}))
++
++const { archiveTaskMedia } = await import('./archiver.ts')
++const { listUnarchivedMedia, updateMediaLocalPaths } = await import('../db/history.ts')
++const { startBackfill, backfillRoutes } = await import('./backfill.ts')
++
++const mockedArchive = vi.mocked(archiveTaskMedia)
++const mockedList = vi.mocked(listUnarchivedMedia)
++const mockedUpdate = vi.mocked(updateMediaLocalPaths)
++
++describe('server/media/backfill', () => {
++  beforeEach(() => {
++    vi.clearAllMocks()
++  })
++
++  it('startBackfill processes unarchived items and updates DB', async () => {
++    const media: MediaAsset[] = [{ kind: 'image', url: 'https://cdn.example.com/a.png' }]
++    mockedList.mockReturnValue([{ taskId: 't-1', media }])
++    mockedArchive.mockResolvedValue([
++      { kind: 'image', url: 'https://cdn.example.com/a.png', localPath: 'media/t-1/0.png' },
++    ])
++
++    startBackfill()
++    // Allow the fire-and-forget promise to resolve
++    await vi.waitFor(() => {
++      expect(mockedUpdate).toHaveBeenCalledWith('t-1', expect.any(Array))
++    })
++    expect(mockedArchive).toHaveBeenCalledWith('t-1', media)
++  })
++
++  it('does not call update when archive yields no localPath', async () => {
++    const media: MediaAsset[] = [{ kind: 'image', url: 'https://cdn.example.com/b.png' }]
++    mockedList.mockReturnValue([{ taskId: 't-2', media }])
++    mockedArchive.mockResolvedValue([
++      { kind: 'image', url: 'https://cdn.example.com/b.png' },
++    ])
++
++    startBackfill()
++    await vi.waitFor(() => {
++      expect(mockedArchive).toHaveBeenCalled()
++    })
++    // Give microtask queue a tick to ensure update is NOT called
++    await new Promise((r) => setTimeout(r, 10))
++    expect(mockedUpdate).not.toHaveBeenCalled()
++  })
++
++  it('handles empty unarchived list gracefully', async () => {
++    mockedList.mockReturnValue([])
++    startBackfill()
++    await new Promise((r) => setTimeout(r, 10))
++    expect(mockedArchive).not.toHaveBeenCalled()
++  })
++
++  it('backfill route returns started status', async () => {
++    mockedList.mockReturnValue([])
++    const app = backfillRoutes
++    const res = await app.request('/media/backfill', { method: 'POST' })
++    expect(res.status).toBe(200)
++    const body = await res.json() as { data: { status: string } }
++    expect(body.data.status).toMatch(/^(started|already_running)$/)
++  })
++})
+diff --git a/server/media/backfill.ts b/server/media/backfill.ts
+new file mode 100644
+index 0000000..51917ba
+--- /dev/null
++++ b/server/media/backfill.ts
+@@ -0,0 +1,78 @@
++import { Hono } from 'hono'
++import { archiveTaskMedia } from './archiver.ts'
++import { listUnarchivedMedia, updateMediaLocalPaths } from '../db/history.ts'
++
++const MAX_CONCURRENCY = 2
++
++let backfillRunning = false
++
++/**
++ * Process unarchived media items with limited concurrency.
++ * Downloads media files for existing history items that lack localPath.
++ * Items older than 14 days will fail (kie.ai deleted them) — skipped gracefully.
++ */
++async function runBackfill(): Promise<{ archived: number; failed: number }> {
++  if (backfillRunning) return { archived: 0, failed: 0 }
++  backfillRunning = true
++
++  let archived = 0
++  let failed = 0
++
++  try {
++    const items = listUnarchivedMedia(50)
++    if (items.length === 0) {
++      console.log('[media-backfill] no unarchived items')
++      return { archived: 0, failed: 0 }
++    }
++
++    console.log(`[media-backfill] starting backfill for ${items.length} items`)
++
++    // Process with limited concurrency
++    const queue = [...items]
++    const workers = Array.from({ length: MAX_CONCURRENCY }, async () => {
++      while (queue.length > 0) {
++        const item = queue.shift()
++        if (!item) break
++        try {
++          const result = await archiveTaskMedia(item.taskId, item.media)
++          const hasNewLocal = result.some((asset) => asset.localPath)
++          if (hasNewLocal) {
++            updateMediaLocalPaths(item.taskId, result)
++            archived++
++          } else {
++            failed++
++          }
++        } catch {
++          failed++
++        }
++      }
++    })
++
++    await Promise.all(workers)
++    console.log(`[media-backfill] done: ${archived} archived, ${failed} failed/skipped`)
++  } finally {
++    backfillRunning = false
++  }
++
++  return { archived, failed }
++}
++
++/** Call once at server startup (fire-and-forget). */
++export function startBackfill(): void {
++  void runBackfill().catch((err) =>
++    console.error('[media-backfill] unexpected error', err),
++  )
++}
++
++/** Manual trigger route: POST /api/media/backfill */
++export const backfillRoutes = new Hono()
++
++backfillRoutes.post('/media/backfill', (c) => {
++  if (backfillRunning) {
++    return c.json({ data: { status: 'already_running' } })
++  }
++  void runBackfill().catch((err) =>
++    console.error('[media-backfill] manual trigger error', err),
++  )
++  return c.json({ data: { status: 'started' } })
++})
+diff --git a/server/routes/media.ts b/server/routes/media.ts
+new file mode 100644
+index 0000000..d5f7e53
+--- /dev/null
++++ b/server/routes/media.ts
+@@ -0,0 +1,126 @@
++import { createReadStream, existsSync, realpathSync, statSync } from 'node:fs'
++import { extname, join, normalize } from 'node:path'
++import { Hono } from 'hono'
++import { getMediaRoot } from '../media/archiver.ts'
++
++const MIME_TYPES: Record<string, string> = {
++  '.mp4': 'video/mp4',
++  '.webm': 'video/webm',
++  '.mov': 'video/quicktime',
++  '.avi': 'video/x-msvideo',
++  '.mp3': 'audio/mpeg',
++  '.wav': 'audio/wav',
++  '.ogg': 'audio/ogg',
++  '.flac': 'audio/flac',
++  '.m4a': 'audio/mp4',
++  '.png': 'image/png',
++  '.jpg': 'image/jpeg',
++  '.jpeg': 'image/jpeg',
++  '.webp': 'image/webp',
++  '.gif': 'image/gif',
++  '.svg': 'image/svg+xml',
++}
++
++export const mediaRoutes = new Hono()
++
++mediaRoutes.get('/media/*', (c) => {
++  const rawPath = c.req.path.replace(/^\/media\//, '')
++
++  // Path traversal protection
++  if (rawPath.includes('..') || rawPath.includes('\0')) {
++    return c.json({ error: 'Invalid path' }, 400)
++  }
++
++  const safePath = normalize(rawPath)
++  if (safePath.startsWith('..') || safePath.startsWith('/')) {
++    return c.json({ error: 'Invalid path' }, 400)
++  }
++
++  const filePath = join(getMediaRoot(), safePath)
++
++  // Ensure resolved path is still within media root
++  const mediaRoot = getMediaRoot()
++  if (!filePath.startsWith(mediaRoot)) {
++    return c.json({ error: 'Invalid path' }, 400)
++  }
++
++  if (!existsSync(filePath)) {
++    return c.json({ error: 'Not found' }, 404)
++  }
++
++  const stat = statSync(filePath)
++  if (!stat.isFile()) {
++    return c.json({ error: 'Not found' }, 404)
++  }
++
++  // Symlink protection: ensure the real path is still within media root
++  const realPath = realpathSync(filePath)
++  if (!realPath.startsWith(realpathSync(mediaRoot))) {
++    return c.json({ error: 'Invalid path' }, 400)
++  }
++
++  const ext = extname(filePath).toLowerCase()
++  const contentType = MIME_TYPES[ext] ?? 'application/octet-stream'
++
++  // HTTP Range support (required for video/audio seeking in WKWebView/WebKitGTK)
++  const rangeHeader = c.req.header('range')
++  if (rangeHeader) {
++    const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader)
++    if (match) {
++      const start = match[1] ? parseInt(match[1], 10) : 0
++      const end = match[2] ? parseInt(match[2], 10) : stat.size - 1
++      if (start >= stat.size || end >= stat.size || start > end) {
++        return new Response(null, {
++          status: 416,
++          headers: { 'Content-Range': `bytes */${stat.size}` },
++        })
++      }
++      const rangeStream = createReadStream(filePath, { start, end })
++      return new Response(
++        new ReadableStream({
++          start(controller) {
++            rangeStream.on('data', (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)))
++            rangeStream.on('end', () => controller.close())
++            rangeStream.on('error', (err) => controller.error(err))
++          },
++          cancel() {
++            rangeStream.destroy()
++          },
++        }),
++        {
++          status: 206,
++          headers: {
++            'Content-Type': contentType,
++            'Content-Range': `bytes ${start}-${end}/${stat.size}`,
++            'Content-Length': String(end - start + 1),
++            'Accept-Ranges': 'bytes',
++            'Cache-Control': 'public, max-age=31536000, immutable',
++          },
++        },
++      )
++    }
++  }
++
++  const stream = createReadStream(filePath)
++
++  return new Response(
++    new ReadableStream({
++      start(controller) {
++        stream.on('data', (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)))
++        stream.on('end', () => controller.close())
++        stream.on('error', (err) => controller.error(err))
++      },
++      cancel() {
++        stream.destroy()
++      },
++    }),
++    {
++      headers: {
++        'Content-Type': contentType,
++        'Content-Length': String(stat.size),
++        'Accept-Ranges': 'bytes',
++        'Cache-Control': 'public, max-age=31536000, immutable',
++      },
++    },
++  )
++})
+diff --git a/server/routes/settings.ts b/server/routes/settings.ts
+index cadc374..2f69037 100644
+--- a/server/routes/settings.ts
++++ b/server/routes/settings.ts
+@@ -1,3 +1,5 @@
++import { exec } from 'node:child_process'
++import { mkdirSync } from 'node:fs'
+ import { Hono } from 'hono'
+ import { deleteSetting } from '../db/settings.ts'
+ import {
+@@ -8,6 +10,7 @@ import {
+   maskApiKey,
+   setStoredApiKey,
+ } from '../settings/apiKey.ts'
++import { getMediaRoot } from '../media/archiver.ts'
+ import { getDb } from '../db/open.ts'
+ import { z } from 'zod'
+ import { validateJson } from './validation.ts'
+@@ -51,3 +54,22 @@ settingsRoutes.delete('/settings/api-key', (c) => {
+   deleteSetting(KIE_API_KEY_SETTING)
+   return c.json({ data: { hasApiKey: hasUsableApiKey() } })
+ })
++
++/** ローカルメディアフォルダを OS のファイルマネージャで開く */
++settingsRoutes.post('/settings/open-media-folder', (c) => {
++  const mediaRoot = getMediaRoot()
++  mkdirSync(mediaRoot, { recursive: true })
++
++  const cmd =
++    process.platform === 'win32'
++      ? `explorer.exe "${mediaRoot}"`
++      : process.platform === 'darwin'
++        ? `open "${mediaRoot}"`
++        : `xdg-open "${mediaRoot}"`
++
++  exec(cmd, (err) => {
++    if (err) console.warn('[settings] failed to open media folder:', err.message)
++  })
++
++  return c.json({ data: { path: mediaRoot } })
++})
+diff --git a/server/routes/task.ts b/server/routes/task.ts
+index 50454f0..cf7cab7 100644
+--- a/server/routes/task.ts
++++ b/server/routes/task.ts
+@@ -1,6 +1,8 @@
+ import { Hono } from 'hono'
+ import { getProviderAdapter } from '../kie/adapters/index.ts'
+ import type { Operation, Provider } from '../kie/types.ts'
++import { archiveTaskMedia } from '../media/archiver.ts'
++import { updateMediaLocalPaths } from '../db/history.ts'
+ 
+ export const taskRoutes = new Hono()
+ 
+@@ -10,5 +12,16 @@ taskRoutes.get('/task', async (c) => {
+   const provider = (c.req.query('provider') ?? 'market') as Provider
+   const operation = (c.req.query('operation') ?? 'generate') as Operation
+   const task = await getProviderAdapter(provider).getTask(taskId, operation)
++
++  // Auto-archive media to local filesystem (fire-and-forget)
++  if (
++    (task.state === 'success' || task.state === 'partial') &&
++    task.media.some((m) => (m.url ?? m.streamUrl) && !m.localPath)
++  ) {
++    void archiveTaskMedia(taskId, task.media)
++      .then((archived) => updateMediaLocalPaths(taskId, archived))
++      .catch((err) => console.error('[media-archive]', taskId, err))
++  }
++
+   return c.json({ data: task })
+ })
+diff --git a/server/routes/update.ts b/server/routes/update.ts
+new file mode 100644
+index 0000000..f11009e
+--- /dev/null
++++ b/server/routes/update.ts
+@@ -0,0 +1,51 @@
++import { Hono } from 'hono'
++
++export interface UpdateCheckResult {
++  available: boolean
++  version?: string
++  downloaded?: boolean
++}
++
++type UpdateHandler = () => Promise<UpdateCheckResult>
++
++// globalThis に保存する。Electrobun のバンドラは server/app.ts 経由と
++// src/bun/index.ts 経由でこのモジュールのインスタンスを2つ生成するため、
++// module-level let ではハンドラが共有されない。
++const UPDATE_HANDLER_KEY = Symbol.for('kie.updateHandler')
++
++type GlobalWithHandler = typeof globalThis & {
++  [UPDATE_HANDLER_KEY]?: UpdateHandler
++}
++
++/**
++ * デスクトップメインプロセス（src/bun/index.ts）から Updater ハンドラを登録する。
++ * 未登録時（dev / web 環境）は 503 を返す。
++ */
++export function registerUpdateHandler(fn: UpdateHandler) {
++  ;(globalThis as GlobalWithHandler)[UPDATE_HANDLER_KEY] = fn
++}
++
++/** ハンドラ登録済み（= デスクトップ版）かどうか */
++export function isUpdateHandlerRegistered(): boolean {
++  return typeof (globalThis as GlobalWithHandler)[UPDATE_HANDLER_KEY] === 'function'
++}
++
++export const updateRoutes = new Hono()
++
++updateRoutes.post('/update/check', async (c) => {
++  const handler = (globalThis as GlobalWithHandler)[UPDATE_HANDLER_KEY]
++  if (!handler) {
++    return c.json(
++      { error: 'アップデート機能はデスクトップ版でのみ利用できます' },
++      503,
++    )
++  }
++  try {
++    const result = await handler()
++    return c.json({ data: result })
++  } catch (err) {
++    const message =
++      err instanceof Error ? err.message : 'アップデート確認に失敗しました'
++    return c.json({ error: message }, 500)
++  }
++})
+diff --git a/src/bun/index.ts b/src/bun/index.ts
+index 75efa60..ea292ef 100644
+--- a/src/bun/index.ts
++++ b/src/bun/index.ts
+@@ -32,6 +32,8 @@ if (!existsSync(catalogPath)) {
+ const { createApp } = await import('../../server/app.ts')
+ const { getDb, getDbPath } = await import('../../server/db/open.ts')
+ const { syncCatalog } = await import('../../server/catalog/sync.ts')
++const { startBackfill } = await import('../../server/media/backfill.ts')
++const { registerUpdateHandler } = await import('../../server/routes/update.ts')
+ 
+ const app = createApp()
+ 
+@@ -68,6 +70,9 @@ if (process.env.SYNC_MODELS_ON_START !== '0') {
+   })
+ }
+ 
++// Backfill: download media for existing history items that lack localPath.
++startBackfill()
++
+ // NOTE: Electrobun's native wrapper treats the ENTIRE views:// URL path
+ // (including ?query and #hash) as a literal file path. No parameters can be
+ // appended to the URL. The frontend uses the default API port (8787) or
+@@ -80,13 +85,16 @@ new BrowserWindow({
+ 
+ // Non-blocking, best-effort update check. Silently skipped when no baseUrl is
+ // configured (local builds) or when the updater API is unavailable.
++// Downloads the update so it is applied on next startup.
+ async function checkForUpdatesQuietly() {
+   try {
+     const local = await Electrobun.Updater.getLocal()
+     if (!local?.baseUrl) return
+     const info = await Electrobun.Updater.checkForUpdate()
+     if (info?.updateAvailable) {
+-      console.log(`[updater] update available: ${info.version ?? 'unknown'}`)
++      console.log(`[updater] update available: ${info.version ?? 'unknown'} — downloading…`)
++      await Electrobun.Updater.downloadUpdate()
++      console.log('[updater] download complete; will apply on next startup')
+     }
+   } catch (err) {
+     console.warn('[updater] update check skipped', err)
+@@ -95,6 +103,21 @@ async function checkForUpdatesQuietly() {
+ 
+ void checkForUpdatesQuietly()
+ 
++// Register the /api/update/check handler so the frontend SettingsSheet can
++// trigger an explicit update check + download from the UI.
++registerUpdateHandler(async () => {
++  const local = await Electrobun.Updater.getLocal()
++  if (!local?.baseUrl) {
++    return { available: false }
++  }
++  const info = await Electrobun.Updater.checkForUpdate()
++  if (!info?.updateAvailable) {
++    return { available: false, version: info?.version }
++  }
++  await Electrobun.Updater.downloadUpdate()
++  return { available: true, version: info.version, downloaded: true }
++})
++
+ process.on('exit', () => {
+   try {
+     db?.close()
+diff --git a/src/components/HistoryGallery.tsx b/src/components/HistoryGallery.tsx
+index 2d8b908..457722e 100644
+--- a/src/components/HistoryGallery.tsx
++++ b/src/components/HistoryGallery.tsx
+@@ -18,12 +18,7 @@ import {
+ } from 'lucide-react'
+ import { useVirtualizer } from '@tanstack/react-virtual'
+ import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
+-import {
+-  mediaExpiry,
+-  mediaExpiryAt,
+-  mediaExpiryCardLabel,
+-  type MediaExpiry,
+-} from '../lib/mediaExpiry.ts'
++import { localMediaUrl } from '../lib/api.ts'
+ import type { HistoryItem, MediaAsset, QuickAction, TaskState } from '../lib/models/types.ts'
+ import { Pressable, PressableDiv } from './motion/Pressable.tsx'
+ import { SharedMedia } from './motion/SharedMedia.tsx'
+@@ -35,31 +30,6 @@ const HistorySheets = lazy(() =>
+   })),
+ )
+ 
+-function successExpiry(item: HistoryItem): MediaExpiry | null {
+-  if (
+-    item.state !== 'success' ||
+-    !((item.media?.length ?? 0) || (item.resultUrls?.length ?? 0))
+-  ) return null
+-  const expiresAt = item.expiresAt ?? item.media?.find((asset) => asset.expiresAt)?.expiresAt
+-  // 明示的な expiresAt が無い場合は kie.ai 公式の 14 日保持期間から推定する
+-  return expiresAt ? mediaExpiryAt(expiresAt) : mediaExpiry(item.createdAt)
+-}
+-
+-function expiryTextClass(status: MediaExpiry['status']): string {
+-  switch (status) {
+-    case 'expired':
+-      return 'text-[var(--danger)]'
+-    case 'soon':
+-      return 'text-[var(--warning)]'
+-    case 'ok':
+-      return 'text-white/70'
+-    default: {
+-      const _exhaustive: never = status
+-      return _exhaustive
+-    }
+-  }
+-}
+-
+ function relativeTime(ts: number): string {
+   const diff = Date.now() - ts
+   const sec = Math.floor(diff / 1000)
+@@ -119,35 +89,29 @@ const MAX_COMPARE = 4
+ const smallBtnClass = 'studio-btn'
+ const filterSelectClass = 'studio-select w-auto max-w-none px-2 py-1.5 text-xs'
+ 
+-/** 画像読み込み失敗時に表示する期限切れプレースホルダー。 */
+-function ExpiredPlaceholder({ label }: { label?: string }) {
+-  return (
+-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
+-      <span className="grid size-10 place-items-center rounded-full bg-[var(--danger)]/15 text-[var(--danger)]">
+-        <Clock size={18} aria-hidden />
+-      </span>
+-      <span className="text-[11px] font-semibold text-[var(--danger)]">期限切れ</span>
+-      <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
+-        {label ?? 'kie.ai の保管期限（14日）を過ぎたためメディアを取得できません'}
+-      </span>
+-    </div>
+-  )
+-}
+-
+-/** img の onError で期限切れ表示に切り替えるラッパー。 */
++/** img の onError でフォールバック表示に切り替えるラッパー。 */
+ function GalleryImage({
+   src,
+   alt,
+   className,
+-  expired,
+ }: {
+   src: string
+   alt: string
+   className: string
+-  expired: boolean
+ }) {
+   const [failed, setFailed] = useState(false)
+-  if (failed || expired) return <ExpiredPlaceholder />
++  if (failed) {
++    return (
++      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
++        <span className="grid size-10 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
++          <Clock size={18} aria-hidden />
++        </span>
++        <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
++          メディアを取得できません
++        </span>
++      </div>
++    )
++  }
+   return (
+     <img
+       src={src}
+@@ -489,9 +453,6 @@ export function HistoryGallery({
+                   すべて削除
+                 </button>
+               )}
+-              <p className="border-t border-[var(--border)] px-3 py-2 text-[10px] leading-snug text-[var(--text-muted)]">
+-                生成メディアには保存期限があります。期限が不明なものも早めに保存してください
+-              </p>
+             </div>
+           </details>
+           <input
+@@ -623,14 +584,17 @@ export function HistoryGallery({
+               const selected = h.taskId === activeTaskId
+               const comparing = compareIdSet.has(h.taskId)
+               const primaryMedia = h.media?.[0]
+-              const mediaUrl = primaryMedia?.url ?? primaryMedia?.streamUrl ?? h.resultUrls?.[0]
+-              const thumb = primaryMedia?.previewUrl ?? mediaUrl
++              const mediaUrl = primaryMedia?.localPath
++                ? localMediaUrl(primaryMedia.localPath)
++                : primaryMedia?.url ?? primaryMedia?.streamUrl ?? h.resultUrls?.[0]
++              const thumb = primaryMedia?.localPath
++                ? localMediaUrl(primaryMedia.localPath)
++                : primaryMedia?.previewUrl ?? mediaUrl
+               const audioTracks = (h.media ?? []).filter((asset) => asset.kind === 'audio')
+               const isAudio = primaryMedia?.kind === 'audio'
+                 || h.category === 'audio'
+                 || Boolean(mediaUrl && isAudioUrl(mediaUrl))
+               const busy = isBusyState(h.state)
+-              const expiry = successExpiry(h)
+ 
+               return (
+                 <div
+@@ -675,7 +639,6 @@ export function HistoryGallery({
+                               src={thumb}
+                               alt={h.prompt || shortModel(h.model)}
+                               className="h-full w-full object-cover"
+-                              expired={expiry?.status === 'expired'}
+                             />
+                           )
+                         ) : isAudio && !busy ? (
+@@ -731,15 +694,6 @@ export function HistoryGallery({
+                           </div>
+                         )}
+ 
+-                        {expiry?.status === 'expired' && !isAudio && (
+-                          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-1.5">
+-                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--danger)] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+-                              <Clock size={10} aria-hidden />
+-                              期限切れ
+-                            </span>
+-                          </div>
+-                        )}
+-
+                         <div className="pointer-events-none absolute inset-x-0 bottom-0 studio-tile-scrim p-2">
+                           <div className="truncate text-[11px] font-medium text-white">
+                             {shortModel(h.model)}
+@@ -747,15 +701,6 @@ export function HistoryGallery({
+                           <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
+                             <span>{relativeTime(h.createdAt)}</span>
+                             <span className="flex shrink-0 items-center gap-1.5">
+-                              {expiry ? (
+-                                <span
+-                                  className={`font-semibold ${expiryTextClass(expiry.status)}`}
+-                                >
+-                                  {mediaExpiryCardLabel(expiry)}
+-                                </span>
+-                              ) : h.state === 'success' ? (
+-                                <span className="font-semibold">早めに保存</span>
+-                              ) : null}
+                               {typeof h.creditsConsumed === 'number' && (
+                                 <span>−{h.creditsConsumed}</span>
+                               )}
+diff --git a/src/components/HistorySheets.tsx b/src/components/HistorySheets.tsx
+index 2cce538..27f1cf1 100644
+--- a/src/components/HistorySheets.tsx
++++ b/src/components/HistorySheets.tsx
+@@ -7,9 +7,9 @@ import {
+   fetchDownloadUrl,
+   fetchPersonas,
+   fetchTimestampedLyrics,
++  localMediaUrl,
+ } from '../lib/api.ts'
+ import { isAudioUrl, isVideoUrl, mediaKindFromUrl } from '../lib/media.ts'
+-import { mediaExpiry, mediaExpiryAt, mediaExpiryViewerLabel } from '../lib/mediaExpiry.ts'
+ import type {
+   HistoryItem,
+   MediaAsset,
+@@ -78,26 +78,24 @@ function canReuse(item: HistoryItem): boolean {
+   return Boolean(item.input && item.modelId)
+ }
+ 
+-/** 詳細ビューアー用の画像。読み込み失敗時に期限切れプレースホルダーを表示する。 */
++/** 詳細ビューアー用の画像。読み込み失敗時にフォールバックを表示する。 */
+ function ViewerImage({
+   src,
+   alt,
+-  expired,
+ }: {
+   src: string
+   alt: string
+-  expired: boolean
+ }) {
+   const [failed, setFailed] = useState(false)
+-  if (failed || expired) {
++  if (failed) {
+     return (
+       <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
+-        <span className="grid size-12 place-items-center rounded-full bg-[var(--danger)]/15 text-[var(--danger)]">
++        <span className="grid size-12 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
+           <Clock size={22} aria-hidden />
+         </span>
+-        <p className="text-sm font-semibold text-[var(--danger)]">メディア期限切れ</p>
++        <p className="text-sm font-semibold text-[var(--text-muted)]">メディアを取得できません</p>
+         <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
+-          kie.ai の保管期限（14日）を過ぎたため、このメディアは取得できません。同じ入力で再生成できます。
++          メディアの読み込みに失敗しました。同じ入力で再生成できます。
+         </p>
+       </div>
+     )
+@@ -180,14 +178,6 @@ export function HistorySheets({
+       }))),
+     [items],
+   )
+-  const activeExpiry =
+-    active?.state === 'success' && activeMedia.length > 0
+-      ? (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt)
+-        ? mediaExpiryAt(
+-            (active.expiresAt ?? activeMedia.find((asset) => asset.expiresAt)?.expiresAt) as number,
+-          )
+-        : mediaExpiry(active.createdAt)
+-      : null
+   const download = useMutation({
+     mutationFn: async (url: string) => {
+       const response = await fetchDownloadUrl(url)
+@@ -392,7 +382,7 @@ export function HistorySheets({
+                 <div className="mb-4 grid grid-cols-2 gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
+                   {[{ label: 'Before', item: parent }, { label: 'After', item: active }].map(({ label, item }) => {
+                     const asset = mediaFor(item).find((entry) => entry.kind === 'video')
+-                    const url = asset?.url ?? asset?.streamUrl
++                    const url = asset?.localPath ? localMediaUrl(asset.localPath) : asset?.url ?? asset?.streamUrl
+                     return (
+                       <div key={label} className="min-w-0">
+                         <span className="studio-label">{label}</span>
+@@ -419,7 +409,10 @@ export function HistorySheets({
+                       </div>
+                     )
+                   }
+-                  const url = asset.url ?? asset.streamUrl
++                  const remoteUrl = asset.url ?? asset.streamUrl
++                  const url = asset.localPath
++                    ? localMediaUrl(asset.localPath)
++                    : remoteUrl
+                   if (!url) return null
+                   const audio = asset.kind === 'audio' || isAudioUrl(url)
+                   const video = asset.kind === 'video' || isVideoUrl(url)
+@@ -478,7 +471,6 @@ export function HistorySheets({
+                         <ViewerImage
+                           src={url}
+                           alt={active.prompt || '生成結果'}
+-                          expired={activeExpiry?.status === 'expired'}
+                         />
+                       )}
+                     </SharedMedia>
+@@ -492,15 +484,15 @@ export function HistorySheets({
+                         新しいタブ
+                       </a>
+                       <Pressable
+-                        disabled={download.isPending}
+-                        onClick={() => download.mutate(url)}
++                        disabled={download.isPending || !remoteUrl}
++                        onClick={() => remoteUrl && download.mutate(remoteUrl)}
+                         className={smallBtnClass}
+                         scaleTo={0.96}
+                       >
+                         {download.isPending ? '保存準備中…' : '保存'}
+                       </Pressable>
+                       <Pressable
+-                        onClick={() => onSendToInput(url)}
++                        onClick={() => onSendToInput(remoteUrl ?? url)}
+                         className={`${smallBtnClass} inline-flex items-center gap-1`}
+                         scaleTo={0.96}
+                       >
+@@ -666,21 +658,7 @@ export function HistorySheets({
+                         <Pressable className={smallBtnClass} onClick={() => onQuickAction(active, asset, 'market-edit')}>Marketで編集</Pressable>
+                       </div>
+                     )}
+-                    {index === 0 && activeExpiry ? (
+-                      <p
+-                        className={`text-xs ${
+-                          activeExpiry.status === 'ok'
+-                            ? 'text-[var(--text-muted)]'
+-                            : activeExpiry.status === 'soon'
+-                              ? 'text-[var(--warning)]'
+-                              : 'text-[var(--danger)]'
+-                        }`}
+-                      >
+-                        {mediaExpiryViewerLabel(activeExpiry)}
+-                      </p>
+-                    ) : index === 0 ? (
+-                      <p className="text-xs text-[var(--warning)]">保存期限あり · 早めにまとめて保存してください</p>
+-                    ) : null}
++
+                     {download.isError && (
+                       <p className="studio-field-error">
+                         {(download.error as Error).message ||
+@@ -769,7 +747,7 @@ export function HistorySheets({
+           >
+             {compareItems.map((item) => {
+               const asset = mediaFor(item)[0]
+-              const url = asset?.url ?? asset?.streamUrl
++              const url = asset?.localPath ? localMediaUrl(asset.localPath) : asset?.url ?? asset?.streamUrl
+               return (
+                 <div
+                   key={item.taskId}
+diff --git a/src/components/SettingsSheet.tsx b/src/components/SettingsSheet.tsx
+index 4d73dea..16b929e 100644
+--- a/src/components/SettingsSheet.tsx
++++ b/src/components/SettingsSheet.tsx
+@@ -2,13 +2,14 @@ import { useActionState, useState } from 'react'
+ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+ import {
+   Check,
++  FolderOpen,
+   KeyRound,
+   RefreshCw,
+   Settings,
+   ShieldCheck,
+   Trash2,
+ } from 'lucide-react'
+-import { clearApiKey, fetchSettings, saveApiKey } from '../lib/api.ts'
++import { clearApiKey, checkForUpdate, fetchHealth, fetchSettings, openMediaFolder, saveApiKey } from '../lib/api.ts'
+ import { Pressable } from './motion/Pressable.tsx'
+ import { SpringSheet } from './motion/SpringSheet.tsx'
+ 
+@@ -108,6 +109,73 @@ function ApiKeyForm({
+   )
+ }
+ 
++/**
++ * アップデート確認ボタン。デスクトップ版の Updater API を叩き、
++ * 確認中 → 結果（最新 / 新バージョンDL済み / エラー）を表示する。
++ */
++function UpdateCheckButton() {
++  const [status, setStatus] = useState<
++    'idle' | 'checking' | 'up-to-date' | 'downloaded' | 'error'
++  >('idle')
++  const [detail, setDetail] = useState<string | null>(null)
++
++  async function handleCheck() {
++    setStatus('checking')
++    setDetail(null)
++    try {
++      const { data } = await checkForUpdate()
++      if (data.available && data.downloaded) {
++        setStatus('downloaded')
++        setDetail(data.version ? `v${data.version}` : null)
++      } else {
++        setStatus('up-to-date')
++      }
++    } catch (err) {
++      setStatus('error')
++      setDetail(
++        err instanceof Error ? err.message : '確認に失敗しました',
++      )
++    }
++  }
++
++  const checking = status === 'checking'
++
++  return (
++    <div className="flex flex-col items-end gap-1">
++      <Pressable
++        onClick={() => void handleCheck()}
++        disabled={checking}
++        className="studio-btn w-auto gap-1 px-3 text-xs disabled:cursor-not-allowed disabled:opacity-50"
++        scaleTo={0.96}
++        aria-busy={checking || undefined}
++      >
++        <RefreshCw
++          size={13}
++          strokeWidth={2}
++          aria-hidden
++          className={checking ? 'animate-spin' : undefined}
++        />
++        {checking ? '確認中…' : 'アップデートを確認'}
++      </Pressable>
++      {status === 'up-to-date' && (
++        <p className="text-xs text-[var(--text-muted)]" role="status">
++          最新のバージョンです
++        </p>
++      )}
++      {status === 'downloaded' && (
++        <p className="text-xs text-[var(--success,var(--accent))]" role="status">
++          {detail ?? '新しいバージョン'} をダウンロード済み — 次回起動時に適用
++        </p>
++      )}
++      {status === 'error' && (
++        <p className="text-xs text-[var(--danger)]" role="alert">
++          {detail}
++        </p>
++      )}
++    </div>
++  )
++}
++
+ export function SettingsSheet({
+   open,
+   onClose,
+@@ -124,6 +192,13 @@ export function SettingsSheet({
+     staleTime: 30_000,
+   })
+ 
++  const healthQuery = useQuery({
++    queryKey: ['health'],
++    queryFn: fetchHealth,
++    enabled: open,
++    staleTime: 60_000,
++  })
++
+   async function refreshDependentQueries() {
+     await Promise.all([
+       queryClient.invalidateQueries({ queryKey: ['settings'] }),
+@@ -231,6 +306,25 @@ export function SettingsSheet({
+           )}
+         </section>
+ 
++        <section className="mt-6 border-t border-[var(--border)] pt-4">
++          <div className="flex items-center justify-between gap-3">
++            <div>
++              <div className="studio-label">ローカルメディア</div>
++              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
++                生成結果はこの端末のフォルダに自動保存されます。14日を過ぎたファイルは削除される場合があります。
++              </p>
++            </div>
++            <Pressable
++              onClick={() => void openMediaFolder()}
++              className="studio-btn w-auto shrink-0 gap-1 px-3 text-xs"
++              scaleTo={0.96}
++            >
++              <FolderOpen size={13} strokeWidth={2} aria-hidden />
++              フォルダを開く
++            </Pressable>
++          </div>
++        </section>
++
+         <section className="mt-6 border-t border-[var(--border)] pt-4">
+           <div className="flex items-center justify-between gap-3">
+             <div>
+@@ -240,20 +334,13 @@ export function SettingsSheet({
+                 <span className="text-[var(--text-muted)]">v{APP_VERSION}</span>
+               </p>
+             </div>
+-            <a
+-              href="https://github.com"
+-              target="_blank"
+-              rel="noreferrer"
+-              className="studio-btn w-auto gap-1 px-3 text-xs"
+-              aria-label="アップデートを確認"
+-            >
+-              <RefreshCw size={13} strokeWidth={2} aria-hidden />
+-              アップデートを確認
+-            </a>
++            {healthQuery.data?.isDesktop && <UpdateCheckButton />}
+           </div>
+-          <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
+-            デスクトップ版は起動時に自動でアップデートを確認します。新しい版がある場合は次回起動時に適用されます。
+-          </p>
++          {healthQuery.data?.isDesktop && (
++            <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
++              デスクトップ版は起動時に自動でアップデートを確認します。新しい版がある場合は次回起動時に適用されます。
++            </p>
++          )}
+         </section>
+ 
+         <div className="mt-5 flex justify-end">
+diff --git a/src/components/audio/AudioPlayer.tsx b/src/components/audio/AudioPlayer.tsx
+index 180787f..4fa6d8a 100644
+--- a/src/components/audio/AudioPlayer.tsx
++++ b/src/components/audio/AudioPlayer.tsx
+@@ -16,6 +16,7 @@ import {
+   X,
+ } from 'lucide-react'
+ import { Pressable } from '../motion/Pressable.tsx'
++import { apiUrl } from '../../lib/api.ts'
+ import {
+   AudioPlayerContext,
+   type AudioPlayerValue,
+@@ -23,6 +24,7 @@ import {
+ } from './audioPlayerContext.ts'
+ 
+ function sourceOf(track: AudioTrack): string | undefined {
++  if (track.localPath) return apiUrl(`/${track.localPath}`)
+   return track.streamUrl ?? track.url
+ }
+ 
+diff --git a/src/lib/api.ts b/src/lib/api.ts
+index a41d179..4404f79 100644
+--- a/src/lib/api.ts
++++ b/src/lib/api.ts
+@@ -63,6 +63,9 @@ const API_BASE: string =
+ 
+ export const apiUrl = (path: string): string => `${API_BASE}${path}`
+ 
++/** ローカルメディアの配信 URL を生成（dev: 相対、desktop: 絶対 127.0.0.1） */
++export const localMediaUrl = (localPath: string): string => apiUrl(`/${localPath}`)
++
+ async function parseJson<T>(res: Response): Promise<T> {
+   let data: unknown
+   try {
+@@ -100,7 +103,7 @@ export async function fetchCredits() {
+ 
+ export async function fetchHealth() {
+   const res = await fetch(apiUrl('/api/health'))
+-  return parseJson<{ ok: boolean; hasKey: boolean }>(res)
++  return parseJson<{ ok: boolean; hasKey: boolean; isDesktop: boolean }>(res)
+ }
+ 
+ export async function uploadFile(file: File): Promise<string> {
+@@ -376,3 +379,21 @@ export async function clearApiKey() {
+   })
+   return parseJson<{ data: { hasApiKey: boolean } }>(res)
+ }
++
++export async function openMediaFolder() {
++  const res = await fetch(apiUrl('/api/settings/open-media-folder'), {
++    method: 'POST',
++  })
++  return parseJson<{ data: { path: string } }>(res)
++}
++
++export interface UpdateCheckResult {
++  available: boolean
++  version?: string
++  downloaded?: boolean
++}
++
++export async function checkForUpdate() {
++  const res = await fetch(apiUrl('/api/update/check'), { method: 'POST' })
++  return parseJson<{ data: UpdateCheckResult }>(res)
++}
+diff --git a/src/lib/history.ts b/src/lib/history.ts
+index 8cb15d4..8a20209 100644
+--- a/src/lib/history.ts
++++ b/src/lib/history.ts
+@@ -175,7 +175,7 @@ function asMedia(value: unknown): MediaAsset[] | undefined {
+       return []
+     }
+     const asset: MediaAsset = { kind: raw.kind }
+-    for (const key of ['id', 'url', 'streamUrl', 'previewUrl', 'title', 'mimeType', 'providerAssetId'] as const) {
++    for (const key of ['id', 'url', 'streamUrl', 'previewUrl', 'title', 'mimeType', 'providerAssetId', 'localPath'] as const) {
+       const parsed = asString(raw[key])
+       if (parsed !== undefined) asset[key] = parsed
+     }
+diff --git a/src/lib/mediaExpiry.ts b/src/lib/mediaExpiry.ts
+deleted file mode 100644
+index 0b4cadf..0000000
+--- a/src/lib/mediaExpiry.ts
++++ /dev/null
+@@ -1,83 +0,0 @@
+-/** kie.ai retention for generated media files (official: 14 days). */
+-export const MEDIA_RETENTION_MS = 14 * 24 * 60 * 60 * 1000
+-
+-/** Remaining days above this count as `ok`; 1–3 as `soon`. */
+-const SOON_DAYS = 3
+-
+-export type MediaExpiryStatus = 'ok' | 'soon' | 'expired'
+-
+-export interface MediaExpiry {
+-  expiresAt: number
+-  remainingMs: number
+-  /** Whole days left (ceil). 0 or negative means expired. */
+-  daysLeft: number
+-  status: MediaExpiryStatus
+-}
+-
+-export function mediaExpiry(
+-  createdAt: number,
+-  now: number = Date.now(),
+-): MediaExpiry {
+-  const expiresAt = createdAt + MEDIA_RETENTION_MS
+-  const remainingMs = expiresAt - now
+-  const daysLeft = Math.ceil(remainingMs / (24 * 60 * 60 * 1000))
+-
+-  let status: MediaExpiryStatus
+-  if (daysLeft <= 0) {
+-    status = 'expired'
+-  } else if (daysLeft <= SOON_DAYS) {
+-    status = 'soon'
+-  } else {
+-    status = 'ok'
+-  }
+-
+-  return { expiresAt, remainingMs, daysLeft, status }
+-}
+-
+-/** Calculate from an API-provided deadline. Prefer this over inferred retention. */
+-export function mediaExpiryAt(
+-  expiresAt: number,
+-  now: number = Date.now(),
+-): MediaExpiry {
+-  const normalized = expiresAt < 1e12 ? expiresAt * 1000 : expiresAt
+-  const remainingMs = normalized - now
+-  const daysLeft = Math.ceil(remainingMs / (24 * 60 * 60 * 1000))
+-  return {
+-    expiresAt: normalized,
+-    remainingMs,
+-    daysLeft,
+-    status: daysLeft <= 0 ? 'expired' : daysLeft <= SOON_DAYS ? 'soon' : 'ok',
+-  }
+-}
+-
+-/** Short label for gallery cards. */
+-export function mediaExpiryCardLabel(expiry: MediaExpiry): string {
+-  switch (expiry.status) {
+-    case 'expired':
+-      return '期限切れの可能性'
+-    case 'soon':
+-      return `あと${expiry.daysLeft}日`
+-    case 'ok':
+-      return `残${expiry.daysLeft}日`
+-    default: {
+-      const _exhaustive: never = expiry.status
+-      return _exhaustive
+-    }
+-  }
+-}
+-
+-/** Longer label for the detail viewer. */
+-export function mediaExpiryViewerLabel(expiry: MediaExpiry): string {
+-  switch (expiry.status) {
+-    case 'expired':
+-      return 'kie.ai 側の保管期限を過ぎている可能性があります。早めに Download via API で保存してください'
+-    case 'soon':
+-      return `kie.ai 側の保管期限: あと ${expiry.daysLeft} 日 — 早めに Download via API で保存してください`
+-    case 'ok':
+-      return `kie.ai 側の保管期限: あと ${expiry.daysLeft} 日（要ダウンロード）`
+-    default: {
+-      const _exhaustive: never = expiry.status
+-      return _exhaustive
+-    }
+-  }
+-}
+diff --git a/src/lib/models/types.ts b/src/lib/models/types.ts
+index b959ed0..2a26831 100644
+--- a/src/lib/models/types.ts
++++ b/src/lib/models/types.ts
+@@ -123,6 +123,8 @@ export interface MediaAsset {
+   expiresAt?: number
+   providerAssetId?: string
+   metadata?: Record<string, unknown>
++  /** ローカル保存済みファイルの相対パス (server 基準)。存在すれば期限切れなし */
++  localPath?: string
+ }
+ 
+ export interface NormalizedTask {
+diff --git a/vite.config.ts b/vite.config.ts
+index 5d7cfeb..0847578 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -27,6 +27,10 @@ export default defineConfig(() => ({
+         target: 'http://127.0.0.1:8787',
+         changeOrigin: true,
+       },
++      '/media': {
++        target: 'http://127.0.0.1:8787',
++        changeOrigin: true,
++      },
+     },
+   },
+ }))
