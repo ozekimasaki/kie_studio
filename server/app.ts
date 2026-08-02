@@ -1,6 +1,9 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { uploadRoutes } from './routes/upload.ts'
 import { generateRoutes } from './routes/generate.ts'
 import { taskRoutes } from './routes/task.ts'
@@ -21,6 +24,19 @@ import { mediaRoutes } from './routes/media.ts'
 import { backfillRoutes } from './media/backfill.ts'
 import { KieApiError } from './kie/client.ts'
 import { hasUsableApiKey } from './settings/apiKey.ts'
+
+function readAppVersion(): string {
+  try {
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+    const raw = readFileSync(join(root, 'package.json'), 'utf8')
+    const parsed = JSON.parse(raw) as { version?: string }
+    return parsed.version?.trim() || '0.0.0'
+  } catch {
+    return '0.0.0'
+  }
+}
+
+const APP_VERSION = readAppVersion()
 
 /**
  * Builds the Hono application shared by the dev Bun server (`server/index.ts`)
@@ -54,6 +70,7 @@ export function createApp(): Hono {
       ok: true,
       hasKey: hasUsableApiKey(),
       isDesktop: isUpdateHandlerRegistered(),
+      version: APP_VERSION,
     }),
   )
 
