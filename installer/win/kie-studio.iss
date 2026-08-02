@@ -97,6 +97,6 @@ Type: files; Name: "{app}\app.ico"
 
 ; [UninstallDelete] + 追跡ファイル削除で {app} は空になるが、Inno は空のインストール先
 ; ディレクトリを回収しない。unins000.exe の自己削除を待ってから {app} のみ削除する。
-; 親 dir (canary/) にはユーザーDB (studio.db) があるため絶対に触らない（破滅的破壊を回避）。
+; 親 dir (canary/) にはユーザーDB (studio.db / flue.db) があるため絶対に触らない（破滅的破壊を回避）。
 [UninstallRun]
 Filename: "{cmd}"; Parameters: "/c ping 127.0.0.1 -n 4 > nul & rd /s /q ""{app}"""; Flags: nowait runhidden runascurrentuser; RunOnceId: "KieStudioCleanAppDir"

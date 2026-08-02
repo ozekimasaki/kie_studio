@@ -1,7 +1,13 @@
 import Electrobun, { BrowserWindow, Utils } from 'electrobun/bun'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { randomUUID } from 'node:crypto'
 import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
+import {
+  loadEmbeddedAgentApp,
+  proxyAgentsToSidecar,
+  type FlueNodeApplication,
+} from './agentHost.ts'
 
 // Electrobun main process entry (build.bun.entrypoint). Boots the shared Hono
 // app inside Bun and points a native webview at the pre-built React UI.
@@ -12,6 +18,14 @@ import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
 const userData = Utils.paths.userData
 mkdirSync(userData, { recursive: true })
 process.env.STUDIO_DB_PATH = join(userData, 'studio.db')
+
+// Flue conversation DB lives next to studio.db (parent of install `app/`).
+// Uninstall must never delete this directory — same rule as studio.db.
+process.env.FLUE_DB_PATH = join(userData, 'flue.db')
+
+// Per-boot token shared with the embedded (or sidecar) agent server for the
+// loopback internal API. Must be set before the agent app loads providers.
+process.env.STUDIO_AGENT_TOKEN = randomUUID()
 
 // The catalog also lives in writable userData: the bundled source path is
 // read-only on packaged builds (notably Linux, where startup sync could not
@@ -37,12 +51,23 @@ const { registerUpdateHandler } = await import('../../server/routes/update.ts')
 
 const app = createApp()
 
+let agentApp: FlueNodeApplication | null = null
+
+function dispatch(req: Request): Response | Promise<Response> {
+  const path = new URL(req.url).pathname
+  if (path.startsWith('/agents')) {
+    if (agentApp) return agentApp.fetch(req)
+    return proxyAgentsToSidecar(req)
+  }
+  return app.fetch(req)
+}
+
 function startServer() {
   const maxAttempts = 20
   let port = 8787
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      return Bun.serve({ fetch: app.fetch, port, hostname: '127.0.0.1' })
+      return Bun.serve({ fetch: dispatch, port, hostname: '127.0.0.1' })
     } catch {
       // Most likely EADDRINUSE; try the next port.
       port += 1
@@ -52,7 +77,11 @@ function startServer() {
 }
 
 const server = startServer()
+// Agent tools call the studio internal API on this exact bind port.
+process.env.STUDIO_API_BASE = `http://127.0.0.1:${server.port}`
 console.log(`KIE STUDIO API listening on http://127.0.0.1:${server.port}`)
+
+agentApp = await loadEmbeddedAgentApp(process.env)
 
 let db: ReturnType<typeof getDb> | null = null
 try {
@@ -119,6 +148,11 @@ registerUpdateHandler(async () => {
 })
 
 process.on('exit', () => {
+  try {
+    agentApp?.closeSync()
+  } catch {
+    // ignore cleanup errors
+  }
   try {
     db?.close()
   } catch {

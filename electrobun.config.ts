@@ -15,11 +15,15 @@ export default {
     },
     views: {},
     // Vite build output (base: '/') → packaged webview under views://mainview/.
+    // agent/dist is the self-contained Flue embed (ssr.noExternal); no node_modules staging.
     copy: {
       'dist/index.html': 'views/mainview/index.html',
       'dist/assets/': 'views/mainview/assets/',
       'dist/favicon.svg': 'views/mainview/favicon.svg',
+      'agent/dist/': 'agent-server/',
     },
+    // Keep agent-server on disk so Bun can dynamic-import app.mjs at runtime.
+    asarUnpack: ['agent-server/**'],
     watchIgnore: ['dist/**'],
     // Code signing / notarization are out of scope (unsigned distribution).
     mac: {

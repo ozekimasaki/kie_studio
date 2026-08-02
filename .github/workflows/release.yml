@@ -45,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Install agent dependencies
+        run: bun install --cwd agent
+
       - name: Build desktop app
         env:
           # Static host for differential auto-updates. Empty disables updates.
