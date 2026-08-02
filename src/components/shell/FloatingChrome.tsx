@@ -24,10 +24,17 @@ export function FloatingChrome({
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1 space-y-0.5">
           <h1 className="studio-display truncate">{title}</h1>
-          {subtitle && (
-            <p className="studio-subtitle hidden truncate sm:block">{subtitle}</p>
-          )}
-          {meta && <div className="hidden sm:block">{meta}</div>}
+          {/* Always reserve subtitle/meta rows on sm+ so mode switches don't jump height. */}
+          <p className="studio-subtitle hidden truncate sm:block">
+            {subtitle ?? '\u00A0'}
+          </p>
+          <div className="hidden min-h-[1rem] sm:block">
+            {meta ?? (
+              <p className="studio-meta invisible select-none" aria-hidden>
+                {'\u00A0'}
+              </p>
+            )}
+          </div>
         </div>
         {center && (
           <div className="hidden min-w-0 shrink-0 sm:flex sm:justify-center">
@@ -39,7 +46,7 @@ export function FloatingChrome({
         </div>
       </div>
       {center && (
-        <div className="w-full min-w-0 sm:hidden" aria-hidden={false}>
+        <div className="w-full min-w-0 sm:hidden">
           {center}
         </div>
       )}
