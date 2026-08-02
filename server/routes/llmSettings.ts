@@ -20,6 +20,8 @@ import {
   isBuiltinLlmProvider,
 } from '../../src/lib/models/llmProviders.ts'
 import type { StoredCustomLlmEndpoint } from '../settings/llmKeys.ts'
+import { GROK_OAUTH_ENDPOINT_ID } from '../grokOauth/constants.ts'
+import { mergeCustomEndpointsWithGrokOauth } from '../grokOauth/systemEndpoint.ts'
 
 export const llmSettingsRoutes = new Hono()
 
@@ -65,7 +67,15 @@ const preferredModelBodySchema = z.object({
   model: z.string({ error: 'model is required' }).trim().min(1, 'model is required'),
 })
 
-function maskedStored(endpoint: StoredCustomLlmEndpoint) {
+function maskedStored(endpoint: StoredCustomLlmEndpoint | {
+  id: string
+  label: string
+  kind: 'openai-compatible' | 'anthropic-compatible'
+  baseUrl: string
+  models: string[]
+  apiKey: string
+  system?: boolean
+}) {
   const { apiKey, ...rest } = endpoint
   return {
     ...rest,
@@ -86,10 +96,13 @@ llmSettingsRoutes.get('/settings/llm', (c) => {
       apiKeyFromStore: hasStoredLlmApiKey(info.id),
     }
   })
+  const customEndpoints = mergeCustomEndpointsWithGrokOauth(
+    getCustomLlmEndpoints(),
+  ).map(maskedStored)
   return c.json({
     data: {
       providers,
-      customEndpoints: getCustomLlmEndpoints().map(maskedStored),
+      customEndpoints,
       defaultModel: getDefaultLlmModel(),
       preferredModels: getPreferredLlmModels(),
     },
@@ -117,6 +130,12 @@ llmSettingsRoutes.put('/settings/llm/endpoints', validateJson(endpointsBodySchem
   const seen = new Set<string>()
   const stored: StoredCustomLlmEndpoint[] = []
   for (const endpoint of endpoints) {
+    if (endpoint.id === GROK_OAUTH_ENDPOINT_ID) {
+      return c.json(
+        { error: `endpoint id "${GROK_OAUTH_ENDPOINT_ID}" is reserved for X account OAuth` },
+        400,
+      )
+    }
     if (seen.has(endpoint.id)) {
       return c.json({ error: `duplicate endpoint id: ${endpoint.id}` }, 400)
     }
@@ -125,7 +144,11 @@ llmSettingsRoutes.put('/settings/llm/endpoints', validateJson(endpointsBodySchem
     stored.push({ ...endpoint, apiKey })
   }
   setCustomLlmEndpoints(stored)
-  return c.json({ data: { customEndpoints: stored.map(maskedStored) } })
+  return c.json({
+    data: {
+      customEndpoints: mergeCustomEndpointsWithGrokOauth(stored).map(maskedStored),
+    },
+  })
 })
 
 llmSettingsRoutes.put('/settings/llm/default-model', validateJson(defaultModelBodySchema), (c) => {
