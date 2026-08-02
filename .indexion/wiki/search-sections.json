@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "248",
+  "next_vid": "268",
   "entries": [
     {
       "section": {
@@ -187,56 +187,6 @@
     },
     {
       "section": {
-        "id": "server-api",
-        "title": "Server API",
-        "content": "\nHono エントリは `server/index.ts`。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。\n\n",
-        "page_id": "server-api",
-        "level": 1
-      },
-      "vid": "163"
-    },
-    {
-      "section": {
-        "id": "server-api#-2",
-        "title": "主要ルート",
-        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化 |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET/PUT | `/api/history` | SQLite 履歴一覧 / 全置換 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "164"
-    },
-    {
-      "section": {
-        "id": "server-api#db-3",
-        "title": "DB",
-        "content": "\n`data/studio.db` に `history_items`、`saved_personas`、`saved_audio_assets` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "165"
-    },
-    {
-      "section": {
-        "id": "server-api#-4",
-        "title": "エラー",
-        "content": "\n`KieApiError` は `{ error, code }` と適切な status に変換する。Malformed JSON は 400。polling 側の upstream error はフロント履歴にも診断として残す。\n\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "166"
-    },
-    {
-      "section": {
-        "id": "server-api#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Architecture](wiki://architecture)\n- [Kie Integration](wiki://kie-integration)\n- [Catalog Sync](wiki://catalog-sync)\n",
-        "page_id": "server-api",
-        "level": 2
-      },
-      "vid": "167"
-    },
-    {
-      "section": {
         "id": "kie-integration",
         "title": "Kie Integration",
         "content": "\n`server/kie/` が認証、Market、Upload、provider adapter を担当する。\n\n",
@@ -294,66 +244,6 @@
         "level": 2
       },
       "vid": "173"
-    },
-    {
-      "section": {
-        "id": "frontend",
-        "title": "Frontend",
-        "content": "\nReact UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO を同じ Studio shell で扱う。\n\n",
-        "page_id": "frontend",
-        "level": 1
-      },
-      "vid": "214"
-    },
-    {
-      "section": {
-        "id": "frontend#-ux-2",
-        "title": "主な UX",
-        "content": "\n- 最初に用途、次にモデル。独自モデルセレクター内で検索・お気に入り・最近使用・提供元フィルターを統合する\n- デスクトップは左の作成フォームと右のギャラリーを同時表示し、モバイルは `作成 / 履歴` を全高で切り替える\n- モバイルは送信成功後に履歴へ移動し、履歴の再利用・素材化では作成へ戻る\n- OpenAPI 制約（必須、文字数、数値、参照数、容量、尺、相互排他）を送信前に表示する。主要項目を先に出し、任意の調整項目は詳細設定へまとめる\n- 生成 CTA は選択モデル、同時生成数、実績ベースの推定クレジット、不足項目を表示し、不足表示から最初の対象へ移動できる\n- Quick Action は入力を復元するだけで、自動送信・自動課金しない\n- 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能\n- 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "215"
-    },
-    {
-      "section": {
-        "id": "frontend#audio-3",
-        "title": "AUDIO",
-        "content": "\n| コンポーネント | 役割 |\n|------|------|\n| `components/audio/AudioEditors.tsx` | 会話の話者行、ナレーションのセグメント編集 |\n| `components/audio/AudioPlayer.tsx` | 画面移動で切れない単一ミニプレイヤー、Media Session |\n| `SunoStyleAssist` | 原文と改善案の比較・適用・取り消し |\n| `HistorySheets` | 波形、同期歌詞、区間選択、Persona、Suno編集 |\n\n自動再生と操作効果音は使わない。複数候補は同一生成グループのトラックとして扱う。\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "216"
-    },
-    {
-      "section": {
-        "id": "frontend#video--history-4",
-        "title": "VIDEO / history",
-        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\nギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "217"
-    },
-    {
-      "section": {
-        "id": "frontend#-5",
-        "title": "軽量化",
-        "content": "\n履歴段階描画、動画 Intersection Observer、遅延ロード、経過時間別 polling、terminal 時中心の SQLite 永続化を維持する。\n\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "218"
-    },
-    {
-      "section": {
-        "id": "frontend#see-also-6",
-        "title": "See Also",
-        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Architecture](wiki://architecture)\n",
-        "page_id": "frontend",
-        "level": 2
-      },
-      "vid": "219"
     },
     {
       "section": {
@@ -473,67 +363,197 @@
         "page_id": "architecture",
         "level": 1
       },
-      "vid": "241"
+      "vid": "248"
     },
     {
       "section": {
         "id": "architecture#-2",
         "title": "レイヤ構成",
-        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...')\n             │\n             ▼\nHono (:8787)\n  ├─ routes/*          HTTP boundary\n  ├─ kie/adapters/*    Market / Suno / Veo / Runway normalization\n  ├─ db/*              history / personas / audio assets\n  ├─ catalog/*         docs + dedicated workflows\n  └─ grok/*            prompt optimization\n```\n\n`KIE_API_KEY` は Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。\n\n",
+        "content": "\n```text\nBrowser (Vite :5173)\n  App / components / lib\n    ├─ Studio | エージェント モード切替\n    ├─ SubmissionQueue (20 requests / 10 seconds)\n    ├─ AudioPlayerProvider (single persistent player)\n    └─ fetch('/api/...' | '/agents/...')\n             │                    │\n             ▼                    ▼\nHono (:8787)              Flue agent (:8789 Node / embed)\n  ├─ routes/*               createAgentRouter(Studio)\n  ├─ kie/adapters/*         → loopback /api/internal/agent/*\n  ├─ db/*                   (credentials, generate, history)\n  ├─ catalog/*\n  └─ grok/*\n```\n\n`KIE_API_KEY` と LLM API キーは Hono 側のみ。フロントは相対 `/api` と `/agents` だけを呼ぶ。\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "242"
+      "vid": "249"
     },
     {
       "section": {
         "id": "architecture#desktop-electrobun-3",
         "title": "Desktop 層（Electrobun）",
-        "content": "\nデスクトップ版は Electrobun（Bun メインプロセス `src/bun/index.ts` + ネイティブ webview）。`Bun.serve` で Hono を起動し、ビルド済み UI を `views://mainview/` でロードする。設定は `electrobun.config.ts`。\n\n- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。\n- 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。\n\n",
+        "content": "\nデスクトップ版は Electrobun（Bun メインプロセス `src/bun/index.ts` + ネイティブ webview）。`Bun.serve` で Hono を起動し、ビルド済み UI を `views://mainview/` でロードする。設定は `electrobun.config.ts`。\n\n- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。\n- エージェント会話 DB（`flue.db`）は `FLUE_DB_PATH` で同じ userData に配置。\n- パッケージ時は `agent/dist/` を `agent-server/` として同梱（`asarUnpack`）。`loadFlueNodeApplication` で埋め込み、`/agents/*` を転送。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。\n- 起動毎に `STUDIO_AGENT_TOKEN` を発行し、内部 API とエージェントで共有する。\n- 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "243"
+      "vid": "250"
     },
     {
       "section": {
         "id": "architecture#-4",
         "title": "パッケージ責務",
-        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action の調停 |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係 |\n| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater） |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
+        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action、モード切替の調停 |\n| `src/components/agent/` | エージェントチャット UI |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係、agentApi |\n| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater + agent embed） |\n| `src/bun/agentHost.ts` | Flue `app.mjs` 解決・読込・sidecar プロキシ |\n| `agent/` | Flue サブプロジェクト（Studio エージェント・ツール・プロバイダ） |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "244"
+      "vid": "251"
     },
     {
       "section": {
         "id": "architecture#-5",
         "title": "デスクトップ配布",
-        "content": "\n| プラットフォーム | 成果物 | 備考 |\n|------|------|------|\n| Windows x64 | `canary-win-x64-KIESTUDIO-Setup.exe`（Inno Setup） | 第一導線。ARP 登録・アンインストーラー・ショートカット・アイコン。per-user（`%LocalAppData%\\ai.kie.studio\\<ch>\\app`、管理者権限不要） |\n| Linux x64 | `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | tar.gz 自己展開のみ（`.deb` は Electrobun 非対応） |\n| 自動アップデート | `*.tar.zst` + `update.json` + patch | `RELEASE_BASE_URL` 配下へ配信（Inno Setup 非依存） |\n\n- Windows インストーラーは `installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`（tar.zst 展開 → launcher.exe へ rcedit アイコン埋め込み → ISCC コンパイル）。`npm run desktop:installer:win`。\n- アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。\n- arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。\n- アンインストールは `app\\` のみ削除し、親ディレクトリの `studio.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。\n- `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。\n\n",
+        "content": "\n| プラットフォーム | 成果物 | 備考 |\n|------|------|------|\n| Windows x64 | `canary-win-x64-KIESTUDIO-Setup.exe`（Inno Setup） | 第一導線。ARP 登録・アンインストーラー・ショートカット・アイコン。per-user（`%LocalAppData%\\ai.kie.studio\\<ch>\\app`、管理者権限不要） |\n| Linux x64 | `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | tar.gz 自己展開のみ（`.deb` は Electrobun 非対応） |\n| 自動アップデート | `*.tar.zst` + `update.json` + patch | `RELEASE_BASE_URL` 配下へ配信（Inno Setup 非依存） |\n\n- Windows インストーラーは `installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`（tar.zst 展開 → launcher.exe へ rcedit アイコン埋め込み → ISCC コンパイル）。`npm run desktop:installer:win`。\n- アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。\n- arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。\n- アンインストールは `app\\` のみ削除し、親ディレクトリの `studio.db` / `flue.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。\n- `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。\n- デスクトップビルドは `agent:build` を前段で実行する（CI は `bun install --cwd agent` も実施）。\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "245"
+      "vid": "252"
     },
     {
       "section": {
         "id": "architecture#-6",
         "title": "拡張ポイント",
-        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n\n",
+        "content": "\n- provider 追加: `ProviderAdapter` を実装し adapter registry へ登録\n- workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き\n- 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新\n- DB 変更: `server/db/open.ts` の加算マイグレーションを使う\n- エージェントツール追加: `agent/src/agents/studio.ts` + 必要なら `server/routes/agentInternal.ts`\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "246"
+      "vid": "253"
     },
     {
       "section": {
         "id": "architecture#see-also-7",
         "title": "See Also",
-        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n",
+        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Server API](wiki://server-api)\n- [Kie Integration](wiki://kie-integration)\n- [Frontend](wiki://frontend)\n- [Agent Mode](wiki://agent-mode)\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "247"
+      "vid": "254"
+    },
+    {
+      "section": {
+        "id": "frontend",
+        "title": "Frontend",
+        "content": "\nReact UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO を同じ Studio shell で扱う。\n\n",
+        "page_id": "frontend",
+        "level": 1
+      },
+      "vid": "255"
+    },
+    {
+      "section": {
+        "id": "frontend#-ux-2",
+        "title": "主な UX",
+        "content": "\n- FloatingChrome 中央の `Studio | エージェント` セグメントでワークスペースを切替（`StudioModeToggle`）\n- 最初に用途、次にモデル。独自モデルセレクター内で検索・お気に入り・最近使用・提供元フィルターを統合する\n- デスクトップは左の作成フォームと右のギャラリーを同時表示し、モバイルは `作成 / 履歴` を全高で切り替える（エージェントモード時は作成/履歴タブを隠しチャットパネルを全面表示）\n- モバイルは送信成功後に履歴へ移動し、履歴の再利用・素材化では作成へ戻る\n- OpenAPI 制約（必須、文字数、数値、参照数、容量、尺、相互排他）を送信前に表示する。主要項目を先に出し、任意の調整項目は詳細設定へまとめる\n- 生成 CTA は選択モデル、同時生成数、実績ベースの推定クレジット、不足項目を表示し、不足表示から最初の対象へ移動できる\n- Quick Action は入力を復元するだけで、自動送信・自動課金しない\n- 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能\n- 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "256"
+    },
+    {
+      "section": {
+        "id": "frontend#-3",
+        "title": "エージェントモード",
+        "content": "\n| コンポーネント | 役割 |\n|------|------|\n| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体 |\n| `components/agent/AgentChat.tsx` | `useFlueAgent` による送受信・SSE |\n| `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |\n| `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |\n| `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |\n\nエージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "257"
+    },
+    {
+      "section": {
+        "id": "frontend#audio-4",
+        "title": "AUDIO",
+        "content": "\n| コンポーネント | 役割 |\n|------|------|\n| `components/audio/AudioEditors.tsx` | 会話の話者行、ナレーションのセグメント編集 |\n| `components/audio/AudioPlayer.tsx` | 画面移動で切れない単一ミニプレイヤー、Media Session |\n| `SunoStyleAssist` | 原文と改善案の比較・適用・取り消し |\n| `HistorySheets` | 波形、同期歌詞、区間選択、Persona、Suno編集 |\n\n自動再生と操作効果音は使わない。複数候補は同一生成グループのトラックとして扱う。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "258"
+    },
+    {
+      "section": {
+        "id": "frontend#video--history-5",
+        "title": "VIDEO / history",
+        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\nギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "259"
+    },
+    {
+      "section": {
+        "id": "frontend#-6",
+        "title": "軽量化",
+        "content": "\n履歴段階描画、動画 Intersection Observer、遅延ロード、経過時間別 polling、terminal 時中心の SQLite 永続化を維持する。AgentView は lazy load。\n\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "260"
+    },
+    {
+      "section": {
+        "id": "frontend#see-also-7",
+        "title": "See Also",
+        "content": "\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Architecture](wiki://architecture)\n- [Agent Mode](wiki://agent-mode)\n",
+        "page_id": "frontend",
+        "level": 2
+      },
+      "vid": "261"
+    },
+    {
+      "section": {
+        "id": "server-api",
+        "title": "Server API",
+        "content": "\nHono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。デスクトップでは Electrobun メインが同じプロセスで Hono を起動し、`/agents/*` は埋め込み Flue へ転送する。\n\n",
+        "page_id": "server-api",
+        "level": 1
+      },
+      "vid": "262"
+    },
+    {
+      "section": {
+        "id": "server-api#-2",
+        "title": "主要ルート",
+        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化 |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET/PUT | `/api/history` | SQLite 履歴一覧 / 全置換 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n| GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |\n| GET/POST/PATCH/DELETE | `/api/agent/conversations` | エージェント会話メタデータ |\n| * | `/api/internal/agent/*` | Flue エージェント専用（`x-studio-agent-token` 必須） |\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "263"
+    },
+    {
+      "section": {
+        "id": "server-api#-api-3",
+        "title": "内部エージェント API",
+        "content": "\nトークンは `STUDIO_AGENT_TOKEN`（未設定時は開発用既定値）。デスクトップは起動毎に UUID を発行する。\n\n| Path | 説明 |\n|------|------|\n| `/internal/agent/credentials` | 復号済み LLM キー + カスタムエンドポイント |\n| `/internal/agent/workflows` | キュレーション済み workflow 一覧 |\n| `/internal/agent/workflows/:id/schema` | 入力スキーマ |\n| `/internal/agent/generate` | adapter create + 履歴 upsert → `{ taskId }` |\n| `/internal/agent/task` | 正規化タスク状態 |\n| `/internal/agent/history` | 履歴検索 |\n| `/internal/agent/history/:taskId/input` | 入力復元 |\n| `/internal/agent/credits` | 残高 |\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "264"
+    },
+    {
+      "section": {
+        "id": "server-api#db-4",
+        "title": "DB",
+        "content": "\n`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。Flue 会話本体は別 DB（`FLUE_DB_PATH` / `flue.db`）。\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "265"
+    },
+    {
+      "section": {
+        "id": "server-api#-5",
+        "title": "エラー",
+        "content": "\n`KieApiError` は `{ error, code }` と適切な status に変換する。Malformed JSON は 400。polling 側の upstream error はフロント履歴にも診断として残す。\n\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "266"
+    },
+    {
+      "section": {
+        "id": "server-api#see-also-6",
+        "title": "See Also",
+        "content": "\n- [Architecture](wiki://architecture)\n- [Kie Integration](wiki://kie-integration)\n- [Catalog Sync](wiki://catalog-sync)\n- [Agent Mode](wiki://agent-mode)\n",
+        "page_id": "server-api",
+        "level": 2
+      },
+      "vid": "267"
     }
   ]
 }

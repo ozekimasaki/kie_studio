@@ -1,6 +1,6 @@
 # Server API
 
-Hono エントリは `server/index.ts`。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。
+Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。デスクトップでは Electrobun メインが同じプロセスで Hono を起動し、`/agents/*` は埋め込み Flue へ転送する。
 
 ## 主要ルート
 
@@ -21,10 +21,28 @@ Hono エントリは `server/index.ts`。`127.0.0.1:8787` で待受し、API key
 | POST | `/api/history/migrate` | 旧 localStorage 移行 |
 | GET | `/api/credits` | 残高 |
 | POST | `/api/download-url` | 一時 download URL |
+| GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |
+| GET/POST/PATCH/DELETE | `/api/agent/conversations` | エージェント会話メタデータ |
+| * | `/api/internal/agent/*` | Flue エージェント専用（`x-studio-agent-token` 必須） |
+
+## 内部エージェント API
+
+トークンは `STUDIO_AGENT_TOKEN`（未設定時は開発用既定値）。デスクトップは起動毎に UUID を発行する。
+
+| Path | 説明 |
+|------|------|
+| `/internal/agent/credentials` | 復号済み LLM キー + カスタムエンドポイント |
+| `/internal/agent/workflows` | キュレーション済み workflow 一覧 |
+| `/internal/agent/workflows/:id/schema` | 入力スキーマ |
+| `/internal/agent/generate` | adapter create + 履歴 upsert → `{ taskId }` |
+| `/internal/agent/task` | 正規化タスク状態 |
+| `/internal/agent/history` | 履歴検索 |
+| `/internal/agent/history/:taskId/input` | 入力復元 |
+| `/internal/agent/credits` | 残高 |
 
 ## DB
 
-`data/studio.db` に `history_items`、`saved_personas`、`saved_audio_assets` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。
+`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。Flue 会話本体は別 DB（`FLUE_DB_PATH` / `flue.db`）。
 
 ## エラー
 
@@ -35,3 +53,4 @@ Hono エントリは `server/index.ts`。`127.0.0.1:8787` で待受し、API key
 - [Architecture](wiki://architecture)
 - [Kie Integration](wiki://kie-integration)
 - [Catalog Sync](wiki://catalog-sync)
+- [Agent Mode](wiki://agent-mode)

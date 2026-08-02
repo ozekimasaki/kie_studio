@@ -144,6 +144,51 @@ export function listHistory(options?: { limit?: number; offset?: number }): Hist
   return rows.map(rowToItem)
 }
 
+/** Insert or update a single history item (used by agent-initiated generation). */
+export function upsertHistoryItem(item: HistoryItem): void {
+  getDb()
+    .prepare(
+      `INSERT INTO history_items (
+        task_id, model, category, state, created_at,
+        result_urls, prompt, credits_consumed, fail_msg, model_id, input, pinned
+        , provider, operation, parent_task_id, media, provider_status, partial,
+        expires_at, raw_param, raw_result
+      ) VALUES (
+        @task_id, @model, @category, @state, @created_at,
+        @result_urls, @prompt, @credits_consumed, @fail_msg, @model_id, @input, @pinned
+        , @provider, @operation, @parent_task_id, @media, @provider_status, @partial,
+        @expires_at, @raw_param, @raw_result
+      )
+      ON CONFLICT(task_id) DO UPDATE SET
+        model = excluded.model,
+        category = excluded.category,
+        state = excluded.state,
+        result_urls = excluded.result_urls,
+        prompt = excluded.prompt,
+        credits_consumed = excluded.credits_consumed,
+        fail_msg = excluded.fail_msg,
+        model_id = excluded.model_id,
+        input = excluded.input,
+        provider = excluded.provider,
+        operation = excluded.operation,
+        parent_task_id = excluded.parent_task_id,
+        media = excluded.media,
+        provider_status = excluded.provider_status,
+        partial = excluded.partial,
+        expires_at = excluded.expires_at,
+        raw_param = excluded.raw_param,
+        raw_result = excluded.raw_result`,
+    )
+    .run(itemToParams(item))
+}
+
+/** Read one history item by task id. */
+export function getHistoryItem(taskId: string): HistoryItem | null {
+  const row = getDb()
+    .prepare('SELECT * FROM history_items WHERE task_id = ?')
+    .get(taskId) as HistoryRow | undefined
+  return row ? rowToItem(row) : null
+}
 export function historyCount(): number {
   const row = getDb()
     .prepare('SELECT COUNT(*) AS n FROM history_items')

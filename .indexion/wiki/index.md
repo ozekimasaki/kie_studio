@@ -1,6 +1,6 @@
 # Wiki Index
 
-This index catalogs all 10 pages in this wiki.
+This index catalogs all 11 pages in this wiki.
 
 ## How to Navigate This Wiki
 
@@ -12,13 +12,14 @@ For specific topics, browse the **Categories** section.
 
 Most-linked pages that serve as knowledge hubs:
 
-- [Architecture](wiki://architecture) — 6 incoming links
+- [Architecture](wiki://architecture) — 7 incoming links
 - [Core Concepts](wiki://core-concepts) — 6 incoming links
-- [Server API](wiki://server-api) — 5 incoming links
-- [Frontend](wiki://frontend) — 4 incoming links
+- [Server API](wiki://server-api) — 6 incoming links
+- [Frontend](wiki://frontend) — 5 incoming links
 - [Getting Started](wiki://getting-started) — 3 incoming links
 - [Catalog Sync](wiki://catalog-sync) — 3 incoming links
 - [Client Lib](wiki://client-lib) — 3 incoming links
+- [Agent Mode](wiki://agent-mode) — 3 incoming links
 - [Kie Integration](wiki://kie-integration) — 2 incoming links
 
 ## Categories
@@ -28,6 +29,10 @@ Most-linked pages that serve as knowledge hubs:
 - [Core Concepts](wiki://core-concepts)
 - [Frontend](wiki://frontend)
 - [Client Lib](wiki://client-lib)
+
+### agent
+
+- [Agent Mode](wiki://agent-mode)
 
 ### server
 
@@ -44,13 +49,12 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: server-api
+- pages update: frontend
+- pages update: architecture
+- pages add: agent-mode
 - pages update: catalog-sync
 - ingest: overview
 - ingest: getting-started
 - ingest: core-concepts
-- ingest: architecture
-- ingest: frontend
-- ingest: server-api
-- pages update: kie-integration
-- pages update: client-lib
 

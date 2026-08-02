@@ -4,14 +4,27 @@ React UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO �
 
 ## 主な UX
 
+- FloatingChrome 中央の `Studio | エージェント` セグメントでワークスペースを切替（`StudioModeToggle`）
 - 最初に用途、次にモデル。独自モデルセレクター内で検索・お気に入り・最近使用・提供元フィルターを統合する
-- デスクトップは左の作成フォームと右のギャラリーを同時表示し、モバイルは `作成 / 履歴` を全高で切り替える
+- デスクトップは左の作成フォームと右のギャラリーを同時表示し、モバイルは `作成 / 履歴` を全高で切り替える（エージェントモード時は作成/履歴タブを隠しチャットパネルを全面表示）
 - モバイルは送信成功後に履歴へ移動し、履歴の再利用・素材化では作成へ戻る
 - OpenAPI 制約（必須、文字数、数値、参照数、容量、尺、相互排他）を送信前に表示する。主要項目を先に出し、任意の調整項目は詳細設定へまとめる
 - 生成 CTA は選択モデル、同時生成数、実績ベースの推定クレジット、不足項目を表示し、不足表示から最初の対象へ移動できる
 - Quick Action は入力を復元するだけで、自動送信・自動課金しない
 - 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能
 - 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類
+
+## エージェントモード
+
+| コンポーネント | 役割 |
+|------|------|
+| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体 |
+| `components/agent/AgentChat.tsx` | `useFlueAgent` による送受信・SSE |
+| `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |
+| `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |
+| `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |
+
+エージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。
 
 ## AUDIO
 
@@ -32,10 +45,11 @@ Runway Aleph は親タスクと Before/After を表示。動画と音声の両�
 
 ## 軽量化
 
-履歴段階描画、動画 Intersection Observer、遅延ロード、経過時間別 polling、terminal 時中心の SQLite 永続化を維持する。
+履歴段階描画、動画 Intersection Observer、遅延ロード、経過時間別 polling、terminal 時中心の SQLite 永続化を維持する。AgentView は lazy load。
 
 ## See Also
 
 - [Core Concepts](wiki://core-concepts)
 - [Client Lib](wiki://client-lib)
 - [Architecture](wiki://architecture)
+- [Agent Mode](wiki://agent-mode)

@@ -23,6 +23,7 @@ import { HistoryGallery } from './components/HistoryGallery.tsx'
 import {
   StudioShell,
   type MobileStudioView,
+  type StudioWorkspaceMode,
 } from './components/shell/StudioShell.tsx'
 import { Pressable } from './components/motion/Pressable.tsx'
 import { AudioPlayerProvider } from './components/audio/AudioPlayer.tsx'
@@ -59,6 +60,12 @@ const SettingsSheet = lazy(() =>
     default: module.SettingsSheet,
   })),
 )
+const AgentView = lazy(() =>
+  import('./components/agent/AgentView.tsx').then((module) => ({
+    default: module.AgentView,
+  })),
+)
+
 
 /** Restore saved input over defaults; unknown keys are dropped. */
 function mergeInputWithDefaults(
@@ -97,6 +104,7 @@ export default function App() {
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
   const [batchCount, setBatchCount] = useState(1)
   const [mobileView, setMobileView] = useState<MobileStudioView>('create')
+  const [view, setView] = useState<StudioWorkspaceMode>('studio')
   const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
     useState(false)
   const [creditSheetRequested, setCreditSheetRequested] = useState(false)
@@ -377,6 +385,8 @@ export default function App() {
   return (
     <AudioPlayerProvider>
       <StudioShell
+      workspaceMode={view}
+      onWorkspaceModeChange={setView}
       mobileView={mobileView}
       historyCount={history.length}
       pendingCount={pendingCount}
@@ -386,8 +396,13 @@ export default function App() {
           KIE <span className="text-[var(--accent)]">STUDIO</span>
         </>
       }
-      chromeSubtitle="kie.ai · IMAGE / VIDEO / AUDIO"
+      chromeSubtitle={
+        view === 'agent'
+          ? 'エージェント · LLM と会話しながら生成'
+          : 'kie.ai · IMAGE / VIDEO / AUDIO'
+      }
       chromeMeta={
+        view === 'agent' ? undefined : (
         <>
           {syncedAt && (
             <p className="studio-meta">
@@ -400,6 +415,7 @@ export default function App() {
             </p>
           )}
         </>
+        )
       }
       chromeTrailing={
         <div className="flex items-stretch gap-1.5 sm:gap-2">
@@ -413,6 +429,11 @@ export default function App() {
             <Settings size={16} strokeWidth={2} aria-hidden />
           </Pressable>
         </div>
+      }
+      agent={
+        <Suspense fallback={null}>
+          <AgentView />
+        </Suspense>
       }
       form={
         <>
@@ -703,6 +724,7 @@ export default function App() {
         />
       }
       />
+
       {creditSheetRequested && (
         <Suspense fallback={null}>
           <CreditPurchaseSheet
