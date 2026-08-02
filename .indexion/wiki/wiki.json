@@ -53,13 +53,15 @@
         "vite.config.ts",
         "src/App.tsx",
         "src/components/shell/",
-        "src/components/motion/",
-        "src/lib/motion.ts",
+        "src/bun/index.ts",
+        "src/bun/agentHost.ts",
+        "agent/",
+        "electrobun.config.ts",
         "server/db/"
       ],
       "children": [],
-      "provenance": "manual",
-      "last_actor": "agent:qoder"
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
     },
     {
       "id": "frontend",
@@ -69,6 +71,7 @@
         "src/App.tsx",
         "src/components/",
         "src/components/shell/",
+        "src/components/agent/",
         "src/components/motion/",
         "src/lib/motion.ts",
         "src/main.tsx",
@@ -77,7 +80,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "client-lib",
@@ -95,13 +98,17 @@
       "title": "Server API",
       "file": "server-api.md",
       "sources": [
+        "server/app.ts",
         "server/index.ts",
         "server/routes/",
-        "server/db/"
+        "server/db/",
+        "server/routes/agentInternal.ts",
+        "server/routes/llmSettings.ts",
+        "server/routes/agentConversations.ts"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "kie-integration",
@@ -136,6 +143,24 @@
         "server/grok/",
         "server/routes/optimize-prompt.ts",
         "src/components/PromptOptimizePanel.tsx"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "agent-mode",
+      "title": "Agent Mode",
+      "file": "agent-mode.md",
+      "sources": [
+        "agent/",
+        "src/components/agent/",
+        "src/bun/agentHost.ts",
+        "src/bun/index.ts",
+        "server/routes/agentInternal.ts",
+        "server/routes/llmSettings.ts",
+        "server/routes/agentConversations.ts",
+        "electrobun.config.ts"
       ],
       "children": [],
       "provenance": "synthesized",
