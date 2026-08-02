@@ -33,11 +33,11 @@ export const BUILTIN_LLM_PROVIDERS: readonly BuiltinLlmProviderInfo[] = [
     label: 'Google Gemini',
     envVar: 'GEMINI_API_KEY',
     suggestedModels: [
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
       'gemini-3.1-pro-preview',
-      'gemini-3.1-flash',
-      'gemini-3-flash-preview',
+      'gemini-3-pro-preview',
       'gemini-2.5-pro',
-      'gemini-2.5-flash',
     ],
   },
   {
@@ -90,5 +90,5 @@ export function customEndpointProviderId(endpointId: string): string {
 /** Fallback model for new agent conversations when no default is configured. */
 export const FALLBACK_AGENT_MODEL = {
   provider: 'google' as BuiltinLlmProvider,
-  model: 'gemini-3.1-flash',
+  model: 'gemini-3.6-flash',
 }
