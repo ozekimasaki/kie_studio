@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, Settings } from 'lucide-react'
+import { Bot, ExternalLink, Settings } from 'lucide-react'
 import { CategoryTabs } from './components/CategoryTabs.tsx'
 import { ModelSelect } from './components/ModelSelect.tsx'
 import {
@@ -59,6 +59,12 @@ const SettingsSheet = lazy(() =>
     default: module.SettingsSheet,
   })),
 )
+const AgentView = lazy(() =>
+  import('./components/agent/AgentView.tsx').then((module) => ({
+    default: module.AgentView,
+  })),
+)
+
 
 /** Restore saved input over defaults; unknown keys are dropped. */
 function mergeInputWithDefaults(
@@ -97,6 +103,7 @@ export default function App() {
   const [lastUsedCredits, setLastUsedCredits] = useState<number | null>(null)
   const [batchCount, setBatchCount] = useState(1)
   const [mobileView, setMobileView] = useState<MobileStudioView>('create')
+  const [view, setView] = useState<'studio' | 'agent'>('studio')
   const [creditPurchaseSheetOpen, setCreditPurchaseSheetOpen] =
     useState(false)
   const [creditSheetRequested, setCreditSheetRequested] = useState(false)
@@ -376,6 +383,11 @@ export default function App() {
 
   return (
     <AudioPlayerProvider>
+      {view === 'agent' ? (
+        <Suspense fallback={null}>
+          <AgentView onBack={() => setView('studio')} />
+        </Suspense>
+      ) : (
       <StudioShell
       mobileView={mobileView}
       historyCount={history.length}
@@ -404,6 +416,14 @@ export default function App() {
       chromeTrailing={
         <div className="flex items-stretch gap-1.5 sm:gap-2">
           <CreditBadge lastUsed={lastUsedCredits} />
+          <Pressable
+            onClick={() => setView('agent')}
+            className="studio-btn shrink-0 self-stretch px-2.5"
+            aria-label="エージェントモードを開く"
+            scaleTo={0.96}
+          >
+            <Bot size={16} strokeWidth={2} aria-hidden />
+          </Pressable>
           <Pressable
             onClick={() => setSettingsSheetOpen(true)}
             className="studio-btn shrink-0 self-stretch px-2.5"
@@ -702,7 +722,8 @@ export default function App() {
           }}
         />
       }
-      />
+      />      )}
+
       {creditSheetRequested && (
         <Suspense fallback={null}>
           <CreditPurchaseSheet

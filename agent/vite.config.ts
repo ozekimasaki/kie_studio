@@ -33,7 +33,9 @@ export default defineConfig({
 	plugins: [nodeSqliteRewrite(), flue()],
 	server: {
 		// The studio web frontend owns 5173; the agent dev server uses 8789 and
-		// is reached through the frontend's /agents proxy.
+		// is reached through the frontend's /agents proxy. Bind IPv4 loopback
+		// explicitly — the proxy targets 127.0.0.1 and localhost may be ::1.
+		host: '127.0.0.1',
 		port: 8789,
 	},
 	ssr: {

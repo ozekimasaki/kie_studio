@@ -13,6 +13,7 @@ import {
 import { clearApiKey, checkForUpdate, fetchHealth, fetchSettings, openMediaFolder, saveApiKey, syncModels } from '../lib/api.ts'
 import type { QueryClient } from '@tanstack/react-query'
 import { Pressable } from './motion/Pressable.tsx'
+import { LlmSettingsSection } from './LlmSettingsSection.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 
 const APP_VERSION =
@@ -365,6 +366,8 @@ export function SettingsSheet({
             </>
           )}
         </section>
+
+        <LlmSettingsSection />
 
         <section className="mt-6 border-t border-[var(--border)] pt-4">
           <div className="flex items-center justify-between gap-3">
