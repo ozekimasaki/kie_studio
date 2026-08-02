@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bot, MessageSquarePlus, PanelLeft, Trash2 } from 'lucide-react'
+import { Bot, MessageSquarePlus, PanelLeft, Settings, Trash2 } from 'lucide-react'
 import {
   createAgentConversation,
   deleteAgentConversation,
@@ -15,9 +15,11 @@ import { AgentModelPicker, type ModelSelection } from './AgentModelPicker.tsx'
 function NewConversationPanel({
   onCreated,
   onCancel,
+  onOpenSettings,
 }: {
   onCreated: (conversation: AgentConversation) => void
   onCancel: () => void
+  onOpenSettings?: () => void
 }) {
   const queryClient = useQueryClient()
   const [selection, setSelection] = useState<ModelSelection | null>(null)
@@ -30,15 +32,21 @@ function NewConversationPanel({
     },
   })
 
+  const canStart = Boolean(selection?.provider && selection.model.trim())
+
   return (
     <div className="mx-auto grid max-w-lg gap-4 px-4 py-8">
       <div>
         <h2 className="studio-empty-title">新しいエージェント会話</h2>
         <p className="studio-empty-body mt-1">
-          会話ごとに LLM を選びます。API キーは設定画面で登録できます。
+          会話ごとに LLM を選びます。API キーとモデルは設定画面で登録できます。
         </p>
       </div>
-      <AgentModelPicker value={selection} onChange={setSelection} />
+      <AgentModelPicker
+        value={selection}
+        onChange={setSelection}
+        onOpenSettings={onOpenSettings}
+      />
       {createMutation.isError && (
         <p className="text-sm text-[var(--danger)]" role="alert">
           {(createMutation.error as Error).message}
@@ -48,20 +56,20 @@ function NewConversationPanel({
         <button
           type="button"
           className="studio-btn-primary flex-1 py-2"
-          disabled={!selection || createMutation.isPending}
+          disabled={!canStart || createMutation.isPending}
           onClick={() => {
-            if (!selection) return
+            if (!selection?.model.trim()) return
             createMutation.mutate({
               id: newConversationId(),
               title: '新しい会話',
               provider: selection.provider,
-              model: selection.model,
+              model: selection.model.trim(),
             })
           }}
         >
           会話を開始
         </button>
-        <button type="button" className="studio-btn px-4 py-2" onClick={onCancel}>
+        <button type="button" className="studio-btn w-auto px-4 py-2" onClick={onCancel}>
           キャンセル
         </button>
       </div>
@@ -69,7 +77,7 @@ function NewConversationPanel({
   )
 }
 
-export function AgentView() {
+export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const queryClient = useQueryClient()
   const conversationsQuery = useQuery({
     queryKey: ['agent-conversations'],
@@ -78,7 +86,7 @@ export function AgentView() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isNewFlow, setIsNewFlow] = useState(false)
   const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(new Set())
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const conversations = useMemo(() => conversationsQuery.data ?? [], [conversationsQuery.data])
   const selected = conversations.find((c) => c.id === selectedId) ?? null
@@ -86,12 +94,13 @@ export function AgentView() {
   // Select the most recent conversation on first load.
   useEffect(() => {
     if (selectedId || isNewFlow || conversations.length === 0) return
-    setSelectedId(conversations[0].id)
+    setSelectedId(conversations[0]!.id)
   }, [conversations, selectedId, isNewFlow])
 
   const startNewFlow = useCallback(() => {
     setIsNewFlow(true)
     setSelectedId(null)
+    setSidebarOpen(false)
   }, [])
 
   const handleCreated = useCallback((conversation: AgentConversation) => {
@@ -122,51 +131,73 @@ export function AgentView() {
     [selectedId, queryClient],
   )
 
+  const selectConversation = useCallback((id: string) => {
+    setIsNewFlow(false)
+    setSelectedId(id)
+    setSidebarOpen(false)
+  }, [])
+
   return (
     <div className="flex h-full min-h-0 flex-col text-[var(--text)]">
-      <header className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] px-3 py-2.5">
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-[var(--border)] px-3 py-2 sm:gap-2">
         <button
           type="button"
           onClick={() => setSidebarOpen((v) => !v)}
-          className="studio-btn px-2 py-1.5"
+          className="studio-btn w-auto shrink-0 px-2 py-1.5"
           aria-label="会話一覧の表示切替"
+          aria-expanded={sidebarOpen}
         >
           <PanelLeft size={15} aria-hidden />
         </button>
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Bot size={17} className="shrink-0 text-[var(--accent)]" aria-hidden />
-          <h1 className="truncate text-sm font-semibold">
-            {selected ? selected.title : 'エージェントモード'}
-          </h1>
-          {selected && (
-            <span className="studio-chip shrink-0 text-[10px]">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+          <Bot size={16} className="shrink-0 text-[var(--accent)]" aria-hidden />
+          <h2 className="min-w-0 truncate text-sm font-semibold">
+            {selected && !isNewFlow ? selected.title : 'エージェント'}
+          </h2>
+          {selected && !isNewFlow && (
+            <span className="studio-meta hidden max-w-[9rem] shrink truncate text-[10px] sm:inline">
               {selected.provider}/{selected.model}
             </span>
           )}
         </div>
-        {selected && (
+        <div className="flex shrink-0 items-center gap-1">
+          {selected && !isNewFlow && (
+            <button
+              type="button"
+              onClick={() => handleDelete(selected)}
+              className="studio-btn w-auto px-2 py-1.5 text-[var(--danger)]"
+              aria-label="この会話を削除"
+            >
+              <Trash2 size={15} aria-hidden />
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => handleDelete(selected)}
-            className="studio-btn px-2 py-1.5 text-[var(--danger)]"
-            aria-label="この会話を削除"
+            onClick={startNewFlow}
+            className="studio-btn-primary studio-btn-compact"
+            aria-label="新規会話"
           >
-            <Trash2 size={15} aria-hidden />
+            <MessageSquarePlus size={14} aria-hidden />
+            新規
           </button>
-        )}
-        <button
-          type="button"
-          onClick={startNewFlow}
-          className="studio-btn-primary flex items-center gap-1.5 px-3 py-1.5 text-sm"
-        >
-          <MessageSquarePlus size={15} aria-hidden />
-          新規
-        </button>
-      </header>
+        </div>
+      </div>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         {sidebarOpen && (
-          <aside className="w-56 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--surface)] max-sm:absolute max-sm:z-10 max-sm:h-full max-sm:w-64 max-sm:shadow-lg">
+          <button
+            type="button"
+            className="absolute inset-0 z-[1] bg-[oklch(0.2_0.02_250_/_0.35)] sm:hidden"
+            aria-label="会話一覧を閉じる"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {sidebarOpen && (
+          <aside
+            className="absolute inset-y-0 left-0 z-[2] flex w-64 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface)] shadow-lg sm:static sm:z-auto sm:w-56 sm:shadow-none"
+            aria-label="会話一覧"
+          >
             {conversationsQuery.isLoading ? (
               <p className="p-3 text-xs text-[var(--text-muted)]">読込中…</p>
             ) : conversations.length === 0 ? (
@@ -179,12 +210,9 @@ export function AgentView() {
                   <li key={conversation.id}>
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsNewFlow(false)
-                        setSelectedId(conversation.id)
-                      }}
+                      onClick={() => selectConversation(conversation.id)}
                       className={`w-full rounded-[var(--radius-md)] px-2.5 py-2 text-left text-xs ${
-                        conversation.id === selectedId
+                        conversation.id === selectedId && !isNewFlow
                           ? 'bg-[var(--surface-raised)] font-medium text-[var(--text)]'
                           : 'text-[var(--text-muted)] hover:bg-[var(--surface-raised)]'
                       }`}
@@ -201,9 +229,17 @@ export function AgentView() {
           </aside>
         )}
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main
+          className={`flex min-h-0 min-w-0 flex-1 flex-col ${
+            isNewFlow ? 'overflow-y-auto' : 'overflow-hidden'
+          }`}
+        >
           {isNewFlow ? (
-            <NewConversationPanel onCreated={handleCreated} onCancel={() => setIsNewFlow(false)} />
+            <NewConversationPanel
+              onCreated={handleCreated}
+              onCancel={() => setIsNewFlow(false)}
+              onOpenSettings={onOpenSettings}
+            />
           ) : selected ? (
             <AgentChat
               key={selected.id}
@@ -223,6 +259,25 @@ export function AgentView() {
                   <br />
                   「新規」から会話を始めてください。
                 </p>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={startNewFlow}
+                    className="studio-btn-primary studio-btn-compact px-4"
+                  >
+                    新規会話
+                  </button>
+                  {onOpenSettings && (
+                    <button
+                      type="button"
+                      onClick={onOpenSettings}
+                      className="studio-btn w-auto gap-1.5 px-3 py-2 text-sm"
+                    >
+                      <Settings size={14} aria-hidden />
+                      LLM 設定
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

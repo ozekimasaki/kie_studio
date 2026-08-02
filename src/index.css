@@ -384,6 +384,17 @@ making white button text inherit the dark ink color (~2:1 contrast).
   background: var(--color-teal-700);
 }
 
+/* Toolbar / inline primary — same layer so width:100% is overridden. */
+.studio-btn-primary.studio-btn-compact {
+  width: auto;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 }
 
 .model-favorite-button {

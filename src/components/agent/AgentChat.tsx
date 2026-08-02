@@ -151,7 +151,7 @@ function MessageBubble({ message }: { message: FlueConversationMessage }) {
       <div
         className={
           isUser
-            ? 'max-w-[85%] rounded-2xl rounded-br-md bg-[var(--accent)] px-4 py-2.5 text-sm text-white'
+            ? 'max-w-[85%] rounded-[var(--radius-lg)] rounded-br-md bg-[var(--accent)] px-4 py-2.5 text-sm text-[var(--on-accent)]'
             : 'grid w-full max-w-full gap-2 px-1 text-sm text-[var(--text)]'
         }
       >
@@ -282,14 +282,14 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
               }}
               rows={Math.min(6, Math.max(2, input.split('\n').length))}
               placeholder="メッセージを入力… (Enter で送信 / Shift+Enter で改行)"
-              className="studio-input flex-1 resize-none"
+              className="studio-input min-w-0 flex-1 resize-none"
               aria-label="エージェントへのメッセージ"
             />
             {busy ? (
               <button
                 type="button"
                 onClick={() => void client.abort()}
-                className="studio-btn shrink-0 px-3 py-2"
+                className="studio-btn w-auto shrink-0 px-3 py-2"
                 aria-label="応答を停止"
               >
                 <Square size={16} aria-hidden />
@@ -299,7 +299,7 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
                 type="button"
                 onClick={() => void submit()}
                 disabled={!input.trim()}
-                className="studio-btn-primary shrink-0 px-3 py-2"
+                className="studio-btn-primary studio-btn-compact"
                 aria-label="送信"
               >
                 <SendHorizontal size={16} aria-hidden />

@@ -9,7 +9,7 @@ export function StudioModeToggle({
 }) {
   return (
     <div
-      className="studio-segment shrink-0"
+      className="studio-segment w-full shrink-0 sm:w-auto"
       role="tablist"
       aria-label="ワークスペースモード"
     >
@@ -17,7 +17,7 @@ export function StudioModeToggle({
         type="button"
         role="tab"
         aria-selected={value === 'studio'}
-        className="studio-segment-item min-h-9 px-3 sm:px-4"
+        className="studio-segment-item min-h-9 flex-1 px-3 sm:flex-none sm:px-4"
         onClick={() => onChange('studio')}
       >
         Studio
@@ -26,7 +26,7 @@ export function StudioModeToggle({
         type="button"
         role="tab"
         aria-selected={value === 'agent'}
-        className="studio-segment-item min-h-9 px-3 sm:px-4"
+        className="studio-segment-item min-h-9 flex-1 px-3 sm:flex-none sm:px-4"
         onClick={() => onChange('agent')}
       >
         エージェント

@@ -7,11 +7,13 @@ import {
   getCustomLlmEndpoints,
   getDefaultLlmModel,
   getLlmApiKey,
+  getPreferredLlmModels,
   hasStoredLlmApiKey,
   maskApiKey,
   setCustomLlmEndpoints,
   setDefaultLlmModel,
   setLlmApiKey,
+  setPreferredLlmModel,
 } from '../settings/llmKeys.ts'
 import {
   BUILTIN_LLM_PROVIDERS,
@@ -58,6 +60,11 @@ const defaultModelBodySchema = z.object({
   model: z.string({ error: 'model is required' }).trim().min(1, 'model is required'),
 })
 
+const preferredModelBodySchema = z.object({
+  provider: z.string({ error: 'provider is required' }).trim().min(1, 'provider is required'),
+  model: z.string({ error: 'model is required' }).trim().min(1, 'model is required'),
+})
+
 function maskedStored(endpoint: StoredCustomLlmEndpoint) {
   const { apiKey, ...rest } = endpoint
   return {
@@ -84,6 +91,7 @@ llmSettingsRoutes.get('/settings/llm', (c) => {
       providers,
       customEndpoints: getCustomLlmEndpoints().map(maskedStored),
       defaultModel: getDefaultLlmModel(),
+      preferredModels: getPreferredLlmModels(),
     },
   })
 })
@@ -124,3 +132,13 @@ llmSettingsRoutes.put('/settings/llm/default-model', validateJson(defaultModelBo
   setDefaultLlmModel(c.req.valid('json'))
   return c.json({ data: { defaultModel: c.req.valid('json') } })
 })
+
+llmSettingsRoutes.put(
+  '/settings/llm/preferred-model',
+  validateJson(preferredModelBodySchema),
+  (c) => {
+    const { provider, model } = c.req.valid('json')
+    const preferredModels = setPreferredLlmModel(provider, model)
+    return c.json({ data: { preferredModels } })
+  },
+)

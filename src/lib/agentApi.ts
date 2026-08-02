@@ -32,6 +32,8 @@ export interface LlmSettings {
   providers: LlmProviderSettings[]
   customEndpoints: CustomEndpointSettings[]
   defaultModel: { provider: string; model: string } | null
+  /** Preferred model id keyed by provider id (builtin or `custom-<id>`). */
+  preferredModels: Record<string, string>
 }
 
 async function parse<T>(res: Response): Promise<T> {
@@ -85,7 +87,11 @@ export async function deleteAgentConversation(id: string): Promise<void> {
 
 export async function fetchLlmSettings(): Promise<LlmSettings> {
   const res = await fetch(apiUrl('/api/settings/llm'))
-  return parse<LlmSettings>(res)
+  const data = await parse<LlmSettings>(res)
+  return {
+    ...data,
+    preferredModels: data.preferredModels ?? {},
+  }
 }
 
 export async function saveLlmApiKey(provider: string, apiKey: string): Promise<void> {
@@ -125,6 +131,18 @@ export async function saveDefaultLlmModel(value: {
   model: string
 }): Promise<void> {
   const res = await fetch(apiUrl('/api/settings/llm/default-model'), {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(value),
+  })
+  await parse(res)
+}
+
+export async function savePreferredLlmModel(value: {
+  provider: string
+  model: string
+}): Promise<void> {
+  const res = await fetch(apiUrl('/api/settings/llm/preferred-model'), {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(value),

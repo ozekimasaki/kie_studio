@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, KeyRound, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import {
@@ -7,6 +7,7 @@ import {
   saveDefaultLlmModel,
   saveLlmApiKey,
   saveLlmCustomEndpoints,
+  savePreferredLlmModel,
   type CustomEndpointInput,
   type LlmProviderSettings,
 } from '../lib/agentApi.ts'
@@ -29,35 +30,119 @@ function LlmKeyForm({
   })
 
   return (
-    <div className="mt-2 flex items-center gap-2">
-      <div className="relative min-w-0 flex-1">
-        <KeyRound
-          size={13}
-          strokeWidth={2}
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--text-muted)]"
-        />
-        <input
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          className="studio-input w-full py-1.5 pr-3 pl-8 text-xs"
-          placeholder={provider.hasKey ? '新しいキーで上書き…' : `${provider.label} の API キー`}
-          value={key}
-          disabled={mutation.isPending}
-          onChange={(e) => setKey(e.target.value)}
-          aria-label={`${provider.label} の API キー`}
-        />
+    <div className="mt-2 grid gap-1.5">
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <KeyRound
+            size={13}
+            strokeWidth={2}
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--text-muted)]"
+          />
+          <input
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            className="studio-input w-full py-1.5 pr-3 pl-8 text-xs"
+            placeholder={provider.hasKey ? '新しいキーで上書き…' : `${provider.label} の API キー`}
+            value={key}
+            disabled={mutation.isPending}
+            onChange={(e) => setKey(e.target.value)}
+            aria-label={`${provider.label} の API キー`}
+          />
+        </div>
+        <Pressable
+          type="button"
+          disabled={!key.trim() || mutation.isPending}
+          onClick={() => mutation.mutate()}
+          className="studio-btn-primary w-auto shrink-0 px-3 py-1.5 text-xs disabled:opacity-50"
+          scaleTo={0.96}
+        >
+          {mutation.isPending ? '保存中…' : '保存'}
+        </Pressable>
       </div>
-      <Pressable
-        type="button"
-        disabled={!key.trim() || mutation.isPending}
-        onClick={() => mutation.mutate()}
-        className="studio-btn-primary w-auto shrink-0 px-3 py-1.5 text-xs disabled:opacity-50"
-        scaleTo={0.96}
+      {mutation.isError && (
+        <p className="studio-field-error" role="alert">
+          {(mutation.error as Error).message}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function ProviderPreferredModel({
+  provider,
+  preferredModel,
+  onSaved,
+}: {
+  provider: LlmProviderSettings
+  preferredModel: string | undefined
+  onSaved: () => void
+}) {
+  const [custom, setCustom] = useState('')
+  const mutation = useMutation({
+    mutationFn: (model: string) =>
+      savePreferredLlmModel({ provider: provider.id, model }),
+    onSuccess: onSaved,
+  })
+
+  const suggestions = provider.suggestedModels
+  const current = preferredModel?.trim() || suggestions[0] || ''
+  const selectValue =
+    current && suggestions.includes(current)
+      ? current
+      : custom || current
+        ? '__custom__'
+        : ''
+
+  useEffect(() => {
+    if (preferredModel && !suggestions.includes(preferredModel)) {
+      setCustom(preferredModel)
+    }
+  }, [preferredModel, suggestions])
+
+  return (
+    <div className="mt-2 grid gap-1.5">
+      <label
+        className="text-[10px] font-medium text-[var(--text-muted)]"
+        htmlFor={`llm-preferred-${provider.id}`}
       >
-        {mutation.isPending ? '保存中…' : '保存'}
-      </Pressable>
+        このキーで使うモデル
+      </label>
+      <select
+        id={`llm-preferred-${provider.id}`}
+        className="studio-select w-full py-1.5 text-xs"
+        disabled={!provider.hasKey || mutation.isPending}
+        value={selectValue}
+        onChange={(e) => {
+          if (e.target.value === '__custom__') return
+          setCustom('')
+          mutation.mutate(e.target.value)
+        }}
+      >
+        {!provider.hasKey && <option value="">キーを設定してください</option>}
+        {suggestions.map((model) => (
+          <option key={model} value={model}>
+            {model}
+          </option>
+        ))}
+        {(custom || (current && !suggestions.includes(current))) && (
+          <option value="__custom__">{custom || current} (手入力)</option>
+        )}
+      </select>
+          <input
+            type="text"
+            className="studio-input w-full py-1.5 text-xs"
+            placeholder="またはモデル ID を直接入力"
+            disabled={!provider.hasKey || mutation.isPending}
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            onBlur={() => {
+              const trimmed = custom.trim()
+              if (trimmed && trimmed !== preferredModel) mutation.mutate(trimmed)
+            }}
+            aria-label={`${provider.label} のモデル ID`}
+          />
       {mutation.isError && (
         <p className="studio-field-error" role="alert">
           {(mutation.error as Error).message}
@@ -128,12 +213,15 @@ function CustomEndpointsEditor({
               key={endpoint.id}
               className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs"
             >
-              <span className="flex-1">
+              <span className="flex-1 min-w-0">
                 <span className="block font-medium text-[var(--text)]">{endpoint.label}</span>
-                <span className="block text-[var(--text-muted)]">
+                <span className="block truncate text-[var(--text-muted)]">
                   {endpoint.kind === 'openai-compatible' ? 'OpenAI 互換' : 'Claude 互換'}
                   {' · '}
                   {endpoint.baseUrl}
+                </span>
+                <span className="mt-0.5 block truncate text-[10px] text-[var(--text-muted)]">
+                  モデル: {endpoint.models.join(', ')}
                 </span>
               </span>
               <Pressable
@@ -246,10 +334,25 @@ function DefaultModelSelect({ onSaved }: { onSaved: () => void }) {
   const choices = [
     ...settings.providers
       .filter((p) => p.hasKey)
-      .flatMap((p) => p.suggestedModels.map((model) => ({ provider: p.id, model, label: `${p.label} / ${model}` }))),
+      .flatMap((p) => {
+        const preferred = settings.preferredModels[p.id]
+        const models = new Set(p.suggestedModels)
+        if (preferred) models.add(preferred)
+        return [...models].map((model) => ({
+          provider: p.id,
+          model,
+          label: `${p.label} / ${model}`,
+        }))
+      }),
     ...settings.customEndpoints
       .filter((e) => e.hasKey)
-      .flatMap((e) => e.models.map((model) => ({ provider: `custom-${e.id}`, model, label: `${e.label} / ${model}` }))),
+      .flatMap((e) =>
+        e.models.map((model) => ({
+          provider: `custom-${e.id}`,
+          model,
+          label: `${e.label} / ${model}`,
+        })),
+      ),
   ]
   if (choices.length === 0) return null
 
@@ -303,7 +406,7 @@ export function LlmSettingsSection() {
     <section className="mt-6 border-t border-[var(--border)] pt-4">
       <div className="studio-label">エージェント (LLM プロバイダ)</div>
       <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-        エージェントモードで使う LLM の API キーを管理します。キーはこの端末内にのみ暗号化して保存され、エージェントサーバー以外には公開されません。
+        エージェントモードで使う LLM の API キーとモデルを管理します。キーはこの端末内にのみ暗号化して保存され、エージェントサーバー以外には公開されません。
       </p>
 
       {settingsQuery.isLoading ? (
@@ -332,6 +435,11 @@ export function LlmSettingsSection() {
                 )}
               </div>
               <LlmKeyForm provider={provider} onSaved={refresh} />
+              <ProviderPreferredModel
+                provider={provider}
+                preferredModel={settings.preferredModels[provider.id]}
+                onSaved={refresh}
+              />
             </div>
           ))}
 

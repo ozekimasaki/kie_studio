@@ -18,8 +18,12 @@ export interface DefaultLlmModel {
   model: string
 }
 
+/** Preferred model id per provider (builtin id or `custom-<endpointId>`). */
+export type PreferredLlmModels = Record<string, string>
+
 const CUSTOM_ENDPOINTS_SETTING = 'LLM_CUSTOM_ENDPOINTS'
 const DEFAULT_MODEL_SETTING = 'LLM_DEFAULT_MODEL'
+const PREFERRED_MODELS_SETTING = 'LLM_PREFERRED_MODELS'
 
 function keySettingName(provider: BuiltinLlmProvider): string {
   return `LLM_API_KEY_${provider.toUpperCase()}`
@@ -120,6 +124,31 @@ export function getDefaultLlmModel(): DefaultLlmModel | null {
 
 export function setDefaultLlmModel(value: DefaultLlmModel): void {
   setSetting(DEFAULT_MODEL_SETTING, JSON.stringify(value))
+}
+
+/** Preferred model per provider for new conversations (plaintext). */
+export function getPreferredLlmModels(): PreferredLlmModels {
+  const raw = getSetting(PREFERRED_MODELS_SETTING)
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: PreferredLlmModels = {}
+    for (const [provider, model] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof provider !== 'string' || !provider.trim()) continue
+      if (typeof model !== 'string' || !model.trim()) continue
+      out[provider.trim()] = model.trim()
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+export function setPreferredLlmModel(provider: string, model: string): PreferredLlmModels {
+  const next = { ...getPreferredLlmModels(), [provider.trim()]: model.trim() }
+  setSetting(PREFERRED_MODELS_SETTING, JSON.stringify(next))
+  return next
 }
 
 export function isKnownLlmProvider(id: string): boolean {

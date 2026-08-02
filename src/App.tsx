@@ -398,7 +398,7 @@ export default function App() {
       }
       chromeSubtitle={
         view === 'agent'
-          ? 'エージェント · LLM と会話しながら生成'
+          ? 'エージェント'
           : 'kie.ai · IMAGE / VIDEO / AUDIO'
       }
       chromeMeta={
@@ -419,7 +419,7 @@ export default function App() {
       }
       chromeTrailing={
         <div className="flex items-stretch gap-1.5 sm:gap-2">
-          <CreditBadge lastUsed={lastUsedCredits} />
+          <CreditBadge lastUsed={lastUsedCredits} compact={view === 'agent'} />
           <Pressable
             onClick={() => setSettingsSheetOpen(true)}
             className="studio-btn shrink-0 self-stretch px-2.5"
@@ -431,8 +431,14 @@ export default function App() {
         </div>
       }
       agent={
-        <Suspense fallback={null}>
-          <AgentView />
+        <Suspense
+          fallback={
+            <div className="grid h-full place-items-center text-sm text-[var(--text-muted)]">
+              エージェントを読込中…
+            </div>
+          }
+        >
+          <AgentView onOpenSettings={() => setSettingsSheetOpen(true)} />
         </Suspense>
       }
       form={

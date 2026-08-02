@@ -17,21 +17,32 @@ export function FloatingChrome({
   return (
     <Material
       weight="chrome"
-      className="flex shrink-0 items-center justify-between gap-2 rounded-[var(--radius-xl)] px-3 py-2.5 sm:px-4 sm:py-3 md:px-5"
+      className="flex shrink-0 flex-col gap-2 rounded-[var(--radius-xl)] px-3 py-2.5 sm:px-4 sm:py-3 md:px-5"
       initial={false}
       role="banner"
     >
-      <div className="min-w-0 shrink-0 space-y-0.5">
-        <h1 className="studio-display">{title}</h1>
-        {subtitle && <p className="studio-subtitle hidden sm:block">{subtitle}</p>}
-        {meta && <div className="hidden sm:block">{meta}</div>}
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <h1 className="studio-display truncate">{title}</h1>
+          {subtitle && (
+            <p className="studio-subtitle hidden truncate sm:block">{subtitle}</p>
+          )}
+          {meta && <div className="hidden sm:block">{meta}</div>}
+        </div>
+        {center && (
+          <div className="hidden min-w-0 shrink-0 sm:flex sm:justify-center">
+            {center}
+          </div>
+        )}
+        <div className="ml-auto flex min-w-0 shrink-0 items-stretch justify-end">
+          {trailing}
+        </div>
       </div>
       {center && (
-        <div className="mx-auto flex min-w-0 shrink-0 justify-center px-1 sm:px-2">
+        <div className="w-full min-w-0 sm:hidden" aria-hidden={false}>
           {center}
         </div>
       )}
-      <div className="ml-auto min-w-0">{trailing}</div>
     </Material>
   )
 }
