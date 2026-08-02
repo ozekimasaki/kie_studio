@@ -23,6 +23,10 @@ process.env.STUDIO_DB_PATH = join(userData, 'studio.db')
 // Uninstall must never delete this directory — same rule as studio.db.
 process.env.FLUE_DB_PATH = join(userData, 'flue.db')
 
+// Grok OAuth tokens (auth.json) — sibling of studio.db / flue.db.
+process.env.GROK_OAUTH_PROXY_HOME = join(userData, 'grok-oauth')
+mkdirSync(process.env.GROK_OAUTH_PROXY_HOME, { recursive: true })
+
 // Per-boot token shared with the embedded (or sidecar) agent server for the
 // loopback internal API. Must be set before the agent app loads providers.
 process.env.STUDIO_AGENT_TOKEN = randomUUID()

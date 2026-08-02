@@ -91,10 +91,12 @@ server/
   db/                  # bun:sqlite（履歴・Persona・音源素材・app_settings）
   settings/            # API キー取得（保存ストア→env フォールバック）
   kie/adapters/        # Market / Suno / Veo / Runway の共通化
-  grok/                # Grok CLI 最適化
+  grok/                # Grok CLI 最適化（プロンプト最適化専用。OAuth 同梱とは別）
+  grokOauth/           # X アカウント OAuth + OpenAI 互換プロキシ（エージェント用）
   catalog/             # docs catalog 同期 + 専用 workflow
 electrobun.config.ts   # Electrobun ビルド設定
 scripts/sync-models.ts
+docs/PRE_RELEASE.md    # リリース前チェックリスト
 .indexion/wiki/        # プロジェクト知識ベース
 ```
 
@@ -120,8 +122,10 @@ scripts/sync-models.ts
 | `server/db/` | bun:sqlite（既定 `data/studio.db`、`STUDIO_DB_PATH` で上書き） |
 | `server/settings/` | 保存ストア優先の API キー取得ヘルパ |
 | `server/kie/adapters/` | Market / Suno / Veo / Runway の生成・状態・エラーを正規化 |
-| `server/grok/` | Grok CLI |
+| `server/grok/` | Grok CLI（プロンプト最適化） |
+| `server/grokOauth/` | X OAuth ログイン + `/api/grok-oauth/v1` プロキシ（エージェント用。`server/grok/` とは別） |
 | `server/catalog/` + `scripts/` | カタログ同期 |
+| `docs/PRE_RELEASE.md` | Pre-release チェックリスト |
 | `.indexion/wiki/` | indexion 知識ベース |
 
 ## 作業ルール
@@ -133,6 +137,17 @@ scripts/sync-models.ts
 - union / enum の `switch` は `default` で `never` チェック
 - **コード編集後は必ず検証コマンドを実行する**: `npm run lint && npm test && npx tsc -b`（3 つすべてが成功することを確認してから完了とする）
 - 大きな機能変更の前後で、関係する wiki ページを `ingest` → 必要なら `pages update`
+- リリース前・大きめ PR の完了前は [docs/PRE_RELEASE.md](docs/PRE_RELEASE.md) を通す（UI/UX・README/AGENTS 同期を含む）
+
+## Pre-release
+
+手順の正本は [docs/PRE_RELEASE.md](docs/PRE_RELEASE.md)。要約:
+
+1. `npm run lint && npm test && npx tsc -b`
+2. 変更面の機能スモーク
+3. UI/UX（崩れ・被り）目視
+4. wiki / AGENTS.md / README の同期
+5. 秘密情報（`.env`、`data/grok-oauth/auth.json` 等）をコミットしない
 
 ## Skills ルーティング
 
@@ -232,6 +247,7 @@ npm run sync:models -- --force
 - Persona と外部音源メタデータは SQLite に保存する。メディア本体は保存しない
 - 旧 localStorage キーは初回起動時に `POST /api/history/migrate` で移行する
 - プロンプト最適化は Grok CLI 依存。未インストール時は 503 でよい
+- エージェントの Grok は `XAI_API_KEY`（組み込み xai）と **X アカウント OAuth**（`server/grokOauth/`、Settings からログイン）が併存する。トークンは `data/grok-oauth/`（desktop は userData/`grok-oauth`）の `auth.json`。コミット禁止。`server/grok/`（CLI 最適化）と混同しない
 - `FieldType` / 特殊 UI を増やすときは `types.ts` → `DynamicForm` → 必要ならカタログ抽出を一連で見る
 - Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` と adapter を一連で見る
 

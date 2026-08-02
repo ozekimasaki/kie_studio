@@ -20,6 +20,7 @@ import {
   getLlmApiKey,
 } from '../settings/llmKeys.ts'
 import { BUILTIN_LLM_PROVIDERS } from '../../src/lib/models/llmProviders.ts'
+import { mergeCustomEndpointsWithGrokOauth } from '../grokOauth/systemEndpoint.ts'
 import { validateJson } from './validation.ts'
 
 /**
@@ -53,7 +54,7 @@ agentInternalRoutes.get('/internal/agent/credentials', (c) => {
   return c.json({
     data: {
       providers,
-      customEndpoints: getCustomLlmEndpoints(),
+      customEndpoints: mergeCustomEndpointsWithGrokOauth(getCustomLlmEndpoints()),
       defaultModel: getDefaultLlmModel(),
     },
   })

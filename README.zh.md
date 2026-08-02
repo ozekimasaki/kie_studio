@@ -17,7 +17,7 @@
 - 提示词优化（Grok CLI）与代码片段
 - `@引用` 插入 & Kling Elements 支持
 
-> 代理工作指南请参阅 [AGENTS.md](./AGENTS.md)；UI/设计方针请参阅 [DESIGN.md](./DESIGN.md)。
+> 代理工作指南请参阅 [AGENTS.md](./AGENTS.md)；UI/设计方针请参阅 [DESIGN.md](./DESIGN.md)；发布前检查请参阅 [docs/PRE_RELEASE.md](./docs/PRE_RELEASE.md)。
 
 ## 环境要求
 
@@ -25,6 +25,7 @@
 - Node.js（支持 Vite 8 / React 19 的近期 LTS，建议 20.19+ 或 22.12+）及 npm
 - kie.ai API 密钥（<https://kie.ai/api-key>）。桌面版也可在应用内设置面板保存。
 - 可选：[Grok CLI](https://docs.x.ai/build/overview)（用于提示词优化，通过 `grok login` 或 `XAI_API_KEY` 认证）
+- 可选：Agent 模式的 Grok 可通过设置中的 **X 账号 OAuth**（SuperGrok / Premium+，无需 API 密钥）或 `XAI_API_KEY`
 
 ## 快速开始
 
@@ -119,6 +120,11 @@ npm run sync:models -- --force
 | GET | `/api/personas` | 列出 Persona 素材架 |
 | DELETE | `/api/personas/:id` | 删除 Persona |
 | GET | `/api/grok/status` | Grok CLI 可用性 |
+| GET | `/api/settings/grok-oauth` | X 账号 OAuth 状态（Agent Grok） |
+| POST | `/api/settings/grok-oauth/login/start` | 开始 device-code OAuth |
+| POST | `/api/settings/grok-oauth/login/poll` | 轮询授权 |
+| POST | `/api/settings/grok-oauth/logout` | 清除 OAuth 令牌 |
+| ALL | `/api/grok-oauth/v1/*` | 使用 OAuth Bearer 的 OpenAI 兼容代理 |
 | GET | `/api/optimize-profile?modelId=` | 按模型的优化配置 |
 | POST | `/api/optimize-prompt` | 提示词优化 / 生成 |
 | GET | `/api/history` | 历史列表（SQLite） |
@@ -182,8 +188,10 @@ server/         # Hono API（Bun 运行时，127.0.0.1:8787）
   settings/     # API 密钥获取（持久存储 → 环境变量回退）
   db/           # bun:sqlite（历史、Persona、音频素材、app_settings）
   grok/         # Grok CLI 集成（提示词优化）
+  grokOauth/    # X 账号 OAuth + OpenAI 兼容代理（Agent）
   catalog/      # docs OpenAPI + 专用 workflow 集成
 electrobun.config.ts    # Electrobun 构建与分发配置（含 win/linux 图标路径）
+docs/PRE_RELEASE.md     # 发布前检查清单
 assets/icon-master.svg  # 应用图标矢量母版（→ icon.ico / icon.png）
 installer/win/kie-studio.iss   # Inno Setup 安装包定义（ARP、卸载程序、快捷方式）
 scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png（sharp + png-to-ico）

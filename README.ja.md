@@ -17,7 +17,7 @@ kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う
 - プロンプト最適化（Grok CLI）とスニペット
 - `@参照` 挿入・Kling Elements 対応
 
-> エージェント向けの作業ガイドは [AGENTS.md](./AGENTS.md)、UI/デザイン方針は [DESIGN.md](./DESIGN.md) を参照。
+> エージェント向けの作業ガイドは [AGENTS.md](./AGENTS.md)、UI/デザイン方針は [DESIGN.md](./DESIGN.md)、リリース前チェックは [docs/PRE_RELEASE.md](./docs/PRE_RELEASE.md) を参照。
 
 ## 要件
 
@@ -25,6 +25,7 @@ kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う
 - Node.js（Vite 8 / React 19 が動作する最近の LTS。目安: 20.19+ または 22.12+）と npm
 - kie.ai の API キー（<https://kie.ai/api-key>）。デスクトップ版はアプリ内の設定画面からも保存可能
 - 任意: プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview)（認証は `grok login` または `XAI_API_KEY`）
+- 任意: エージェントモードの Grok は Settings から **X アカウント OAuth**（SuperGrok / Premium+、API キー不要）または `XAI_API_KEY`
 
 ## セットアップ
 
@@ -119,6 +120,11 @@ npm run sync:models -- --force
 | GET | `/api/personas` | Persona 素材棚の一覧 |
 | DELETE | `/api/personas/:id` | Persona を削除 |
 | GET | `/api/grok/status` | Grok CLI 利用可否 |
+| GET | `/api/settings/grok-oauth` | X アカウント OAuth 状態（エージェント Grok） |
+| POST | `/api/settings/grok-oauth/login/start` | device-code OAuth 開始 |
+| POST | `/api/settings/grok-oauth/login/poll` | 承認ポーリング |
+| POST | `/api/settings/grok-oauth/logout` | OAuth トークン削除 |
+| ALL | `/api/grok-oauth/v1/*` | OAuth Bearer の OpenAI 互換プロキシ |
 | GET | `/api/optimize-profile?modelId=` | モデル別最適化プロファイル |
 | POST | `/api/optimize-prompt` | プロンプト最適化 / 生成 |
 | GET | `/api/history` | 履歴一覧（SQLite） |
@@ -182,8 +188,10 @@ server/         # Hono API（Bun ランタイム、127.0.0.1:8787）
   settings/     # API キー取得（永続ストア→環境変数）
   db/           # bun:sqlite（履歴・Persona・音源素材・app_settings）
   grok/         # Grok CLI 連携（プロンプト最適化）
+  grokOauth/    # X アカウント OAuth + OpenAI 互換プロキシ（エージェント）
   catalog/      # docs OpenAPI と専用 workflow の統合
 electrobun.config.ts    # Electrobun ビルド・配布設定（win/linux のアイコン指定を含む）
+docs/PRE_RELEASE.md     # リリース前チェックリスト
 assets/icon-master.svg  # アプリアイコンのベクターマスター（→ icon.ico / icon.png）
 installer/win/kie-studio.iss   # Inno Setup インストーラー定義（ARP・アンインストーラー・ショートカット）
 scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png（sharp + png-to-ico）

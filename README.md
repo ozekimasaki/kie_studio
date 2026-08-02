@@ -17,7 +17,7 @@ A Studio for **IMAGE / VIDEO / AUDIO** generation powered by kie.ai's Market API
 - Prompt optimization (Grok CLI) and snippets
 - `@reference` insertion & Kling Elements support
 
-> For agent working guidelines see [AGENTS.md](./AGENTS.md); for UI/design policy see [DESIGN.md](./DESIGN.md).
+> For agent working guidelines see [AGENTS.md](./AGENTS.md); for UI/design policy see [DESIGN.md](./DESIGN.md); for the pre-release checklist see [docs/PRE_RELEASE.md](./docs/PRE_RELEASE.md).
 
 ## Requirements
 
@@ -25,6 +25,7 @@ A Studio for **IMAGE / VIDEO / AUDIO** generation powered by kie.ai's Market API
 - Node.js (recent LTS that supports Vite 8 / React 19; recommended 20.19+ or 22.12+) and npm
 - kie.ai API key (<https://kie.ai/api-key>). The desktop app can also save it from the in-app settings panel.
 - Optional: [Grok CLI](https://docs.x.ai/build/overview) for prompt optimization (authenticate via `grok login` or `XAI_API_KEY`)
+- Optional: Agent-mode Grok via **X account OAuth** in Settings (SuperGrok / Premium+; no `XAI_API_KEY` required), or via an `XAI_API_KEY`
 
 ## Setup
 
@@ -119,6 +120,11 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | GET | `/api/personas` | List Persona shelf |
 | DELETE | `/api/personas/:id` | Delete a Persona |
 | GET | `/api/grok/status` | Grok CLI availability |
+| GET | `/api/settings/grok-oauth` | X-account OAuth login status (agent Grok) |
+| POST | `/api/settings/grok-oauth/login/start` | Start device-code OAuth |
+| POST | `/api/settings/grok-oauth/login/poll` | Poll device-code approval |
+| POST | `/api/settings/grok-oauth/logout` | Clear stored OAuth tokens |
+| ALL | `/api/grok-oauth/v1/*` | OpenAI-compatible proxy using OAuth bearer |
 | GET | `/api/optimize-profile?modelId=` | Per-model optimization profile |
 | POST | `/api/optimize-prompt` | Prompt optimization / generation |
 | GET | `/api/history` | List history (SQLite) |
@@ -182,8 +188,10 @@ server/         # Hono API (Bun runtime, 127.0.0.1:8787)
   settings/     # API key retrieval (persistent store → env fallback)
   db/           # bun:sqlite (history, Persona, audio assets, app_settings)
   grok/         # Grok CLI integration (prompt optimization)
+  grokOauth/    # X-account OAuth + OpenAI-compatible proxy (agent mode)
   catalog/      # docs OpenAPI + dedicated workflow integration
 electrobun.config.ts    # Electrobun build & distribution config (win/linux icon paths)
+docs/PRE_RELEASE.md     # Pre-release checklist (lint/test/UI/docs)
 assets/icon-master.svg  # Vector master for app icon (→ icon.ico / icon.png)
 installer/win/kie-studio.iss   # Inno Setup installer definition (ARP, uninstaller, shortcuts)
 scripts/build-icons.mjs        # icon-master.svg → icon.ico / icon.png (sharp + png-to-ico)
