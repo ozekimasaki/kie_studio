@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "268",
+  "next_vid": "279",
   "entries": [
     {
       "section": {
@@ -554,6 +554,116 @@
         "level": 2
       },
       "vid": "267"
+    },
+    {
+      "section": {
+        "id": "agent-mode",
+        "title": "Agent Mode",
+        "content": "\nFlue 基盤の Studio エージェント。LLM と会話しながら IMAGE / VIDEO / AUDIO を生成する。\n\n",
+        "page_id": "agent-mode",
+        "level": 1
+      },
+      "vid": "268"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-2",
+        "title": "構成",
+        "content": "\n```text\nFrontend (Vite :5173)\n  Studio | エージェント セグメントトグル (FloatingChrome)\n  AgentView / useFlueAgent → /agents/studio/<convId>\n        │                          │\n        ▼                          ▼\n  /api (Hono :8787)          Flue sidecar (:8789 Node, dev)\n                                   │\n                                   ▼ loopback + x-studio-agent-token\n                             /api/internal/agent/*\n```\n\nデスクトップ（Electrobun）では `agent/dist/app.mjs` を `loadFlueNodeApplication` で埋め込み、同じ Bun.serve が `/agents/*` を転送する。`FLUE_DB_PATH` は userData の `flue.db`（`studio.db` と同階層。アンインストールで親 dir を消さない）。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "269"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-agent-3",
+        "title": "エージェント `agent/`",
+        "content": "\n- `src/agents/studio.ts` — `'use agent'` + ツール群\n- `src/providers.ts` — Google / xAI / OpenAI / Anthropic / Alibaba / カスタムエンドポイント。キーは内部 API から `resolve()`\n- `src/kieClient.ts` — `STUDIO_API_BASE` + `STUDIO_AGENT_TOKEN`\n- `vite.config.ts` — `node:sqlite` → Bun 互換 shim 書換、`ssr.noExternal` で自己完結 dist\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "270"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-4",
+        "title": "ツール",
+        "content": "\n| ツール | 役割 |\n|--------|------|\n| `list-workflows` / `get-workflow-schema` | 生成前の候補・入力確認 |\n| `generate-media` / `get-task-status` | 非同期生成 + 状態 |\n| `search-history` / `get-task-input` | 履歴検索・入力復元 |\n| `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |\n\n`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。履歴はサーバー側 upsert で通常ギャラリーにも載る。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "271"
+    },
+    {
+      "section": {
+        "id": "agent-mode#grokx--oauth-5",
+        "title": "Grok（X アカウント OAuth）",
+        "content": "\nエージェントで Grok を使う経路はふたつ（併存）:\n\n1. 組み込み `xai` + `XAI_API_KEY`（Settings のキー、または env）\n2. **X アカウント OAuth**（Settings → LLM →「X アカウントでログイン」）\n\nOAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/ozekimasaki/grok-oauth-proxy) 由来、MIT）。別ポートは立てず、Studio Hono の `/api/grok-oauth/v1/*` が OpenAI 互換プロキシになる。ログイン済みなら credentials / settings にシステムエンドポイント `grok-oauth`（label: Grok (X アカウント)）が注入され、モデルピッカーから選べる。\n\n| 項目 | 内容 |\n|------|------|\n| トークン | `auth.json`（dev: `data/grok-oauth/`、desktop: userData/`grok-oauth`）。コミット禁止 |\n| ログイン API | `GET/POST /api/settings/grok-oauth*`（device-code、クライアントが poll） |\n| プロキシ | `ALL /api/grok-oauth/v1/*` → `https://api.x.ai/v1` |\n| 注意 | 非公式 OAuth。SuperGrok / Premium+ で API アクセスが必要。403 時は公式キーを使う |\n\n`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "272"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-6",
+        "title": "フロント",
+        "content": "\n- `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー\n- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル\n- `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "273"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-7",
+        "title": "会話のライフサイクル（遅延作成）",
+        "content": "\n「会話を開始」時点ではローカル **draft**（`AgentView` state。非永続・リクエスト無し）を作るだけ。\n\n| タイミング | 起きること |\n|------------|-----------|\n| 会話を開始 | draft 生成のみ。`agent_conversations` にも Flue にも触れない |\n| 初回メッセージ送信 | ① `client.send`（`initialData` に provider/model）で Flue インスタンス生成 → ② observation を有効化（履歴 hydrate + SSE follow）→ ③ `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |\n| 2 通目以降 | `agent.sendMessage`（session 経由、optimistic 表示） |\n\ndraft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に保ち、履歴 GET / SSE を一切張らない。送信失敗時は draft に戻り何も残らない。既存会話を開いた場合は従来通りマウント時に observe 開始。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "274"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-8",
+        "title": "サーバー",
+        "content": "\n- `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）\n- `/api/settings/grok-oauth*` — X OAuth ログイン状態・device-code・logout\n- `/api/grok-oauth/v1/*` — OAuth Bearer の OpenAI 互換プロキシ\n- `/api/internal/agent/*` — エージェント専用内部 API（トークン必須）。credentials に OAuth システムエンドポイントを注入\n- `/api/agent-conversations` — 会話メタデータ CRUD（`agent_conversations` テーブル）\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "275"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-9",
+        "title": "エージェント不通時の見え方",
+        "content": "\n`/agents/*` が 502（埋め込み未ロード + sidecar 未起動）でも、SDK の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。`AgentChat` は status `connecting` + error 時に「接続できません」警告を出し、送信欄は blocking しない（送信すれば 502 エラー表示で入力を復元）。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "276"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-10",
+        "title": "コマンド",
+        "content": "\n| コマンド | 用途 |\n|----------|------|\n| `npm run dev` | server + web + agent sidecar |\n| `npm run agent:build` | `agent/dist`（desktop 同梱前に必須） |\n| `npm run desktop:build:canary` | agent:build を含むフルビルド |\n\nリリース前チェックは [docs/PRE_RELEASE.md](../../docs/PRE_RELEASE.md)。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "277"
+    },
+    {
+      "section": {
+        "id": "agent-mode#see-also-11",
+        "title": "See Also",
+        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "278"
     }
   ]
 }

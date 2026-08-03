@@ -167,16 +167,21 @@ export interface AgentChatProps {
   conversationId: string
   provider: string
   model: string
-  /** True while the conversation has not sent its first message yet. */
-  isNew: boolean
-  onFirstMessage?: (text: string) => void
+  /** True while the conversation is a local draft: nothing persisted, no agent instance. */
+  isDraft: boolean
+  /** Called once the draft's first message was accepted, so the caller can persist it. */
+  onFirstSent?: (text: string) => void
 }
 
-export function AgentChat({ conversationId, provider, model, isNew, onFirstMessage }: AgentChatProps) {
+export function AgentChat({ conversationId, provider, model, isDraft, onFirstSent }: AgentChatProps) {
   const queryClient = useQueryClient()
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
-  const freshRef = useRef(isNew)
+  const [submitting, setSubmitting] = useState(false)
+  // Drafts have no agent instance yet: keep the observation dormant (zero
+  // requests) until the first send creates it, then hydrate + follow live.
+  const [activated, setActivated] = useState(!isDraft)
+  const freshRef = useRef(isDraft)
   const seenTaskIdsRef = useRef(new Set<string>())
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -184,7 +189,7 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
     () => createFlueClient({ url: agentConversationUrl(conversationId) }),
     [conversationId],
   )
-  const agent = useFlueAgent({ client })
+  const agent = useFlueAgent({ client: activated ? client : undefined })
 
   // Invalidate the studio history when the agent created a task, so the
   // gallery and its polling pick it up without a manual refresh.
@@ -208,25 +213,36 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
     if (el) el.scrollTop = el.scrollHeight
   }, [agent.messages])
 
-  const busy = agent.status === 'submitted' || agent.status === 'streaming' || agent.status === 'connecting'
+  const responding = agent.status === 'submitted' || agent.status === 'streaming'
+  const busy = submitting || responding
 
   async function submit() {
     const text = input.trim()
     if (!text || busy) return
     setInput('')
     setSendError(null)
-    try {
-      if (freshRef.current) {
-        freshRef.current = false
+    if (freshRef.current) {
+      freshRef.current = false
+      setSubmitting(true)
+      try {
         // First send carries the model selection as instance-creation data.
         await client.send({
           message: { kind: 'user', body: text },
           initialData: { provider, model },
         })
-        onFirstMessage?.(text)
-      } else {
-        await agent.sendMessage(text)
+        setActivated(true)
+        onFirstSent?.(text)
+      } catch (error) {
+        freshRef.current = true
+        setInput(text)
+        setSendError(error instanceof Error ? error.message : String(error))
+      } finally {
+        setSubmitting(false)
       }
+      return
+    }
+    try {
+      await agent.sendMessage(text)
     } catch (error) {
       setInput(text)
       setSendError(error instanceof Error ? error.message : String(error))
@@ -248,10 +264,21 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
           {agent.messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
-          {busy && (
+          {(busy || agent.status === 'connecting') && (
             <p className="flex items-center gap-2 px-1 text-xs text-[var(--text-muted)]">
               <Loader2 size={13} className="animate-spin" aria-hidden />
-              {agent.status === 'streaming' ? '応答を生成中…' : '送信中…'}
+              {agent.status === 'streaming'
+                ? '応答を生成中…'
+                : agent.status === 'connecting'
+                  ? 'エージェントサーバーに接続中…'
+                  : '送信中…'}
+            </p>
+          )}
+          {agent.status === 'connecting' && agent.error && (
+            <p className="flex items-center gap-2 px-1 text-xs text-[var(--danger)]" role="alert">
+              <AlertTriangle size={13} aria-hidden />
+              エージェントサーバーに接続できません。アプリを再起動するか、開発時は agent sidecar
+              込みの npm run dev で起動してください。自動で再試行します。
             </p>
           )}
           {agent.status === 'error' && (
@@ -285,10 +312,10 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
               className="studio-input min-w-0 flex-1 resize-none"
               aria-label="エージェントへのメッセージ"
             />
-            {busy ? (
+            {responding ? (
               <button
                 type="button"
-                onClick={() => void client.abort()}
+                onClick={() => void client.abort().catch(() => {})}
                 className="studio-btn w-auto shrink-0 px-3 py-2"
                 aria-label="応答を停止"
               >
@@ -298,7 +325,7 @@ export function AgentChat({ conversationId, provider, model, isNew, onFirstMessa
               <button
                 type="button"
                 onClick={() => void submit()}
-                disabled={!input.trim()}
+                disabled={!input.trim() || submitting}
                 className="studio-btn-primary studio-btn-compact"
                 aria-label="送信"
               >

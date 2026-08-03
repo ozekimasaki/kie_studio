@@ -152,9 +152,11 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start API + Web together (`dev:server` + `dev:web`) |
+| `npm run dev` | Start API + Web + agent sidecar together (`dev:server` + `dev:web` + `dev:agent`) |
 | `npm run dev:server` | Hono API only (`bun --watch server/index.ts`) |
 | `npm run dev:web` | Vite dev server only |
+| `npm run dev:agent` | Flue agent sidecar only (`127.0.0.1:8789`) |
+| `npm run agent:build` | Build `agent/dist` (required before desktop builds) |
 | `npm run desktop:dev` | Launch Electrobun desktop in dev mode (`electrobun run --env=dev`) |
 | `npm run desktop:build:canary` | Canary desktop build (`vite build` + `electrobun build`) |
 | `npm run desktop:build:stable` | Stable desktop build |

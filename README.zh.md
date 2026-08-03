@@ -152,9 +152,11 @@ npm run sync:models -- --force
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 同时启动 API + Web（`dev:server` + `dev:web`） |
+| `npm run dev` | 同时启动 API + Web + 代理 sidecar（`dev:server` + `dev:web` + `dev:agent`） |
 | `npm run dev:server` | 仅 Hono API（`bun --watch server/index.ts`） |
 | `npm run dev:web` | 仅 Vite 开发服务器 |
+| `npm run dev:agent` | 仅 Flue 代理 sidecar（`127.0.0.1:8789`） |
+| `npm run agent:build` | 构建 `agent/dist`（桌面构建前必需） |
 | `npm run desktop:dev` | 开发模式启动 Electrobun 桌面（`electrobun run --env=dev`） |
 | `npm run desktop:build:canary` | Canary 桌面构建（`vite build` + `electrobun build`） |
 | `npm run desktop:build:stable` | Stable 桌面构建 |

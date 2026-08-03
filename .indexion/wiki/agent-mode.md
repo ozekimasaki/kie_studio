@@ -60,13 +60,29 @@ OAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/
 - `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル
 - `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替
 
+### 会話のライフサイクル（遅延作成）
+
+「会話を開始」時点ではローカル **draft**（`AgentView` state。非永続・リクエスト無し）を作るだけ。
+
+| タイミング | 起きること |
+|------------|-----------|
+| 会話を開始 | draft 生成のみ。`agent_conversations` にも Flue にも触れない |
+| 初回メッセージ送信 | ① `client.send`（`initialData` に provider/model）で Flue インスタンス生成 → ② observation を有効化（履歴 hydrate + SSE follow）→ ③ `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |
+| 2 通目以降 | `agent.sendMessage`（session 経由、optimistic 表示） |
+
+draft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に保ち、履歴 GET / SSE を一切張らない。送信失敗時は draft に戻り何も残らない。既存会話を開いた場合は従来通りマウント時に observe 開始。
+
 ## サーバー
 
 - `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）
 - `/api/settings/grok-oauth*` — X OAuth ログイン状態・device-code・logout
 - `/api/grok-oauth/v1/*` — OAuth Bearer の OpenAI 互換プロキシ
 - `/api/internal/agent/*` — エージェント専用内部 API（トークン必須）。credentials に OAuth システムエンドポイントを注入
-- `/api/agent/conversations` — 会話メタデータ CRUD（`agent_conversations` テーブル）
+- `/api/agent-conversations` — 会話メタデータ CRUD（`agent_conversations` テーブル）
+
+### エージェント不通時の見え方
+
+`/agents/*` が 502（埋め込み未ロード + sidecar 未起動）でも、SDK の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。`AgentChat` は status `connecting` + error 時に「接続できません」警告を出し、送信欄は blocking しない（送信すれば 502 エラー表示で入力を復元）。
 
 ## コマンド
 

@@ -152,9 +152,11 @@ npm run sync:models -- --force
 
 | コマンド | 説明 |
 |----------|------|
-| `npm run dev` | API + Web を同時起動（`dev:server` + `dev:web`） |
+| `npm run dev` | API + Web + エージェント sidecar を同時起動（`dev:server` + `dev:web` + `dev:agent`） |
 | `npm run dev:server` | Hono API のみ（`bun --watch server/index.ts`） |
 | `npm run dev:web` | Vite 開発サーバーのみ |
+| `npm run dev:agent` | Flue エージェント sidecar のみ（`127.0.0.1:8789`） |
+| `npm run agent:build` | `agent/dist` をビルド（desktop ビルド前に必須） |
 | `npm run desktop:dev` | Electrobun デスクトップを開発起動（`electrobun run --env=dev`） |
 | `npm run desktop:build:canary` | canary デスクトップビルド（`vite build` + `electrobun build`） |
 | `npm run desktop:build:stable` | stable デスクトップビルド |
