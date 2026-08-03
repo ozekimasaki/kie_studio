@@ -402,24 +402,25 @@ export default function App() {
           : 'kie.ai · IMAGE / VIDEO / AUDIO'
       }
       chromeMeta={
-        view === 'agent' ? undefined : (
-        <>
-          {syncedAt && (
-            <p className="studio-meta">
-              catalog {new Date(syncedAt).toLocaleString()}
-            </p>
-          )}
-          {!syncedAt && modelsQuery.data?.data.source === 'seed' && (
-            <p className="studio-meta text-[var(--warning)]">
-              seed catalog · run npm run sync:models
-            </p>
-          )}
-        </>
-        )
+        view === 'agent'
+          ? undefined
+          : syncedAt
+            ? (
+                <p className="studio-meta">
+                  catalog {new Date(syncedAt).toLocaleString()}
+                </p>
+              )
+            : modelsQuery.data?.data.source === 'seed'
+              ? (
+                  <p className="studio-meta text-[var(--warning)]">
+                    seed catalog · run npm run sync:models
+                  </p>
+                )
+              : undefined
       }
       chromeTrailing={
         <div className="flex items-stretch gap-1.5 sm:gap-2">
-          <CreditBadge lastUsed={lastUsedCredits} compact={view === 'agent'} />
+          <CreditBadge lastUsed={lastUsedCredits} />
           <Pressable
             onClick={() => setSettingsSheetOpen(true)}
             className="studio-btn shrink-0 self-stretch px-2.5"

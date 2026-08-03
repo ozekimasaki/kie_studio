@@ -63,36 +63,39 @@ export function StudioShell({
           trailing={chromeTrailing}
         />
 
-        {!isAgent && (
-          <div className="shrink-0 lg:hidden">
-            <div className="studio-segment" role="tablist" aria-label="表示内容">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mobileView === 'create'}
-                className={`studio-segment-item ${mobileView === 'create' ? 'bg-[var(--accent)] !text-[var(--on-accent)]' : ''}`}
-                onClick={() => onMobileViewChange('create')}
-              >
-                作成
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mobileView === 'history'}
-                className={`studio-segment-item gap-1.5 ${mobileView === 'history' ? 'bg-[var(--accent)] !text-[var(--on-accent)]' : ''}`}
-                onClick={() => onMobileViewChange('history')}
-              >
-                履歴 <span className="tabular-nums">{historyCount}</span>
-                {pendingCount ? (
-                  <span
-                    className="size-1.5 rounded-full bg-[var(--warning)]"
-                    aria-label={`${pendingCount}件生成中`}
-                  />
-                ) : null}
-              </button>
-            </div>
+        <div
+          className={`shrink-0 lg:hidden ${isAgent ? 'invisible pointer-events-none' : ''}`}
+          aria-hidden={isAgent}
+        >
+          <div className="studio-segment" role="tablist" aria-label="表示内容">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'create'}
+              tabIndex={isAgent ? -1 : undefined}
+              className={`studio-segment-item ${mobileView === 'create' ? 'bg-[var(--accent)] !text-[var(--on-accent)]' : ''}`}
+              onClick={() => onMobileViewChange('create')}
+            >
+              作成
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileView === 'history'}
+              tabIndex={isAgent ? -1 : undefined}
+              className={`studio-segment-item gap-1.5 ${mobileView === 'history' ? 'bg-[var(--accent)] !text-[var(--on-accent)]' : ''}`}
+              onClick={() => onMobileViewChange('history')}
+            >
+              履歴 <span className="tabular-nums">{historyCount}</span>
+              {pendingCount ? (
+                <span
+                  className="size-1.5 rounded-full bg-[var(--warning)]"
+                  aria-label={`${pendingCount}件生成中`}
+                />
+              ) : null}
+            </button>
           </div>
-        )}
+        </div>
 
         {isAgent ? (
           <Material
