@@ -85,14 +85,39 @@ jobs:
           bun scripts/build-win-installer.mjs ${{ steps.channel.outputs.channel }}
           Copy-Item -Path "release\*-Setup.exe" -Destination artifacts\ -Force
 
+      # softprops/action-gh-release races on matrix create/update and can fail
+      # with tag_name already_exists even after the Release exists (Windows
+      # then never uploads). Create-if-missing + upload --clobber is stable.
       - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v3
-        with:
-          prerelease: ${{ steps.channel.outputs.prerelease == 'true' }}
-          fail_on_unmatched_files: false
-          # Installers plus the auto-update payload (.tar.zst / .patch /
-          # update.json). The Windows .zip stays as a static-host fallback.
-          files: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          IS_PRERELEASE: ${{ steps.channel.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            create_args=(--title "$TAG" --generate-notes)
+            if [[ "$IS_PRERELEASE" == "true" ]]; then
+              create_args+=(--prerelease)
+            fi
+            # Another matrix job may create first; ignore that race.
+            gh release create "$TAG" "${create_args[@]}" || true
+          fi
+
+          for _ in $(seq 1 30); do
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          gh release view "$TAG" >/dev/null
+
+          # Installers plus auto-update payload (.tar.zst / .patch / update.json).
+          # The Windows .zip stays as a static-host fallback.
+          files=(
             artifacts/*.dmg
             artifacts/*.exe
             artifacts/*.deb
@@ -101,5 +126,9 @@ jobs:
             artifacts/*.tar.zst
             artifacts/*.patch
             artifacts/*.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          )
+          if ((${#files[@]} == 0)); then
+            echo "No release artifacts matched; skipping upload."
+            exit 0
+          fi
+          gh release upload "$TAG" "${files[@]}" --clobber
