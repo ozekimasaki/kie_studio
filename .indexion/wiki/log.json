@@ -1135,5 +1135,48 @@
     "summary": "Built index: 4 categories, 9 hub pages",
     "details": {},
     "affected_pages": []
+  },
+  {
+    "timestamp": "1785786332081",
+    "operation": "pages update",
+    "actor": "agent:kimi",
+    "summary": "Updated page: agent-mode",
+    "details": {},
+    "affected_pages": [
+      "agent-mode"
+    ]
+  },
+  {
+    "timestamp": "1785786339659",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "8 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "overview",
+      "getting-started",
+      "core-concepts",
+      "architecture",
+      "frontend",
+      "server-api",
+      "catalog-sync",
+      "prompt-optimize"
+    ]
+  },
+  {
+    "timestamp": "1785786339821",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1785786339972",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 4 categories, 9 hub pages",
+    "details": {},
+    "affected_pages": []
   }
 ]

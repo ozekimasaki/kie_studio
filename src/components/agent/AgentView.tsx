@@ -1,36 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bot, MessageSquarePlus, PanelLeft, Settings, Trash2 } from 'lucide-react'
 import {
   createAgentConversation,
   deleteAgentConversation,
   fetchAgentConversations,
   newConversationId,
-  renameAgentConversation,
   type AgentConversation,
 } from '../../lib/agentApi.ts'
 import { AgentChat } from './AgentChat.tsx'
 import { AgentModelPicker, type ModelSelection } from './AgentModelPicker.tsx'
 
 function NewConversationPanel({
-  onCreated,
+  onStart,
   onCancel,
   onOpenSettings,
 }: {
-  onCreated: (conversation: AgentConversation) => void
+  onStart: (selection: ModelSelection) => void
   onCancel: () => void
   onOpenSettings?: () => void
 }) {
-  const queryClient = useQueryClient()
   const [selection, setSelection] = useState<ModelSelection | null>(null)
-
-  const createMutation = useMutation({
-    mutationFn: createAgentConversation,
-    onSuccess: (conversation) => {
-      void queryClient.invalidateQueries({ queryKey: ['agent-conversations'] })
-      onCreated(conversation)
-    },
-  })
 
   const canStart = Boolean(selection?.provider && selection.model.trim())
 
@@ -47,24 +37,14 @@ function NewConversationPanel({
         onChange={setSelection}
         onOpenSettings={onOpenSettings}
       />
-      {createMutation.isError && (
-        <p className="text-sm text-[var(--danger)]" role="alert">
-          {(createMutation.error as Error).message}
-        </p>
-      )}
       <div className="flex gap-2">
         <button
           type="button"
           className="studio-btn-primary flex-1 py-2"
-          disabled={!canStart || createMutation.isPending}
+          disabled={!canStart}
           onClick={() => {
             if (!selection?.model.trim()) return
-            createMutation.mutate({
-              id: newConversationId(),
-              title: '新しい会話',
-              provider: selection.provider,
-              model: selection.model.trim(),
-            })
+            onStart({ provider: selection.provider, model: selection.model.trim() })
           }}
         >
           会話を開始
@@ -85,55 +65,77 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
   })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isNewFlow, setIsNewFlow] = useState(false)
-  const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(new Set())
+  // Local-only conversation draft: created by "会話を開始", persisted on first send.
+  const [draft, setDraft] = useState<AgentConversation | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const conversations = useMemo(() => conversationsQuery.data ?? [], [conversationsQuery.data])
   const selected = conversations.find((c) => c.id === selectedId) ?? null
+  const active = selected ?? draft
+  // Mirror of the live draft id for async callbacks: after the user navigates
+  // away mid-persist, a late resolution must not yank the selection back.
+  const draftIdRef = useRef<string | null>(null)
+  draftIdRef.current = draft?.id ?? null
 
-  // Select the most recent conversation on first load.
+  // Select the most recent conversation on first load. Skipped while a draft
+  // is open — auto-selecting would unmount it and resurrect the old chat.
   useEffect(() => {
-    if (selectedId || isNewFlow || conversations.length === 0) return
+    if (selectedId || isNewFlow || draft || conversations.length === 0) return
     setSelectedId(conversations[0]!.id)
-  }, [conversations, selectedId, isNewFlow])
+  }, [conversations, selectedId, isNewFlow, draft])
 
   const startNewFlow = useCallback(() => {
     setIsNewFlow(true)
     setSelectedId(null)
+    setDraft(null)
     setSidebarOpen(false)
   }, [])
 
-  const handleCreated = useCallback((conversation: AgentConversation) => {
+  const handleStartDraft = useCallback((selection: ModelSelection) => {
+    const now = Date.now()
+    setDraft({
+      id: newConversationId(),
+      title: '新しい会話',
+      provider: selection.provider,
+      model: selection.model,
+      createdAt: now,
+      updatedAt: now,
+    })
     setIsNewFlow(false)
-    setSelectedId(conversation.id)
-    setFreshIds((prev) => new Set(prev).add(conversation.id))
+    setSelectedId(null)
   }, [])
 
-  const handleFirstMessage = useCallback(
+  const handleFirstSent = useCallback(
     (text: string) => {
-      if (!selected) return
+      if (!draft) return
       const title = text.length > 32 ? `${text.slice(0, 32)}…` : text
-      void renameAgentConversation(selected.id, title)
-        .then(() => queryClient.invalidateQueries({ queryKey: ['agent-conversations'] }))
+      const { id, provider, model } = draft
+      void createAgentConversation({ id, title, provider, model })
+        .then(() => {
+          if (draftIdRef.current === id) setSelectedId(id)
+          return queryClient.invalidateQueries({ queryKey: ['agent-conversations'] })
+        })
         .catch(() => {})
     },
-    [selected, queryClient],
+    [draft, queryClient],
   )
 
   const handleDelete = useCallback(
     (conversation: AgentConversation) => {
       if (!window.confirm(`会話「${conversation.title}」を削除しますか？`)) return
-      void deleteAgentConversation(conversation.id).then(() => {
-        if (selectedId === conversation.id) setSelectedId(null)
-        void queryClient.invalidateQueries({ queryKey: ['agent-conversations'] })
-      })
+      if (draft?.id === conversation.id) setDraft(null)
+      if (selectedId === conversation.id) setSelectedId(null)
+      void deleteAgentConversation(conversation.id)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['agent-conversations'] }))
+        .catch(() => {})
     },
-    [selectedId, queryClient],
+    [draft, selectedId, queryClient],
   )
 
   const selectConversation = useCallback((id: string) => {
     setIsNewFlow(false)
     setSelectedId(id)
+    setDraft(null)
     setSidebarOpen(false)
   }, [])
 
@@ -152,19 +154,19 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           <Bot size={16} className="shrink-0 text-[var(--accent)]" aria-hidden />
           <h2 className="min-w-0 truncate text-sm font-semibold">
-            {selected && !isNewFlow ? selected.title : 'エージェント'}
+            {active && !isNewFlow ? active.title : 'エージェント'}
           </h2>
-          {selected && !isNewFlow && (
+          {active && !isNewFlow && (
             <span className="studio-meta hidden max-w-[9rem] shrink truncate text-[10px] sm:inline">
-              {selected.provider}/{selected.model}
+              {active.provider}/{active.model}
             </span>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {selected && !isNewFlow && (
+          {active && !isNewFlow && (
             <button
               type="button"
-              onClick={() => handleDelete(selected)}
+              onClick={() => handleDelete(active)}
               className="studio-btn w-auto px-2 py-1.5 text-[var(--danger)]"
               aria-label="この会話を削除"
             >
@@ -236,18 +238,18 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
         >
           {isNewFlow ? (
             <NewConversationPanel
-              onCreated={handleCreated}
+              onStart={handleStartDraft}
               onCancel={() => setIsNewFlow(false)}
               onOpenSettings={onOpenSettings}
             />
-          ) : selected ? (
+          ) : active ? (
             <AgentChat
-              key={selected.id}
-              conversationId={selected.id}
-              provider={selected.provider}
-              model={selected.model}
-              isNew={freshIds.has(selected.id)}
-              onFirstMessage={handleFirstMessage}
+              key={active.id}
+              conversationId={active.id}
+              provider={active.provider}
+              model={active.model}
+              isDraft={active.id === draft?.id}
+              onFirstSent={handleFirstSent}
             />
           ) : (
             <div className="grid flex-1 place-items-center px-4">

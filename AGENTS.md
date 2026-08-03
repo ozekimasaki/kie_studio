@@ -68,6 +68,7 @@ Wiki ページ一覧（詳細は各 `.indexion/wiki/*.md`）:
 | `frontend` / `client-lib` | UI・`src/lib` |
 | `server-api` / `kie-integration` | Hono ルート・kie クライアント |
 | `catalog-sync` / `prompt-optimize` | カタログ同期・Grok 最適化 |
+| `agent-mode` | エージェントモード（Flue・会話ライフサイクル） |
 
 ## ディレクトリ構成
 
@@ -75,15 +76,19 @@ Wiki ページ一覧（詳細は各 `.indexion/wiki/*.md`）:
 src/
   App.tsx, main.tsx, index.css
   components/          # 画面 UI
+    agent/             # エージェントモード UI（AgentView / AgentChat / モデルピッカー）
     audio/             # 会話・ナレーション編集、常駐プレイヤー
     shell/             # StudioShell, FloatingChrome
     motion/            # Pressable, Material, SpringSheet, SharedMedia
   lib/
     api.ts, history.ts, submissionQueue.ts, workflowValidation.ts, media*.ts
+    agentApi.ts        # エージェント会話・LLM 設定の /api クライアント
     models/            # types, from-openapi, mentions
   data/catalog.json
 src/bun/
   index.ts             # Electrobun メインプロセス（Bun.serve + BrowserWindow + updater）
+  agentHost.ts         # 埋め込み Flue ロード / sidecar プロキシ（/agents/*）
+agent/                 # Flue エージェント（'use agent' Studio + ツール群。dev sidecar / desktop 埋め込み）
 server/
   app.ts               # createApp(): Hono 本体（CORS・health・route 登録・onError）
   index.ts             # dev エントリ（Bun.serve で createApp を起動・起動時 sync）
@@ -111,6 +116,8 @@ docs/PRE_RELEASE.md    # リリース前チェックリスト
 | `src/components/KlingElementsEditor.tsx` | Kling Elements |
 | `src/components/shell/` | レイアウト枠 |
 | `src/components/motion/` + `src/lib/motion.ts` | インタラクション / モーション |
+| `src/components/agent/` + `src/lib/agentApi.ts` | エージェントモード UI・会話 API。会話は draft → 初回送信時に遅延作成（wiki: agent-mode） |
+| `agent/` | Flue エージェント本体（`agent/src/agents/studio.ts` + ツール。`agent:build` で desktop 同梱） |
 | `src/lib/api.ts` | `/api` クライアント（キーは持たない） |
 | `src/lib/history.ts` | 履歴の純粋関数（cap・正規化）。永続化は SQLite via `/api/history` |
 | `src/lib/submissionQueue.ts` | 未送信キュー・再試行・レート制御 |
@@ -214,8 +221,10 @@ Node.js は Vite 8 / React 19 が動作する LTS（目安 20.19+ / 22.12+）。
 ## よく触るコマンド
 
 ```bash
-npm run dev              # server + web（dev:server + dev:web）
+npm run dev              # server + web + agent sidecar（dev:server + dev:web + dev:agent）
 npm run dev:server       # Hono API のみ（bun --watch server/index.ts）
+npm run dev:agent        # Flue エージェント sidecar のみ（127.0.0.1:8789）
+npm run agent:build      # agent/dist ビルド（desktop ビルド前に必須）
 npm run desktop:dev      # Electrobun デスクトップを開発起動（要 Bun）
 npm run desktop:build:canary  # canary デスクトップビルド（vite build + electrobun build）
 npm run desktop:build:stable  # stable デスクトップビルド
