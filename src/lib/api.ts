@@ -46,25 +46,109 @@ export class ApiClientError extends Error {
   }
 }
 
+/** Desktop Electrobun bind range (see src/bun/index.ts). */
+const API_PORT_MIN = 8787
+const API_PORT_MAX = 8806
+
 /**
  * Resolve the API base URL.
  * - dev / web (http(s) origin): relative path, proxied by Vite to the server.
- * - packaged webview (views:// or null origin): absolute 127.0.0.1 URL on the
- *   default port 8787. Electrobun's native wrapper does NOT allow query strings
- *   or hash fragments in views:// URLs (treated as file path), so the port
- *   cannot be passed via URL. The server always binds 8787 first.
+ * - packaged webview (views:// or null origin): absolute 127.0.0.1 URL. Port is
+ *   discovered via /api/health on 8787–8806 (Electrobun cannot pass the port
+ *   through views://). Prefer the newest `version`, then the lowest port.
  * - override with VITE_API_BASE when needed.
  */
-const API_BASE: string =
-  import.meta.env.VITE_API_BASE ??
-  (location.protocol.startsWith('http')
-    ? ''
-    : 'http://127.0.0.1:8787')
+function initialApiBase(): string {
+  if (import.meta.env.VITE_API_BASE) return String(import.meta.env.VITE_API_BASE)
+  if (typeof location !== 'undefined' && location.protocol.startsWith('http')) {
+    return ''
+  }
+  return 'http://127.0.0.1:8787'
+}
 
-export const apiUrl = (path: string): string => `${API_BASE}${path}`
+let apiBase = initialApiBase()
+let apiBaseResolved = false
+
+export const apiUrl = (path: string): string => `${apiBase}${path}`
 
 /** ローカルメディアの配信 URL を生成（dev: 相対、desktop: 絶対 127.0.0.1） */
 export const localMediaUrl = (localPath: string): string => apiUrl(`/${localPath}`)
+
+/** Compare dotted versions (pre-release suffix ignored). Positive if a > b. */
+export function compareSemver(a: string, b: string): number {
+  const parse = (v: string) =>
+    v
+      .split('-')[0]!
+      .split('.')
+      .map((part) => {
+        const n = Number.parseInt(part, 10)
+        return Number.isFinite(n) ? n : 0
+      })
+  const pa = parse(a)
+  const pb = parse(b)
+  const len = Math.max(pa.length, pb.length)
+  for (let i = 0; i < len; i++) {
+    const da = pa[i] ?? 0
+    const db = pb[i] ?? 0
+    if (da !== db) return da - db
+  }
+  return 0
+}
+
+type HealthProbe = { ok: boolean; version?: string }
+
+/**
+ * For packaged desktop webviews, probe loopback ports and pick the best API.
+ * No-op for Vite/dev (relative base) or VITE_API_BASE overrides.
+ */
+export async function resolveApiBase(): Promise<string> {
+  if (apiBaseResolved) return apiBase
+  apiBaseResolved = true
+
+  // Relative (Vite proxy) or explicit override — nothing to probe.
+  if (apiBase === '' || import.meta.env.VITE_API_BASE) {
+    return apiBase
+  }
+
+  const candidates: { port: number; version: string }[] = []
+  const ports = Array.from(
+    { length: API_PORT_MAX - API_PORT_MIN + 1 },
+    (_, i) => API_PORT_MIN + i,
+  )
+
+  await Promise.all(
+    ports.map(async (port) => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/api/health`, {
+          signal: AbortSignal.timeout(400),
+        })
+        if (!res.ok) return
+        const json = (await res.json()) as HealthProbe
+        if (!json.ok) return
+        candidates.push({ port, version: json.version?.trim() || '0.0.0' })
+      } catch {
+        // Port closed or not our API.
+      }
+    }),
+  )
+
+  if (candidates.length === 0) return apiBase
+
+  candidates.sort((left, right) => {
+    const byVersion = compareSemver(right.version, left.version)
+    if (byVersion !== 0) return byVersion
+    return left.port - right.port
+  })
+
+  apiBase = `http://127.0.0.1:${candidates[0]!.port}`
+  return apiBase
+}
+
+/** Test helper: reset cached desktop API base between cases. */
+export function resetApiBaseForTests(base = initialApiBase()): void {
+  apiBase = base
+  apiBaseResolved = false
+}
 
 async function parseJson<T>(res: Response): Promise<T> {
   let data: unknown
@@ -115,7 +199,12 @@ export async function fetchCredits() {
 
 export async function fetchHealth() {
   const res = await fetch(apiUrl('/api/health'))
-  return parseJson<{ ok: boolean; hasKey: boolean; isDesktop: boolean }>(res)
+  return parseJson<{
+    ok: boolean
+    hasKey: boolean
+    isDesktop: boolean
+    version: string
+  }>(res)
 }
 
 export async function uploadFile(file: File): Promise<string> {

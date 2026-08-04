@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   ApiClientError,
+  compareSemver,
   fetchCredits,
   fetchHistory,
   generateTask,
+  resetApiBaseForTests,
+  resolveApiBase,
   saveApiKey,
 } from './api.ts'
 
@@ -54,8 +57,38 @@ describe('parseJson via API functions', () => {
   })
 })
 
+describe('compareSemver', () => {
+  it('orders dotted versions and ignores pre-release suffixes', () => {
+    expect(compareSemver('1.0.9', '1.0.8')).toBeGreaterThan(0)
+    expect(compareSemver('1.0.8', '1.0.9')).toBeLessThan(0)
+    expect(compareSemver('1.0.9-canary', '1.0.9')).toBe(0)
+    expect(compareSemver('1.0.10', '1.0.9')).toBeGreaterThan(0)
+  })
+})
+
+describe('resolveApiBase', () => {
+  it('prefers the newest healthy version then the lowest port', async () => {
+    resetApiBaseForTests('http://127.0.0.1:8787')
+    const mock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes(':8787/')) {
+        return jsonResponse({ ok: true, version: '1.0.8' })
+      }
+      if (url.includes(':8788/')) {
+        return jsonResponse({ ok: true, version: '1.0.9' })
+      }
+      return new Response('nope', { status: 404 })
+    })
+    vi.stubGlobal('fetch', mock)
+    await expect(resolveApiBase()).resolves.toBe('http://127.0.0.1:8788')
+    // Restore relative base used by Vite/dev request-shape tests.
+    resetApiBaseForTests('')
+  })
+})
+
 describe('request shape', () => {
   it('POSTs generate params as JSON', async () => {
+    resetApiBaseForTests('')
     const mock = stubFetch(jsonResponse({ data: { taskId: 't-1' } }))
     await generateTask({ model: 'test/model', input: { prompt: 'hi' } })
     expect(mock).toHaveBeenCalledTimes(1)
@@ -70,6 +103,7 @@ describe('request shape', () => {
   })
 
   it('PUTs the API key to the settings endpoint', async () => {
+    resetApiBaseForTests('')
     const mock = stubFetch(
       jsonResponse({ data: { hasApiKey: true, apiKeyMasked: 'sk-***' } }),
     )
