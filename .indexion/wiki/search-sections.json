@@ -3,58 +3,8 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "279",
+  "next_vid": "284",
   "entries": [
-    {
-      "section": {
-        "id": "prompt-optimize",
-        "title": "Prompt Optimize",
-        "content": "\nGrok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptimizePanel`）。\n\n",
-        "page_id": "prompt-optimize",
-        "level": 1
-      },
-      "vid": "53"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#-2",
-        "title": "モジュール",
-        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |\n| `server/grok/optimize-profiles.ts` | モデル別最適化ルール / ガイドパス |\n| `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |\n| `src/components/PromptOptimizePanel.tsx` | UI |\n\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "54"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#-3",
-        "title": "挙動",
-        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown とガイドファイルを渡す\n\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "55"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#-4",
-        "title": "認証",
-        "content": "\n`grok login` 済み、または `.env` の `XAI_API_KEY`。\n\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "56"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Getting Started](wiki://getting-started)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "57"
-    },
     {
       "section": {
         "id": "overview",
@@ -664,6 +614,56 @@
         "level": 2
       },
       "vid": "278"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize",
+        "title": "Prompt Optimize",
+        "content": "\nGrok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptimizePanel`）。\n\n",
+        "page_id": "prompt-optimize",
+        "level": 1
+      },
+      "vid": "279"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#-2",
+        "title": "モジュール",
+        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |\n| `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |\n| `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |\n| `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |\n| `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |\n| `src/components/PromptOptimizePanel.tsx` | UI |\n\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "280"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#-3",
+        "title": "挙動",
+        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "281"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#-4",
+        "title": "認証",
+        "content": "\n`grok login` 済み、または `.env` の `XAI_API_KEY`。\n\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "282"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#see-also-5",
+        "title": "See Also",
+        "content": "\n- [Getting Started](wiki://getting-started)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "283"
     }
   ]
 }

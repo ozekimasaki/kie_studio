@@ -2,8 +2,13 @@ import {
   SEEDANCE_GUIDE_CONTENT,
   SEEDANCE_GUIDE_FILE_NAME,
 } from './guides/seedance.ts'
+import {
+  SEEDANCE_2_5_GUIDE_CONTENT,
+  SEEDANCE_2_5_GUIDE_FILE_NAME,
+} from './guides/seedance-2-5.ts'
 
 export type OptimizeFamily =
+  | 'seedance-2-5'
   | 'seedance'
   | 'kling'
   | 'wan'
@@ -20,7 +25,12 @@ export type OptimizeFamily =
   | 'generic-video'
   | 'generic-image'
 
-export type MentionHint = 'at-image' | 'bracket-image' | 'element' | 'none'
+export type MentionHint =
+  | 'at-media'
+  | 'at-image'
+  | 'bracket-image'
+  | 'element'
+  | 'none'
 
 export type OptimizeProfile = {
   family: OptimizeFamily
@@ -40,7 +50,38 @@ const SEEDANCE_GUIDE = {
   content: SEEDANCE_GUIDE_CONTENT,
 }
 
+const SEEDANCE_2_5_GUIDE = {
+  fileName: SEEDANCE_2_5_GUIDE_FILE_NAME,
+  content: SEEDANCE_2_5_GUIDE_CONTENT,
+}
+
 const PROFILES: Record<OptimizeFamily, OptimizeProfile> = {
+  'seedance-2-5': {
+    family: 'seedance-2-5',
+    label: 'Seedance 2.5',
+    modality: 'video',
+    guide: SEEDANCE_2_5_GUIDE,
+    formula:
+      '[Generation Goal] + [Reference Material Roles] + [Event Script / continuous timeline] + [Maintain Consistency]',
+    mention: 'at-media',
+    rules: [
+      '公式ガイドに従い、通常生成・フレーム参照・storyboard・blockout・編集・延長の主タスクを1つに定める。',
+      '参照素材ごとに、対象と参照する性質を @Image N / @Video N / @Audio N で明示する。',
+      '素材本体は Grok に渡らない。入力文に明記されていない素材内容や役割を推測しない。',
+      '長尺は1ステージ1状態変化で設計する。総尺だけから秒数を発明せず、既存指定がある場合だけ連続した整数秒タイムラインを使う。',
+      '人物数、因果、位置関係、小道具の所有、台詞、編集範囲、結末を変えない。',
+      '尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない。',
+    ],
+    avoid: [
+      '素材の役割や番号の推測・付け替え',
+      '複数の主タスクを1プロンプトへ混在',
+      '過密なタイムラインや隙間のある時間指定',
+      '依頼されていない字幕禁止・品質・安定性の定型句',
+      '素材の見た目から人物関係や物語上の事実を推測',
+    ],
+    targetLength:
+      'submit-ready; event density must fit the selected duration (up to 30s)',
+  },
   seedance: {
     family: 'seedance',
     label: 'Seedance',
@@ -291,6 +332,7 @@ export function resolveOptimizeFamily(modelId?: string): OptimizeFamily {
 
   const id = modelId.toLowerCase()
 
+  if (/seedance(?:[-_.]?2[-_.]?5)/.test(id)) return 'seedance-2-5'
   if (id.includes('seedance')) return 'seedance'
   if (id.includes('kling')) return 'kling'
   if (id.startsWith('wan/') || id.includes('/wan')) return 'wan'
@@ -314,7 +356,9 @@ export function getOptimizeProfile(modelId?: string): OptimizeProfile {
 
 export function formatProfileRulesMarkdown(profile: OptimizeProfile): string {
   const mentionLine =
-    profile.mention === 'at-image'
+    profile.mention === 'at-media'
+      ? '参照記法: `@Image N` / `@Video N` / `@Audio N` の入力形式と番号を維持（あれば）'
+      : profile.mention === 'at-image'
       ? '参照記法: `@image1` 形式を維持（あれば）'
       : profile.mention === 'bracket-image'
         ? '参照記法: `[Image 1]` 形式を維持（あれば）'

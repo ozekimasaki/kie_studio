@@ -140,13 +140,16 @@
       "title": "Prompt Optimize",
       "file": "prompt-optimize.md",
       "sources": [
-        "server/grok/",
+        "server/grok/optimize-profiles.ts",
+        "server/grok/guides/seedance.ts",
+        "server/grok/guides/seedance-2-5.ts",
+        "server/grok/cli.ts",
         "server/routes/optimize-prompt.ts",
         "src/components/PromptOptimizePanel.tsx"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:cursor"
+      "last_actor": "agent:codex"
     },
     {
       "id": "agent-mode",

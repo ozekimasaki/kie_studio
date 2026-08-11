@@ -4,17 +4,17 @@
     "overview": {
       "page_hash": "d6fe923928bf718c681b9576526166ea",
       "source_hashes": {
-        "README.md": "f2ccf3227c29dfa07d822608e40109c5",
-        "AGENTS.md": "93bff7a5bcea16f4e271b7ced4ffa023",
-        "package.json": "586d7d4d81bc0d5360a3bf577908c35e"
+        "README.md": "a5af9ae40ef1a620f02753ef042a561b",
+        "AGENTS.md": "932eb83a9f47ee920f4d88104dfcb217",
+        "package.json": "551a840c810b237e48f398d19d993680"
       }
     },
     "getting-started": {
       "page_hash": "204ffa2b5603f49af36584a071c570f5",
       "source_hashes": {
         ".env.example": "fddf3c194ecba8b751a6bc3a84674cec",
-        "package.json": "586d7d4d81bc0d5360a3bf577908c35e",
-        "README.md": "f2ccf3227c29dfa07d822608e40109c5",
+        "package.json": "551a840c810b237e48f398d19d993680",
+        "README.md": "a5af9ae40ef1a620f02753ef042a561b",
         "vite.config.ts": "81ddb3f5c5e0bea052eb31e60bc64df6"
       }
     },
@@ -31,13 +31,13 @@
     "architecture": {
       "page_hash": "e29b85ce9eb9664711efe3067a82f361",
       "source_hashes": {
-        "AGENTS.md": "93bff7a5bcea16f4e271b7ced4ffa023",
+        "AGENTS.md": "932eb83a9f47ee920f4d88104dfcb217",
         "server/index.ts": "50e64e0478880cc94a0784846a244997",
         "vite.config.ts": "81ddb3f5c5e0bea052eb31e60bc64df6",
         "src/App.tsx": "a705af502f4cc688ea81f85e5c2df157",
         "src/bun/index.ts": "3d29fb669827c1ecb49369a90d1b8e86",
         "src/bun/agentHost.ts": "5a701ada99e586d87335014a4c0e4837",
-        "electrobun.config.ts": "a54e977035737038891b045e2c8e4f0e"
+        "electrobun.config.ts": "f52a30dec5a8032bbcd857a28bfce0c1"
       }
     },
     "frontend": {
@@ -74,12 +74,16 @@
         "server/catalog/sync.ts": "6d01b6138b96aff05ee4977515950c8d",
         "scripts/sync-models.ts": "33b691cf2c2cba5d58e450ff14561532",
         "src/lib/models/from-openapi.ts": "a42e4555bc2574f395c0d2dc9679e39a",
-        "src/data/catalog.json": "4a338bcea1b50409e30d4a8e3a52c91d"
+        "src/data/catalog.json": "d8f5dc0451a02eaba7ffeaf5e5430e9f"
       }
     },
     "prompt-optimize": {
-      "page_hash": "cb642c49eb14d09772a62cbf5cdfa2d5",
+      "page_hash": "f706c9e1ede8bc16f7254e5a2ef3adfc",
       "source_hashes": {
+        "server/grok/optimize-profiles.ts": "ee58b8b38d2578297f6b25ce33a24b89",
+        "server/grok/guides/seedance.ts": "85c650af94c67caca3789404228a4be1",
+        "server/grok/guides/seedance-2-5.ts": "1eddecb8acdcfa608470452c130dee94",
+        "server/grok/cli.ts": "3a9ce6222f1e619734fe417957cb51f2",
         "server/routes/optimize-prompt.ts": "f02ea79a59f99ac4b5cbd02f290f0662",
         "src/components/PromptOptimizePanel.tsx": "3ab4c7ddf32c5e5244e618b0398733eb"
       }
@@ -92,7 +96,7 @@
         "server/routes/agentInternal.ts": "bdff92677b364afd8f927fed72c35a03",
         "server/routes/llmSettings.ts": "04bab3f2dabf31760560fbd501ce181f",
         "server/routes/agentConversations.ts": "41bf4968b11a8bc194553cb8b28b3a49",
-        "electrobun.config.ts": "a54e977035737038891b045e2c8e4f0e"
+        "electrobun.config.ts": "f52a30dec5a8032bbcd857a28bfce0c1"
       }
     }
   }

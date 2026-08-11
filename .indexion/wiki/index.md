@@ -51,11 +51,11 @@ Most-linked pages that serve as knowledge hubs:
 
 - ingest: overview
 - ingest: getting-started
-- ingest: core-concepts
 - ingest: architecture
-- ingest: frontend
-- ingest: server-api
 - ingest: catalog-sync
 - ingest: prompt-optimize
-- pages update: agent-mode
+- ingest: agent-mode
+- ingest: core-concepts
+- ingest: frontend
+- ingest: server-api
 

@@ -8,6 +8,8 @@ import {
 
 describe('resolveOptimizeFamily', () => {
   it.each([
+    ['bytedance/seedance-2-5', 'seedance-2-5'],
+    ['bytedance/seedance-2.5', 'seedance-2-5'],
     ['bytedance/seedance-1-5-pro', 'seedance'],
     ['kling/v2-1-master', 'kling'],
     ['wan/v2-2-a14b', 'wan'],
@@ -33,6 +35,17 @@ describe('resolveOptimizeFamily', () => {
 })
 
 describe('getOptimizeProfile guide embedding', () => {
+  it('uses the official Seedance 2.5 guide only for 2.5 models', () => {
+    const profile = getOptimizeProfile('bytedance/seedance-2-5')
+    expect(profile.family).toBe('seedance-2-5')
+    expect(profile.guide?.fileName).toContain('2.5')
+    expect(profile.guide?.content).toContain('合計最大50素材')
+    expect(profile.guide?.content).toContain('整数秒のタイムスタンプ')
+    expect(profile.guide?.content).toContain('動画編集')
+    expect(profile.guide?.content).toContain('素材バイナリが渡らず')
+    expect(profile.guide?.content).toContain('総尺だけを指定した場合')
+  })
+
   it('embeds the Seedance guide content (no filesystem access needed)', () => {
     const profile = getOptimizeProfile('bytedance/seedance-1-5-pro')
     expect(profile.guide).toBeDefined()
