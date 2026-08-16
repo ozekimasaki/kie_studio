@@ -3,13 +3,14 @@ export const API_PORT_END = 8806
 const HEALTH_TIMEOUT_MS = 400
 
 export class CliError extends Error {
-  constructor(
-    message: string,
-    readonly exitCode = 1,
-    readonly hint?: string,
-  ) {
+  exitCode: number
+  hint?: string
+
+  constructor(message: string, exitCode = 1, hint?: string) {
     super(message)
     this.name = 'CliError'
+    this.exitCode = exitCode
+    this.hint = hint
   }
 }
 
@@ -98,10 +99,13 @@ export interface HistoryRow {
 }
 
 export class StudioClient {
-  constructor(
-    readonly base: string,
-    private readonly fetchImpl: FetchImpl = fetch,
-  ) {}
+  base: string
+  private fetchImpl: FetchImpl
+
+  constructor(base: string, fetchImpl: FetchImpl = fetch) {
+    this.base = base
+    this.fetchImpl = fetchImpl
+  }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await this.fetchImpl(`${this.base}${path}`, {

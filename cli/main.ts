@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseArgs } from 'node:util'
+import { parseArgs, type ParseArgsConfig } from 'node:util'
 import {
   CliError,
   discoverApiBase,
@@ -148,9 +148,9 @@ function emit(io: CliIo, jsonMode: boolean, value: unknown, text: string): void 
   io.stdout(text)
 }
 
-function parseFlagArgs(
+function parseFlagArgs<T extends NonNullable<ParseArgsConfig['options']>>(
   args: string[],
-  options: Parameters<typeof parseArgs>[0]['options'],
+  options: T,
 ) {
   try {
     return parseArgs({

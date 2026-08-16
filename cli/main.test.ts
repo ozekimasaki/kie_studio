@@ -1,5 +1,4 @@
 // @vitest-environment node
-// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
 import {
   discoverApiBase,
@@ -203,7 +202,9 @@ describe('main', () => {
       (call) => String(call[0]).endsWith('/api/generate'),
     )
     expect(generateCall).toBeDefined()
-    const body = JSON.parse(String((generateCall?.[1] as RequestInit).body)) as {
+    if (!generateCall) throw new Error('expected POST /api/generate')
+    const init = generateCall[1] as RequestInit
+    const body = JSON.parse(String(init.body)) as {
       model: string
       input: { prompt: string }
       workflowId: string

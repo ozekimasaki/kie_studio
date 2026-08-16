@@ -5,14 +5,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { generateRoutes } from './generate.ts'
 
 const create = vi.fn(async () => ({ taskId: 't-1' }))
-const recordCreatedTask = vi.fn(async () => undefined)
+const recordCreatedTask = vi.fn(async (_arg: unknown) => undefined)
 
 vi.mock('../kie/adapters/index.ts', () => ({
   getProviderAdapter: () => ({ create }),
 }))
 
 vi.mock('../db/recordTask.ts', () => ({
-  recordCreatedTask: (...args: unknown[]) => recordCreatedTask(...args),
+  recordCreatedTask: (arg: unknown) => recordCreatedTask(arg),
 }))
 
 function makeApp() {

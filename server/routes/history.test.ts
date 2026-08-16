@@ -65,6 +65,41 @@ describe('history routes', () => {
     ])
   })
 
+  it('PUT does not regress a terminal row to pending', async () => {
+    replaceAllFromUnknown([
+      {
+        taskId: 'done',
+        model: 'm',
+        category: 'image',
+        state: 'success',
+        createdAt: 1,
+      },
+    ])
+    const app = makeApp()
+    const response = await app.request('/api/history', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: [
+          {
+            taskId: 'done',
+            model: 'm',
+            category: 'image',
+            state: 'waiting',
+            createdAt: 1,
+          },
+        ],
+      }),
+    })
+    expect(response.status).toBe(200)
+    const json = (await response.json()) as {
+      data: { items: { taskId: string; state: string }[] }
+    }
+    expect(json.data.items.find((item) => item.taskId === 'done')?.state).toBe(
+      'success',
+    )
+  })
+
   it('DELETE removes one item and 404s when missing', async () => {
     replaceAllFromUnknown([
       {
