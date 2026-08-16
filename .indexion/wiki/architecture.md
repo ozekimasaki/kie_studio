@@ -41,6 +41,7 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 | `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |
 | `src/lib/` | API、型、履歴、キュー、検証、親子関係、agentApi |
 | `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater + agent embed） |
+| `cli/` | `kiestudio` CLI（公開 `/api` クライアント。生成結果は履歴 Gallery へ） |
 | `src/bun/agentHost.ts` | Flue `app.mjs` 解決・読込・sidecar プロキシ |
 | `agent/` | Flue サブプロジェクト（Studio エージェント・ツール・プロバイダ） |
 | `server/kie/adapters/` | provider 差分の正規化 |

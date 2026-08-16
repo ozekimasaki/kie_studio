@@ -6,8 +6,8 @@
 用途 / workflow 選択
   → SubmissionQueue（未送信）
   → POST /api/generate { provider, operation, model, input }
-  → API受付済みの HistoryItem を SQLite へ保存
-  → GET /api/task?provider=&operation=&taskId= でポーリング
+  → サーバーが HistoryItem を SQLite へ upsert（CLI / UI / エージェント共通）
+  → GET /api/task?provider=&operation=&taskId= でポーリング（終端は履歴へ mirror）
   → generating / partial / success / fail / expired を反映
 ```
 

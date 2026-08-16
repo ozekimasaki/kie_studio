@@ -109,8 +109,8 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | POST | `/api/upload` | Forwards to File Upload API; audio registered to asset shelf |
 | GET | `/api/audio-assets` | List external audio assets |
 | DELETE | `/api/audio-assets/:id` | Delete an external audio asset |
-| POST | `/api/generate` | Create task via provider / operation adapter |
-| GET | `/api/task?provider=&operation=&taskId=` | Normalize per-provider status to common format |
+| POST | `/api/generate` | Create task via provider / operation adapter and upsert history |
+| GET | `/api/task?provider=&operation=&taskId=` | Normalize per-provider status; terminal states mirror into history |
 | GET | `/api/credits` | Remaining credits |
 | POST | `/api/download-url` | Temporary download URL (20 min) |
 | POST | `/api/archive` | Export multi-media + lyrics as ZIP |
@@ -128,7 +128,9 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | GET | `/api/optimize-profile?modelId=` | Per-model optimization profile |
 | POST | `/api/optimize-prompt` | Prompt optimization / generation |
 | GET | `/api/history` | List history (SQLite) |
-| PUT | `/api/history` | Bulk replace history |
+| PUT | `/api/history` | Upsert history (does not delete unknown taskIds) |
+| DELETE | `/api/history/:taskId` | Delete one history item |
+| POST | `/api/history/clear-unpinned` | Delete unpinned history items |
 | POST | `/api/history/import` | Import history from JSON |
 | POST | `/api/history/migrate` | Migrate legacy localStorage history |
 | GET | `/api/settings` | API key save status & masked display |
@@ -170,8 +172,23 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | `npm test` | Run Vitest once |
 | `npm run test:watch` | Run Vitest in watch mode |
 | `npm run sync:models` | Manual catalog sync |
+| `npm run kiestudio` | KIE STUDIO CLI (`bun cli/index.ts`) |
 
 For type-check only: `npx tsc -b` (included in `npm run build`).
+
+## CLI
+
+`kiestudio` talks to the running Studio API. Created tasks land in the same SQLite history as the Gallery.
+
+```bash
+npm run kiestudio -- --help
+kiestudio up
+kiestudio models --category image
+kiestudio generate -m flux-kontext-pro -p "a red bicycle" --wait
+kiestudio history
+```
+
+If the API is down, run `kiestudio up` or `npm run dev` first. Agent instructions: `.cursor/skills/kiestudio-cli/SKILL.md`.
 
 ## Project Structure
 
@@ -201,6 +218,7 @@ scripts/embed-win-icon.mjs     # Post-build icon embed into launcher.exe + tar.z
 scripts/build-win-installer.mjs # tar.zst extract → icon embed → Inno Setup compile
 scripts/collect-release.mjs    # Collect build artifacts into persistent release/
 scripts/sync-models.ts  # Catalog sync CLI
+cli/                    # kiestudio CLI (Studio API client; results land in Gallery)
 .github/workflows/release.yml  # 3-OS matrix build + Releases publish
 .indexion/wiki/         # Project knowledge base (indexion wiki)
 ```

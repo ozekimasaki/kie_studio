@@ -29,7 +29,11 @@
     "sync:models": "tsx scripts/sync-models.ts",
     "dev:agent": "npm --prefix agent run dev",
     "agent:build": "npm --prefix agent run build",
-    "agent:install": "npm --prefix agent install"
+    "agent:install": "npm --prefix agent install",
+    "kiestudio": "bun cli/index.ts"
+  },
+  "bin": {
+    "kiestudio": "./cli/index.ts"
   },
   "dependencies": {
     "@flue/react": "^2.0.1",

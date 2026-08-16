@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import {
+  clearUnpinnedHistory,
+  deleteHistoryItem,
   historyCount,
   importHistoryItems,
   listHistory,
   migrateHistoryItems,
-  replaceAllFromUnknown,
+  upsertHistoryItemsFromUnknown,
 } from '../db/history.ts'
 import { getDb } from '../db/open.ts'
 import { validateJson, validateQuery } from './validation.ts'
@@ -41,14 +43,27 @@ historyRoutes.get('/history', validateQuery(listQuerySchema), (c) => {
 historyRoutes.put('/history', validateJson(itemsBodySchema), (c) => {
   const { items } = c.req.valid('json')
   try {
-    const stored = replaceAllFromUnknown(items)
-    return c.json({ data: { items: stored } })
+    const stored = upsertHistoryItemsFromUnknown(items)
+    return c.json({ data: { items: stored, count: historyCount() } })
   } catch (e) {
     return c.json(
       { error: e instanceof Error ? e.message : 'Failed to save history' },
       400,
     )
   }
+})
+
+historyRoutes.delete('/history/:taskId', (c) => {
+  const taskId = c.req.param('taskId')
+  if (!deleteHistoryItem(taskId)) {
+    return c.json({ error: 'Task not found' }, 404)
+  }
+  return c.json({ data: { items: listHistory(), count: historyCount() } })
+})
+
+historyRoutes.post('/history/clear-unpinned', (c) => {
+  const items = clearUnpinnedHistory()
+  return c.json({ data: { items, count: historyCount() } })
 })
 
 historyRoutes.post('/history/import', validateJson(itemsBodySchema), (c) => {

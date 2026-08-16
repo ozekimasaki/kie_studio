@@ -32,6 +32,7 @@
     "electrobun.config.ts",
     "server/**/*.ts",
     "scripts/**/*.ts",
+    "cli/**/*.ts",
     "src/bun/**/*.ts",
     "types/**/*.d.ts"
   ]

@@ -8,11 +8,12 @@ import {
 } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchHistory, importHistoryApi, putHistory } from './api.ts'
+import { fetchHistory, importHistoryApi, putHistory, deleteHistoryItem, clearUnpinnedHistory } from './api.ts'
 import {
   capItems,
   exportHistoryJson,
   MAX_PINNED,
+  mergeServerHistory,
   parseHistoryJson,
   PENDING_STALE_MS,
   removeFromList,
@@ -48,7 +49,10 @@ export function useHistoryState({
   })
 
   const handleHistoryStored = useCallback(
-    (items: HistoryItem[]) => queryClient.setQueryData(['history'], items),
+    (items: HistoryItem[]) => {
+      setHistory((previous) => mergeServerHistory(previous, items))
+      queryClient.setQueryData(['history'], items)
+    },
     [queryClient],
   )
   const handleHistoryRecovered = useCallback(
@@ -101,6 +105,35 @@ export function useHistoryState({
     onReady: handleHistoryReady,
     onError: handleHistoryMigrationError,
   })
+
+  useEffect(() => {
+    if (!historyPersistReady) return
+    let cancelled = false
+    const syncFromServer = () => {
+      void (async () => {
+        try {
+          const response = await fetchHistory()
+          if (cancelled) return
+          setHistory((previous) =>
+            mergeServerHistory(previous, response.data.items),
+          )
+          queryClient.setQueryData(['history'], response.data.items)
+        } catch {
+          // Background gallery sync; keep local state on failure.
+        }
+      })()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') syncFromServer()
+    }
+    window.addEventListener('focus', syncFromServer)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', syncFromServer)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [historyPersistReady, queryClient])
 
   // 開いたまま期限切れになった進行中を unknown に落とす
   useEffect(() => {
@@ -190,12 +223,46 @@ export function useHistoryState({
 
   function removeHistoryItem(taskId: string) {
     setHistory((prev) => removeFromList(prev, taskId))
-    requestHistoryPersist('immediate')
+    void (async () => {
+      try {
+        const response = await deleteHistoryItem(taskId)
+        setHistory(response.data.items)
+        queryClient.setQueryData(['history'], response.data.items)
+      } catch (error) {
+        setFormError(
+          error instanceof Error ? error.message : '履歴の削除に失敗しました',
+        )
+        try {
+          const recovered = await fetchHistory()
+          setHistory(recovered.data.items)
+          queryClient.setQueryData(['history'], recovered.data.items)
+        } catch {
+          // Keep the optimistic removal when recovery also fails.
+        }
+      }
+    })()
   }
 
   function clearUnpinned() {
     setHistory((prev) => prev.filter((h) => h.pinned))
-    requestHistoryPersist('immediate')
+    void (async () => {
+      try {
+        const response = await clearUnpinnedHistory()
+        setHistory(response.data.items)
+        queryClient.setQueryData(['history'], response.data.items)
+      } catch (error) {
+        setFormError(
+          error instanceof Error ? error.message : '履歴の削除に失敗しました',
+        )
+        try {
+          const recovered = await fetchHistory()
+          setHistory(recovered.data.items)
+          queryClient.setQueryData(['history'], recovered.data.items)
+        } catch {
+          // Keep the optimistic clear when recovery also fails.
+        }
+      }
+    })()
   }
 
   return {
