@@ -26,17 +26,27 @@ type SqliteDatabaseConstructor = new (path: string) => SqliteDatabase;
 const nodeSpecifier = `node:${'sqlite'}`;
 const bunSpecifier = `bun:${'sqlite'}`;
 
-const mod = (await import(nodeSpecifier).catch(() => import(bunSpecifier))) as {
+type SqliteModule = {
 	DatabaseSync?: SqliteDatabaseConstructor;
 	Database?: SqliteDatabaseConstructor;
 };
 
-const DatabaseSyncImpl = mod.DatabaseSync ?? mod.Database;
+function sqliteConstructor(mod: SqliteModule | null): SqliteDatabaseConstructor | null {
+	return mod?.DatabaseSync ?? mod?.Database ?? null;
+}
 
-if (!DatabaseSyncImpl) {
+async function loadSqliteConstructor(): Promise<SqliteDatabaseConstructor> {
+	// Bun 1.3 may resolve node:sqlite to a stub without DatabaseSync. Do not
+	// treat a successful import as "the driver works" — fall through to bun:sqlite.
+	const nodeMod = await import(nodeSpecifier).catch(() => null);
+	const nodeDriver = sqliteConstructor(nodeMod as SqliteModule | null);
+	if (nodeDriver) return nodeDriver;
+	const bunMod = (await import(bunSpecifier)) as SqliteModule;
+	const bunDriver = sqliteConstructor(bunMod);
+	if (bunDriver) return bunDriver;
 	throw new Error(
 		'[agent] no SQLite driver available: neither node:sqlite nor bun:sqlite could be loaded',
 	);
 }
 
-export const DatabaseSync = DatabaseSyncImpl;
+export const DatabaseSync = await loadSqliteConstructor();

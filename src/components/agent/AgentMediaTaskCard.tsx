@@ -24,6 +24,7 @@ function MediaView({ url, kind }: { url: string; kind: string }) {
     <img
       src={url}
       alt="生成結果"
+      referrerPolicy="no-referrer"
       className="max-h-72 w-full rounded-[var(--radius-md)] object-contain bg-black/20"
     />
   )

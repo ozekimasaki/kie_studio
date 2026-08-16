@@ -5,7 +5,7 @@ export default {
   app: {
     name: 'KIE STUDIO',
     identifier: 'ai.kie.studio',
-    version: '1.0.15'
+    version: '1.0.16'
   },
   build: {
     useAsar: true,

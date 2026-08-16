@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "284",
+  "next_vid": "68",
   "entries": [
     {
       "section": {
@@ -13,7 +13,7 @@
         "page_id": "overview",
         "level": 1
       },
-      "vid": "133"
+      "vid": "1"
     },
     {
       "section": {
@@ -23,7 +23,7 @@
         "page_id": "overview",
         "level": 2
       },
-      "vid": "134"
+      "vid": "2"
     },
     {
       "section": {
@@ -33,7 +33,7 @@
         "page_id": "overview",
         "level": 2
       },
-      "vid": "135"
+      "vid": "3"
     },
     {
       "section": {
@@ -43,7 +43,7 @@
         "page_id": "overview",
         "level": 2
       },
-      "vid": "136"
+      "vid": "4"
     },
     {
       "section": {
@@ -53,7 +53,7 @@
         "page_id": "getting-started",
         "level": 1
       },
-      "vid": "137"
+      "vid": "5"
     },
     {
       "section": {
@@ -63,7 +63,7 @@
         "page_id": "getting-started",
         "level": 2
       },
-      "vid": "138"
+      "vid": "6"
     },
     {
       "section": {
@@ -73,7 +73,7 @@
         "page_id": "getting-started",
         "level": 2
       },
-      "vid": "139"
+      "vid": "7"
     },
     {
       "section": {
@@ -83,117 +83,37 @@
         "page_id": "getting-started",
         "level": 2
       },
-      "vid": "140"
+      "vid": "8"
     },
     {
       "section": {
         "id": "getting-started#-5",
         "title": "よく使うコマンド",
-        "content": "\n```bash\nnpm run dev\nnpm test\nnpm run lint\nnpm run build\nnpm run sync:models\nnpm run sync:models -- --force\n```\n\n起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。\n\n",
+        "content": "\n```bash\nnpm run dev\nnpm test\nnpm run lint\nnpm run build\nnpm run sync:models\nnpm run sync:models -- --force\nnpm run kiestudio -- --help\n```\n\n起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。\n\n",
         "page_id": "getting-started",
         "level": 2
       },
-      "vid": "141"
+      "vid": "9"
     },
     {
       "section": {
-        "id": "getting-started#see-also-6",
+        "id": "getting-started#cli-6",
+        "title": "CLI",
+        "content": "\n`kiestudio` は起動中の Studio API のクライアント。生成結果は同じ SQLite 履歴に載り、Gallery で管理する。\n\n```bash\nkiestudio up\nkiestudio models --category image\nkiestudio generate -m flux-kontext-pro -p \"a red bicycle\" --wait\nkiestudio history\n```\n\nAPI 未起動時は `kiestudio up` または `npm run dev`。エージェント向け手順は `.cursor/skills/kiestudio-cli/SKILL.md`。\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "10"
+    },
+    {
+      "section": {
+        "id": "getting-started#see-also-7",
         "title": "See Also",
         "content": "\n- [Overview](wiki://overview)\n- [Architecture](wiki://architecture)\n- [Catalog Sync](wiki://catalog-sync)\n",
         "page_id": "getting-started",
         "level": 2
       },
-      "vid": "142"
-    },
-    {
-      "section": {
-        "id": "client-lib",
-        "title": "Client Lib",
-        "content": "\nフロント共有ロジック（`src/lib/`）。\n\n| ファイル | 役割 |\n|------|------|\n| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |\n| `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |\n| `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |\n| `taskRelations.ts` | 編集・Aleph の parent task 決定 |\n| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化 |\n| `form.ts` | default、dirty、schema 制約検証、先頭 error focus |\n| `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |\n| `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |\n| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |\n\n",
-        "page_id": "client-lib",
-        "level": 1
-      },
-      "vid": "160"
-    },
-    {
-      "section": {
-        "id": "client-lib#-2",
-        "title": "規約",
-        "content": "\n- API は相対 `/api`。失敗は status / code を持つ `ApiClientError`\n- フィールド switch は `default` で `never` を検査\n- `reference + scalar` は UI の配列から API の単一 URL へ変換\n- 未知の履歴 input key は復元時に破棄する\n- exact `expiresAt` がなければ推測日時を出さず、早めの保存だけ促す\n\n",
-        "page_id": "client-lib",
-        "level": 2
-      },
-      "vid": "161"
-    },
-    {
-      "section": {
-        "id": "client-lib#see-also-3",
-        "title": "See Also",
-        "content": "\n- [Frontend](wiki://frontend)\n- [Core Concepts](wiki://core-concepts)\n- [Catalog Sync](wiki://catalog-sync)\n",
-        "page_id": "client-lib",
-        "level": 2
-      },
-      "vid": "162"
-    },
-    {
-      "section": {
-        "id": "kie-integration",
-        "title": "Kie Integration",
-        "content": "\n`server/kie/` が認証、Market、Upload、provider adapter を担当する。\n\n",
-        "page_id": "kie-integration",
-        "level": 1
-      },
-      "vid": "168"
-    },
-    {
-      "section": {
-        "id": "kie-integration#adapter-2",
-        "title": "Adapter",
-        "content": "\n| 実装 | 主な operation |\n|------|----------------|\n| `adapters/market.ts` | Market create / record detail |\n| `adapters/suno.ts` | generate、extend、upload cover/extend、replace、lyrics |\n| `adapters/veo.ts` | generate、extend、1080p、4K |\n| `adapters/runway.ts` | generate、extend、Aleph |\n\n`adapters/index.ts` の registry から `ProviderAdapter` を取得する。作成結果は `taskId` と、即時完了時だけ normalized task を返す。status、複数 media、partial、期限、provider asset ID、raw payload は `NormalizedTask` へ揃える。\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "169"
-    },
-    {
-      "section": {
-        "id": "kie-integration#market-3",
-        "title": "Market",
-        "content": "\n`market.ts` は result JSON を再帰的に走査して URL を抽出し、モデル名と URL から media kind を判定する。fail でも結果がある場合は `partial`。provider / operation を省略した既存リクエストは Market generate として扱う。\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "170"
-    },
-    {
-      "section": {
-        "id": "kie-integration#suno--4",
-        "title": "Suno 補助",
-        "content": "\ntimestamped lyrics、waveform、style boost、Persona は adapter の補助関数を専用 route から呼ぶ。Persona は対応モデル・成功音源・一回制限を UI と DB の両方で守る。\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "171"
-    },
-    {
-      "section": {
-        "id": "kie-integration#upload--archive-5",
-        "title": "Upload / archive",
-        "content": "\nUpload 名は timestamp を付けて一意化し、元名は表示 metadata として返す。archive は temporary download URL を都度取得し、失敗 media ごとに `.error.txt` を入れる。cached lyrics は media download の成否に関係なく ZIP へ入れる。\n\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "172"
-    },
-    {
-      "section": {
-        "id": "kie-integration#see-also-6",
-        "title": "See Also",
-        "content": "\n- [Server API](wiki://server-api)\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n",
-        "page_id": "kie-integration",
-        "level": 2
-      },
-      "vid": "173"
+      "vid": "11"
     },
     {
       "section": {
@@ -203,17 +123,17 @@
         "page_id": "core-concepts",
         "level": 1
       },
-      "vid": "220"
+      "vid": "12"
     },
     {
       "section": {
         "id": "core-concepts#provider--2",
         "title": "Provider 共通タスク",
-        "content": "\n```text\n用途 / workflow 選択\n  → SubmissionQueue（未送信）\n  → POST /api/generate { provider, operation, model, input }\n  → API受付済みの HistoryItem を SQLite へ保存\n  → GET /api/task?provider=&operation=&taskId= でポーリング\n  → generating / partial / success / fail / expired を反映\n```\n\n`MarketAdapter` / `SunoAdapter` / `VeoAdapter` / `RunwayAdapter` は、作成・状態・エラー・メディアを `NormalizedTask` へ揃える。Market は provider / operation 省略時の既定。\n\n",
+        "content": "\n```text\n用途 / workflow 選択\n  → SubmissionQueue（未送信）\n  → POST /api/generate { provider, operation, model, input }\n  → サーバーが HistoryItem を SQLite へ upsert（CLI / UI / エージェント共通）\n  → GET /api/task?provider=&operation=&taskId= でポーリング（終端は履歴へ mirror）\n  → generating / partial / success / fail / expired を反映\n```\n\n`MarketAdapter` / `SunoAdapter` / `VeoAdapter` / `RunwayAdapter` は、作成・状態・エラー・メディアを `NormalizedTask` へ揃える。Market は provider / operation 省略時の既定。\n\n",
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "221"
+      "vid": "13"
     },
     {
       "section": {
@@ -223,7 +143,7 @@
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "222"
+      "vid": "14"
     },
     {
       "section": {
@@ -233,7 +153,7 @@
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "223"
+      "vid": "15"
     },
     {
       "section": {
@@ -243,7 +163,7 @@
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "224"
+      "vid": "16"
     },
     {
       "section": {
@@ -253,57 +173,7 @@
         "page_id": "core-concepts",
         "level": 2
       },
-      "vid": "225"
-    },
-    {
-      "section": {
-        "id": "catalog-sync",
-        "title": "Catalog Sync",
-        "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
-        "page_id": "catalog-sync",
-        "level": 1
-      },
-      "vid": "236"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-2",
-        "title": "入口",
-        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache |\n| `scripts/sync-models.ts` | `npm run sync:models` |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "237"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-3",
-        "title": "抽出",
-        "content": "\n- category は image / video / audio\n- model slug は request example の `model`、説明文の `Must be X`、enum、default の順で採用し、docs の schema 誤記に耐える\n- URL 型は image / video / audio の reference と scalar/array を識別\n- required、enum、min/max、文字数、参照数、容量、duration を抽出\n- OpenAPI に制約がなくても `Required field`、`Max length`、`4-15 seconds` のような説明文を補助的に読む\n- trailing-space key は trim して API key の表記揺れを抑える\n\nMarket の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の schema を正として id、title、useCase 等の UI metadata だけ上書きする。同一 model ID が複数ページから抽出された場合は field 数が多い定義を採用し、衝突を警告する。\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "238"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-4",
-        "title": "同期ポリシー",
-        "content": "\n起動時は古い場合だけ同期する。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。モデルの `.md` 取得は最大3回リトライしてから通常ページへフォールバックする。\n\n通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "239"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "240"
+      "vid": "17"
     },
     {
       "section": {
@@ -313,7 +183,7 @@
         "page_id": "architecture",
         "level": 1
       },
-      "vid": "248"
+      "vid": "18"
     },
     {
       "section": {
@@ -323,37 +193,37 @@
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "249"
+      "vid": "19"
     },
     {
       "section": {
         "id": "architecture#desktop-electrobun-3",
         "title": "Desktop 層（Electrobun）",
-        "content": "\nデスクトップ版は Electrobun（Bun メインプロセス `src/bun/index.ts` + ネイティブ webview）。`Bun.serve` で Hono を起動し、ビルド済み UI を `views://mainview/` でロードする。設定は `electrobun.config.ts`。\n\n- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。\n- エージェント会話 DB（`flue.db`）は `FLUE_DB_PATH` で同じ userData に配置。\n- パッケージ時は `agent/dist/` を `agent-server/` として同梱（`asarUnpack`）。`loadFlueNodeApplication` で埋め込み、`/agents/*` を転送。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。\n- 起動毎に `STUDIO_AGENT_TOKEN` を発行し、内部 API とエージェントで共有する。\n- 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。\n\n",
+        "content": "\nデスクトップ版は Electrobun（Bun メインプロセス `src/bun/index.ts` + ネイティブ webview）。`Bun.serve` で Hono を起動し、ビルド済み UI を `views://mainview/` でロードする。設定は `electrobun.config.ts`。\n\n- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。\n- エージェント会話 DB（`flue.db`）は `FLUE_DB_PATH` で同じ userData に配置。\n- パッケージ時は `agent/dist/` を `agent-server/` として同梱。Electrobun は asar 後に `Resources/app` を消すため `asarUnpack` だけでは足りず、`scripts/keep-agent-server.mjs`（`postBuild`）が `Resources/agent-server` へコピーする。起動時に見つからなければ `app.asar` から userData へ展開する。`loadFlueNodeApplication` で埋め込み、`/agents/*` を転送。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。\n- 起動毎に `STUDIO_AGENT_TOKEN` を発行し、内部 API とエージェントで共有する。\n- 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "250"
+      "vid": "20"
     },
     {
       "section": {
         "id": "architecture#-4",
         "title": "パッケージ責務",
-        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action、モード切替の調停 |\n| `src/components/agent/` | エージェントチャット UI |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係、agentApi |\n| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater + agent embed） |\n| `src/bun/agentHost.ts` | Flue `app.mjs` 解決・読込・sidecar プロキシ |\n| `agent/` | Flue サブプロジェクト（Studio エージェント・ツール・プロバイダ） |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
+        "content": "\n| パス | 役割 |\n|------|------|\n| `src/App.tsx` | フォーム、キュー、履歴、ポーリング、Quick Action、モード切替の調停 |\n| `src/components/agent/` | エージェントチャット UI |\n| `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |\n| `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |\n| `src/lib/` | API、型、履歴、キュー、検証、親子関係、agentApi |\n| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater + agent embed） |\n| `cli/` | `kiestudio` CLI（公開 `/api` クライアント。生成結果は履歴 Gallery へ） |\n| `src/bun/agentHost.ts` | Flue `app.mjs` 解決・読込・sidecar プロキシ |\n| `agent/` | Flue サブプロジェクト（Studio エージェント・ツール・プロバイダ） |\n| `server/kie/adapters/` | provider 差分の正規化 |\n| `server/db/` | 加算マイグレーションを行う SQLite |\n| `server/catalog/` | Market カタログと専用 workflow の統合 |\n| `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "251"
+      "vid": "21"
     },
     {
       "section": {
         "id": "architecture#-5",
         "title": "デスクトップ配布",
-        "content": "\n| プラットフォーム | 成果物 | 備考 |\n|------|------|------|\n| Windows x64 | `canary-win-x64-KIESTUDIO-Setup.exe`（Inno Setup） | 第一導線。ARP 登録・アンインストーラー・ショートカット・アイコン。per-user（`%LocalAppData%\\ai.kie.studio\\<ch>\\app`、管理者権限不要） |\n| Linux x64 | `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | tar.gz 自己展開のみ（`.deb` は Electrobun 非対応） |\n| 自動アップデート | `*.tar.zst` + `update.json` + patch | `RELEASE_BASE_URL` 配下へ配信（Inno Setup 非依存） |\n\n- Windows インストーラーは `installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`（tar.zst 展開 → launcher.exe へ rcedit アイコン埋め込み → ISCC コンパイル）。`npm run desktop:installer:win`。\n- アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。\n- arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。\n- アンインストールは `app\\` のみ削除し、親ディレクトリの `studio.db` / `flue.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。\n- `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。\n- デスクトップビルドは `agent:build` を前段で実行する（CI は `bun install --cwd agent` も実施）。\n\n",
+        "content": "\n| プラットフォーム | 成果物 | 備考 |\n|------|------|------|\n| Windows x64 | `canary-win-x64-KIESTUDIO-Setup.exe`（Inno Setup） | 第一導線。ARP 登録・アンインストーラー・ショートカット・アイコン。per-user（`%LocalAppData%\\ai.kie.studio\\<ch>\\app`、管理者権限不要） |\n| Linux x64 | `canary-linux-x64-KIESTUDIO-<version>.deb`（推奨） / `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | `.deb` は `scripts/build-linux-deb.mjs` で後段生成。Electrobun 純正は tar.gz のみ。インストール先 `/opt/kie-studio/<ch>/` |\n| 自動アップデート | `*.tar.zst` + `update.json` + patch | `RELEASE_BASE_URL` 配下へ配信（Inno Setup 非依存） |\n\n- Windows インストーラーは `installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`（tar.zst 展開 → launcher.exe へ rcedit アイコン埋め込み → ISCC コンパイル）。`npm run desktop:installer:win`。\n- Linux `.deb` は `scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）。インストール先 `/opt/kie-studio/<ch>/`。`.desktop` / アイコンは `/usr/share/` 配下。\n- アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。\n- arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。\n- アンインストールは `app\\` のみ削除し、親ディレクトリの `studio.db` / `flue.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。\n- `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。\n- デスクトップビルドは `agent:build` を前段で実行する（CI は `bun install --cwd agent` も実施）。\n\n",
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "252"
+      "vid": "22"
     },
     {
       "section": {
@@ -363,7 +233,7 @@
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "253"
+      "vid": "23"
     },
     {
       "section": {
@@ -373,7 +243,7 @@
         "page_id": "architecture",
         "level": 2
       },
-      "vid": "254"
+      "vid": "24"
     },
     {
       "section": {
@@ -383,7 +253,7 @@
         "page_id": "frontend",
         "level": 1
       },
-      "vid": "255"
+      "vid": "25"
     },
     {
       "section": {
@@ -393,7 +263,7 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "256"
+      "vid": "26"
     },
     {
       "section": {
@@ -403,7 +273,7 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "257"
+      "vid": "27"
     },
     {
       "section": {
@@ -413,17 +283,17 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "258"
+      "vid": "28"
     },
     {
       "section": {
         "id": "frontend#video--history-5",
         "title": "VIDEO / history",
-        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\nギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。\n\n",
+        "content": "\nRunway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。\n\nギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。ウィンドウフォーカス時に `GET /api/history` を merge し、CLI やエージェントが追加した taskId をギャラリーへ載せる。\n\n",
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "259"
+      "vid": "29"
     },
     {
       "section": {
@@ -433,7 +303,7 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "260"
+      "vid": "30"
     },
     {
       "section": {
@@ -443,7 +313,37 @@
         "page_id": "frontend",
         "level": 2
       },
-      "vid": "261"
+      "vid": "31"
+    },
+    {
+      "section": {
+        "id": "client-lib",
+        "title": "Client Lib",
+        "content": "\nフロント共有ロジック（`src/lib/`）。\n\n| ファイル | 役割 |\n|------|------|\n| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |\n| `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |\n| `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |\n| `taskRelations.ts` | 編集・Aleph の parent task 決定 |\n| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化、`mergeServerHistory`（CLI 件の Gallery 反映） |\n| `form.ts` | default、dirty、schema 制約検証、先頭 error focus |\n| `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |\n| `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |\n| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |\n\n",
+        "page_id": "client-lib",
+        "level": 1
+      },
+      "vid": "32"
+    },
+    {
+      "section": {
+        "id": "client-lib#-2",
+        "title": "規約",
+        "content": "\n- API は相対 `/api`。失敗は status / code を持つ `ApiClientError`\n- フィールド switch は `default` で `never` を検査\n- `reference + scalar` は UI の配列から API の単一 URL へ変換\n- 未知の履歴 input key は復元時に破棄する\n- exact `expiresAt` がなければ推測日時を出さず、早めの保存だけ促す\n\n",
+        "page_id": "client-lib",
+        "level": 2
+      },
+      "vid": "33"
+    },
+    {
+      "section": {
+        "id": "client-lib#see-also-3",
+        "title": "See Also",
+        "content": "\n- [Frontend](wiki://frontend)\n- [Core Concepts](wiki://core-concepts)\n- [Catalog Sync](wiki://catalog-sync)\n",
+        "page_id": "client-lib",
+        "level": 2
+      },
+      "vid": "34"
     },
     {
       "section": {
@@ -453,17 +353,17 @@
         "page_id": "server-api",
         "level": 1
       },
-      "vid": "262"
+      "vid": "35"
     },
     {
       "section": {
         "id": "server-api#-2",
         "title": "主要ルート",
-        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化 |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET/PUT | `/api/history` | SQLite 履歴一覧 / 全置換 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n| GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |\n| GET/POST/PATCH/DELETE | `/api/agent/conversations` | エージェント会話メタデータ |\n| * | `/api/internal/agent/*` | Flue エージェント専用（`x-studio-agent-token` 必須） |\n\n",
+        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成し、履歴へ upsert。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化し、終端は履歴へ mirror |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET | `/api/history` | SQLite 履歴一覧 |\n| PUT | `/api/history` | 履歴 upsert（未知の taskId は消さない。終端を pending で上書きしない） |\n| DELETE | `/api/history/:taskId` | 1 件削除 |\n| POST | `/api/history/clear-unpinned` | 未ピンを削除 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n| GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |\n| GET/POST/PATCH/DELETE | `/api/agent/conversations` | エージェント会話メタデータ |\n| * | `/api/internal/agent/*` | Flue エージェント専用（`x-studio-agent-token` 必須） |\n\n",
         "page_id": "server-api",
         "level": 2
       },
-      "vid": "263"
+      "vid": "36"
     },
     {
       "section": {
@@ -473,7 +373,7 @@
         "page_id": "server-api",
         "level": 2
       },
-      "vid": "264"
+      "vid": "37"
     },
     {
       "section": {
@@ -483,7 +383,7 @@
         "page_id": "server-api",
         "level": 2
       },
-      "vid": "265"
+      "vid": "38"
     },
     {
       "section": {
@@ -493,7 +393,7 @@
         "page_id": "server-api",
         "level": 2
       },
-      "vid": "266"
+      "vid": "39"
     },
     {
       "section": {
@@ -503,117 +403,117 @@
         "page_id": "server-api",
         "level": 2
       },
-      "vid": "267"
+      "vid": "40"
     },
     {
       "section": {
-        "id": "agent-mode",
-        "title": "Agent Mode",
-        "content": "\nFlue 基盤の Studio エージェント。LLM と会話しながら IMAGE / VIDEO / AUDIO を生成する。\n\n",
-        "page_id": "agent-mode",
+        "id": "kie-integration",
+        "title": "Kie Integration",
+        "content": "\n`server/kie/` が認証、Market、Upload、provider adapter を担当する。\n\n",
+        "page_id": "kie-integration",
         "level": 1
       },
-      "vid": "268"
+      "vid": "41"
     },
     {
       "section": {
-        "id": "agent-mode#-2",
-        "title": "構成",
-        "content": "\n```text\nFrontend (Vite :5173)\n  Studio | エージェント セグメントトグル (FloatingChrome)\n  AgentView / useFlueAgent → /agents/studio/<convId>\n        │                          │\n        ▼                          ▼\n  /api (Hono :8787)          Flue sidecar (:8789 Node, dev)\n                                   │\n                                   ▼ loopback + x-studio-agent-token\n                             /api/internal/agent/*\n```\n\nデスクトップ（Electrobun）では `agent/dist/app.mjs` を `loadFlueNodeApplication` で埋め込み、同じ Bun.serve が `/agents/*` を転送する。`FLUE_DB_PATH` は userData の `flue.db`（`studio.db` と同階層。アンインストールで親 dir を消さない）。\n\n",
-        "page_id": "agent-mode",
+        "id": "kie-integration#adapter-2",
+        "title": "Adapter",
+        "content": "\n| 実装 | 主な operation |\n|------|----------------|\n| `adapters/market.ts` | Market create / record detail |\n| `adapters/suno.ts` | generate、extend、upload cover/extend、replace、lyrics |\n| `adapters/veo.ts` | generate、extend、1080p、4K |\n| `adapters/runway.ts` | generate、extend、Aleph |\n\n`adapters/index.ts` の registry から `ProviderAdapter` を取得する。作成結果は `taskId` と、即時完了時だけ normalized task を返す。status、複数 media、partial、期限、provider asset ID、raw payload は `NormalizedTask` へ揃える。\n\n",
+        "page_id": "kie-integration",
         "level": 2
       },
-      "vid": "269"
+      "vid": "42"
     },
     {
       "section": {
-        "id": "agent-mode#-agent-3",
-        "title": "エージェント `agent/`",
-        "content": "\n- `src/agents/studio.ts` — `'use agent'` + ツール群\n- `src/providers.ts` — Google / xAI / OpenAI / Anthropic / Alibaba / カスタムエンドポイント。キーは内部 API から `resolve()`\n- `src/kieClient.ts` — `STUDIO_API_BASE` + `STUDIO_AGENT_TOKEN`\n- `vite.config.ts` — `node:sqlite` → Bun 互換 shim 書換、`ssr.noExternal` で自己完結 dist\n\n",
-        "page_id": "agent-mode",
+        "id": "kie-integration#market-3",
+        "title": "Market",
+        "content": "\n`market.ts` は result JSON を再帰的に走査して URL を抽出し、モデル名と URL から media kind を判定する。fail でも結果がある場合は `partial`。provider / operation を省略した既存リクエストは Market generate として扱う。\n\n",
+        "page_id": "kie-integration",
         "level": 2
       },
-      "vid": "270"
+      "vid": "43"
     },
     {
       "section": {
-        "id": "agent-mode#-4",
-        "title": "ツール",
-        "content": "\n| ツール | 役割 |\n|--------|------|\n| `list-workflows` / `get-workflow-schema` | 生成前の候補・入力確認 |\n| `generate-media` / `get-task-status` | 非同期生成 + 状態 |\n| `search-history` / `get-task-input` | 履歴検索・入力復元 |\n| `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |\n\n`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。履歴はサーバー側 upsert で通常ギャラリーにも載る。\n\n",
-        "page_id": "agent-mode",
+        "id": "kie-integration#suno--4",
+        "title": "Suno 補助",
+        "content": "\ntimestamped lyrics、waveform、style boost、Persona は adapter の補助関数を専用 route から呼ぶ。Persona は対応モデル・成功音源・一回制限を UI と DB の両方で守る。\n\n",
+        "page_id": "kie-integration",
         "level": 2
       },
-      "vid": "271"
+      "vid": "44"
     },
     {
       "section": {
-        "id": "agent-mode#grokx--oauth-5",
-        "title": "Grok（X アカウント OAuth）",
-        "content": "\nエージェントで Grok を使う経路はふたつ（併存）:\n\n1. 組み込み `xai` + `XAI_API_KEY`（Settings のキー、または env）\n2. **X アカウント OAuth**（Settings → LLM →「X アカウントでログイン」）\n\nOAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/ozekimasaki/grok-oauth-proxy) 由来、MIT）。別ポートは立てず、Studio Hono の `/api/grok-oauth/v1/*` が OpenAI 互換プロキシになる。ログイン済みなら credentials / settings にシステムエンドポイント `grok-oauth`（label: Grok (X アカウント)）が注入され、モデルピッカーから選べる。\n\n| 項目 | 内容 |\n|------|------|\n| トークン | `auth.json`（dev: `data/grok-oauth/`、desktop: userData/`grok-oauth`）。コミット禁止 |\n| ログイン API | `GET/POST /api/settings/grok-oauth*`（device-code、クライアントが poll） |\n| プロキシ | `ALL /api/grok-oauth/v1/*` → `https://api.x.ai/v1` |\n| 注意 | 非公式 OAuth。SuperGrok / Premium+ で API アクセスが必要。403 時は公式キーを使う |\n\n`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。\n\n",
-        "page_id": "agent-mode",
+        "id": "kie-integration#upload--archive-5",
+        "title": "Upload / archive",
+        "content": "\nUpload 名は timestamp を付けて一意化し、元名は表示 metadata として返す。archive は temporary download URL を都度取得し、失敗 media ごとに `.error.txt` を入れる。cached lyrics は media download の成否に関係なく ZIP へ入れる。\n\n",
+        "page_id": "kie-integration",
         "level": 2
       },
-      "vid": "272"
+      "vid": "45"
     },
     {
       "section": {
-        "id": "agent-mode#-6",
-        "title": "フロント",
-        "content": "\n- `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー\n- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル\n- `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替\n\n",
-        "page_id": "agent-mode",
-        "level": 2
-      },
-      "vid": "273"
-    },
-    {
-      "section": {
-        "id": "agent-mode#-7",
-        "title": "会話のライフサイクル（遅延作成）",
-        "content": "\n「会話を開始」時点ではローカル **draft**（`AgentView` state。非永続・リクエスト無し）を作るだけ。\n\n| タイミング | 起きること |\n|------------|-----------|\n| 会話を開始 | draft 生成のみ。`agent_conversations` にも Flue にも触れない |\n| 初回メッセージ送信 | ① `client.send`（`initialData` に provider/model）で Flue インスタンス生成 → ② observation を有効化（履歴 hydrate + SSE follow）→ ③ `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |\n| 2 通目以降 | `agent.sendMessage`（session 経由、optimistic 表示） |\n\ndraft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に保ち、履歴 GET / SSE を一切張らない。送信失敗時は draft に戻り何も残らない。既存会話を開いた場合は従来通りマウント時に observe 開始。\n\n",
-        "page_id": "agent-mode",
-        "level": 2
-      },
-      "vid": "274"
-    },
-    {
-      "section": {
-        "id": "agent-mode#-8",
-        "title": "サーバー",
-        "content": "\n- `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）\n- `/api/settings/grok-oauth*` — X OAuth ログイン状態・device-code・logout\n- `/api/grok-oauth/v1/*` — OAuth Bearer の OpenAI 互換プロキシ\n- `/api/internal/agent/*` — エージェント専用内部 API（トークン必須）。credentials に OAuth システムエンドポイントを注入\n- `/api/agent-conversations` — 会話メタデータ CRUD（`agent_conversations` テーブル）\n\n",
-        "page_id": "agent-mode",
-        "level": 2
-      },
-      "vid": "275"
-    },
-    {
-      "section": {
-        "id": "agent-mode#-9",
-        "title": "エージェント不通時の見え方",
-        "content": "\n`/agents/*` が 502（埋め込み未ロード + sidecar 未起動）でも、SDK の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。`AgentChat` は status `connecting` + error 時に「接続できません」警告を出し、送信欄は blocking しない（送信すれば 502 エラー表示で入力を復元）。\n\n",
-        "page_id": "agent-mode",
-        "level": 2
-      },
-      "vid": "276"
-    },
-    {
-      "section": {
-        "id": "agent-mode#-10",
-        "title": "コマンド",
-        "content": "\n| コマンド | 用途 |\n|----------|------|\n| `npm run dev` | server + web + agent sidecar |\n| `npm run agent:build` | `agent/dist`（desktop 同梱前に必須） |\n| `npm run desktop:build:canary` | agent:build を含むフルビルド |\n\nリリース前チェックは [docs/PRE_RELEASE.md](../../docs/PRE_RELEASE.md)。\n\n",
-        "page_id": "agent-mode",
-        "level": 2
-      },
-      "vid": "277"
-    },
-    {
-      "section": {
-        "id": "agent-mode#see-also-11",
+        "id": "kie-integration#see-also-6",
         "title": "See Also",
-        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
-        "page_id": "agent-mode",
+        "content": "\n- [Server API](wiki://server-api)\n- [Architecture](wiki://architecture)\n- [Core Concepts](wiki://core-concepts)\n",
+        "page_id": "kie-integration",
         "level": 2
       },
-      "vid": "278"
+      "vid": "46"
+    },
+    {
+      "section": {
+        "id": "catalog-sync",
+        "title": "Catalog Sync",
+        "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
+        "page_id": "catalog-sync",
+        "level": 1
+      },
+      "vid": "47"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-2",
+        "title": "入口",
+        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache |\n| `scripts/sync-models.ts` | `npm run sync:models` |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "48"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-3",
+        "title": "抽出",
+        "content": "\n- category は image / video / audio\n- model slug は request example の `model`、説明文の `Must be X`、enum、default の順で採用し、docs の schema 誤記に耐える\n- URL 型は image / video / audio の reference と scalar/array を識別\n- required、enum、min/max、文字数、参照数、容量、duration を抽出\n- OpenAPI に制約がなくても `Required field`、`Max length`、`4-15 seconds` のような説明文を補助的に読む\n- trailing-space key は trim して API key の表記揺れを抑える\n\nMarket の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の schema を正として id、title、useCase 等の UI metadata だけ上書きする。同一 model ID が複数ページから抽出された場合は field 数が多い定義を採用し、衝突を警告する。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "49"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-4",
+        "title": "同期ポリシー",
+        "content": "\n起動時は古い場合だけ同期する。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。モデルの `.md` 取得は最大3回リトライしてから通常ページへフォールバックする。\n\n通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "50"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#see-also-5",
+        "title": "See Also",
+        "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "51"
     },
     {
       "section": {
@@ -623,7 +523,7 @@
         "page_id": "prompt-optimize",
         "level": 1
       },
-      "vid": "279"
+      "vid": "52"
     },
     {
       "section": {
@@ -633,7 +533,7 @@
         "page_id": "prompt-optimize",
         "level": 2
       },
-      "vid": "280"
+      "vid": "53"
     },
     {
       "section": {
@@ -643,7 +543,7 @@
         "page_id": "prompt-optimize",
         "level": 2
       },
-      "vid": "281"
+      "vid": "54"
     },
     {
       "section": {
@@ -653,7 +553,7 @@
         "page_id": "prompt-optimize",
         "level": 2
       },
-      "vid": "282"
+      "vid": "55"
     },
     {
       "section": {
@@ -663,7 +563,117 @@
         "page_id": "prompt-optimize",
         "level": 2
       },
-      "vid": "283"
+      "vid": "56"
+    },
+    {
+      "section": {
+        "id": "agent-mode",
+        "title": "Agent Mode",
+        "content": "\nFlue 基盤の Studio エージェント。LLM と会話しながら IMAGE / VIDEO / AUDIO を生成する。\n\n",
+        "page_id": "agent-mode",
+        "level": 1
+      },
+      "vid": "57"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-2",
+        "title": "構成",
+        "content": "\n```text\nFrontend (Vite :5173)\n  Studio | エージェント セグメントトグル (FloatingChrome)\n  AgentView / useFlueAgent → /agents/studio/<convId>\n        │                          │\n        ▼                          ▼\n  /api (Hono :8787)          Flue sidecar (:8789 Node, dev)\n                                   │\n                                   ▼ loopback + x-studio-agent-token\n                             /api/internal/agent/*\n```\n\nデスクトップ（Electrobun）では `agent/dist/app.mjs` を `Resources/agent-server` として同梱し `loadFlueNodeApplication` で埋め込む。同じ Bun.serve が `/agents/*` を転送する。Electrobun は asar 後に `Resources/app` を削除するため、`postBuild` で `Resources/agent-server` へ退避する（`asarUnpack` だけではインストーラーに残らない）。見つからない場合は `app.asar` から userData/`agent-server` へ展開する。`FLUE_DB_PATH` は userData の `flue.db`（`studio.db` と同階層。アンインストールで親 dir を消さない）。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "58"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-agent-3",
+        "title": "エージェント `agent/`",
+        "content": "\n- `src/agents/studio.ts` — `'use agent'` + ツール群\n- `src/providers.ts` — Google / xAI / OpenAI / Anthropic / Alibaba / カスタムエンドポイント。キーは内部 API から `resolve()`\n- `src/kieClient.ts` — `STUDIO_API_BASE` + `STUDIO_AGENT_TOKEN`\n- `vite.config.ts` — `node:sqlite` → Bun 互換 shim 書換、`ssr.noExternal` で自己完結 dist\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "59"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-4",
+        "title": "ツール",
+        "content": "\n| ツール | 役割 |\n|--------|------|\n| `list-workflows` / `get-workflow-schema` | 生成前の候補・入力確認 |\n| `generate-media` / `get-task-status` | 非同期生成 + 状態 |\n| `search-history` / `get-task-input` | 履歴検索・入力復元 |\n| `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |\n\n`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。履歴はサーバー側 upsert で通常ギャラリーにも載る。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "60"
+    },
+    {
+      "section": {
+        "id": "agent-mode#grokx--oauth-5",
+        "title": "Grok（X アカウント OAuth）",
+        "content": "\nエージェントで Grok を使う経路はふたつ（併存）:\n\n1. 組み込み `xai` + `XAI_API_KEY`（Settings のキー、または env）\n2. **X アカウント OAuth**（Settings → LLM →「X アカウントでログイン」）\n\nOAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/ozekimasaki/grok-oauth-proxy) 由来、MIT）。別ポートは立てず、Studio Hono の `/api/grok-oauth/v1/*` が OpenAI 互換プロキシになる。ログイン済みなら credentials / settings にシステムエンドポイント `grok-oauth`（label: Grok (X アカウント)）が注入され、モデルピッカーから選べる。\n\n| 項目 | 内容 |\n|------|------|\n| トークン | `auth.json`（dev: `data/grok-oauth/`、desktop: userData/`grok-oauth`）。コミット禁止 |\n| ログイン API | `GET/POST /api/settings/grok-oauth*`（device-code、クライアントが poll） |\n| プロキシ | `ALL /api/grok-oauth/v1/*` → `https://api.x.ai/v1` |\n| 注意 | 非公式 OAuth。SuperGrok / Premium+ で API アクセスが必要。403 時は公式キーを使う |\n\n`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "61"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-6",
+        "title": "フロント",
+        "content": "\n- `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー\n- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル\n- `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "62"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-7",
+        "title": "会話のライフサイクル（遅延作成）",
+        "content": "\n「会話を開始」時点ではローカル **draft**（`AgentView` state。非永続・リクエスト無し）を作るだけ。\n\n| タイミング | 起きること |\n|------------|-----------|\n| 会話を開始 | draft 生成のみ。`agent_conversations` にも Flue にも触れない |\n| 初回メッセージ送信 | ① `client.send`（`initialData` に provider/model）で Flue インスタンス生成 → ② observation を有効化（履歴 hydrate + SSE follow）→ ③ `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |\n| 2 通目以降 | `agent.sendMessage`（session 経由、optimistic 表示） |\n\ndraft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に保ち、履歴 GET / SSE を一切張らない。送信失敗時は draft に戻り何も残らない。既存会話を開いた場合は従来通りマウント時に observe 開始。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "63"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-8",
+        "title": "サーバー",
+        "content": "\n- `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）\n- `/api/settings/grok-oauth*` — X OAuth ログイン状態・device-code・logout\n- `/api/grok-oauth/v1/*` — OAuth Bearer の OpenAI 互換プロキシ\n- `/api/internal/agent/*` — エージェント専用内部 API（トークン必須）。credentials に OAuth システムエンドポイントを注入\n- `/api/agent-conversations` — 会話メタデータ CRUD（`agent_conversations` テーブル）\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "64"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-9",
+        "title": "エージェント不通時の見え方",
+        "content": "\nFlue の `send()` は LLM を呼ぶ前に HTTP 202 で受付する。したがって送信直後の失敗は **Grok / X OAuth の応答ではなく**、`POST /agents/studio/:id` が Flue に届いていない。原因は (1) インストーラー版で embed（`Resources/agent-server`）が無い (2) 開発時に sidecar `:8789` 未起動、または Vite の `/agents` プロキシが ECONNREFUSED。Settings の X ログインは `/api`（:8787）なので成功しても、エージェント送信は embed / sidecar を使う。\n\n`GET /agents/health` で到達性を見る。不通なら AgentView が送信前に警告する。502 本文は Flue の error envelope（`type: agent_unavailable`）にし、SDK が `request failed` に潰さない。sidecar プロキシは起動レース向けに短く再試行する。インストーラー版で embed が無いときは sidecar（:8789）へは飛ばず、再起動を案内する。\n\n既存会話の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。draft は observe しないので、初回送信の 502 が唯一の兆候だった（入力は復元する）。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "65"
+    },
+    {
+      "section": {
+        "id": "agent-mode#-10",
+        "title": "コマンド",
+        "content": "\n| コマンド | 用途 |\n|----------|------|\n| `npm run dev` | server + web + agent sidecar |\n| `npm run agent:build` | `agent/dist`（desktop 同梱前に必須） |\n| `npm run desktop:build:canary` | agent:build を含むフルビルド |\n\nリリース前チェックは [docs/PRE_RELEASE.md](../../docs/PRE_RELEASE.md)。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "66"
+    },
+    {
+      "section": {
+        "id": "agent-mode#see-also-11",
+        "title": "See Also",
+        "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "67"
     }
   ]
 }

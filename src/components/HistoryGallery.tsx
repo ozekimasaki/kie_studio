@@ -118,6 +118,7 @@ function GalleryImage({
       alt={alt}
       loading="lazy"
       decoding="async"
+      referrerPolicy="no-referrer"
       className={className}
       onError={() => setFailed(true)}
     />
