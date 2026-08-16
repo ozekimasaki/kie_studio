@@ -7,6 +7,7 @@ import {
   fetchGrokOauthStatus,
   fetchLlmSettings,
   logoutGrokOauth,
+  messageForGrokOauthError,
   pollGrokOauthLogin,
   saveDefaultLlmModel,
   saveLlmApiKey,
@@ -454,7 +455,7 @@ function GrokOauthPanel({ onChanged }: { onChanged: () => void }) {
       clearPoll()
       setPending(null)
       setBusy(false)
-      setError(e instanceof Error ? e.message : 'ログインに失敗しました')
+      setError(messageForGrokOauthError(e, 'ログインに失敗しました'))
     }
   }
 
@@ -470,7 +471,7 @@ function GrokOauthPanel({ onChanged }: { onChanged: () => void }) {
       schedulePoll(started.sessionId, started.interval)
     } catch (e) {
       setBusy(false)
-      setError(e instanceof Error ? e.message : 'ログインを開始できませんでした')
+      setError(messageForGrokOauthError(e, 'ログインを開始できませんでした'))
     }
   }
 
@@ -498,13 +499,17 @@ function GrokOauthPanel({ onChanged }: { onChanged: () => void }) {
       void statusQuery.refetch()
       onChanged()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'ログアウトに失敗しました')
+      setError(messageForGrokOauthError(e, 'ログアウトに失敗しました'))
     } finally {
       setBusy(false)
     }
   }
 
   const status = statusQuery.data
+  const statusError =
+    statusQuery.isError
+      ? messageForGrokOauthError(statusQuery.error, '状態の取得に失敗しました')
+      : null
   const expiresLabel =
     status?.expiresAt != null
       ? new Date(status.expiresAt * 1000).toLocaleString()
@@ -601,9 +606,9 @@ function GrokOauthPanel({ onChanged }: { onChanged: () => void }) {
         </Pressable>
       )}
 
-      {error && (
+      {(error || statusError) && (
         <p className="studio-field-error" role="alert">
-          {error}
+          {error ?? statusError}
         </p>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { apiUrl } from './api.ts'
+import { ApiClientError, apiUrl } from './api.ts'
 
 export interface AgentConversation {
   id: string
@@ -38,10 +38,37 @@ export interface LlmSettings {
   preferredModels: Record<string, string>
 }
 
+/** Shown when the API process lacks Grok OAuth routes (stale server on :8787). */
+export const GROK_OAUTH_MISSING_MESSAGE =
+  'API に Grok OAuth がありません。Studio / npm run dev:server を再起動し、8787 で古いプロセスが残っていないか確認してください（要 1.0.9+）。'
+
+export function messageForGrokOauthError(error: unknown, fallback: string): string {
+  if (error instanceof ApiClientError && error.status === 404) {
+    return GROK_OAUTH_MISSING_MESSAGE
+  }
+  if (error instanceof Error && error.message.trim()) return error.message
+  return fallback
+}
+
 async function parse<T>(res: Response): Promise<T> {
-  const body = (await res.json()) as { data?: T; error?: string }
-  if (!res.ok) throw new Error(body.error ?? `Request failed (${res.status})`)
-  return (body.data ?? body) as T
+  let body: unknown
+  try {
+    body = await res.json()
+  } catch {
+    throw new ApiClientError(`Request failed (${res.status})`, res.status)
+  }
+  if (!res.ok) {
+    const err = body as { error?: string; code?: number }
+    throw new ApiClientError(
+      typeof err.error === 'string' && err.error.trim()
+        ? err.error
+        : `Request failed (${res.status})`,
+      res.status,
+      typeof err.code === 'number' ? err.code : undefined,
+    )
+  }
+  const wrapped = body as { data?: T }
+  return (wrapped.data ?? body) as T
 }
 
 /** Conversation URL on the agent server (dev: /agents proxy, desktop: same origin). */
@@ -192,9 +219,22 @@ export async function pollGrokOauthLogin(
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ sessionId }),
   })
-  const body = (await res.json()) as { data?: GrokOauthLoginPoll; error?: string }
-  if (body.data) return body.data
-  if (!res.ok) throw new Error(body.error ?? `Request failed (${res.status})`)
+  let body: unknown
+  try {
+    body = await res.json()
+  } catch {
+    throw new ApiClientError(`Request failed (${res.status})`, res.status)
+  }
+  const payload = body as { data?: GrokOauthLoginPoll; error?: string }
+  if (payload.data) return payload.data
+  if (!res.ok) {
+    throw new ApiClientError(
+      typeof payload.error === 'string' && payload.error.trim()
+        ? payload.error
+        : `Request failed (${res.status})`,
+      res.status,
+    )
+  }
   throw new Error('Unexpected poll response')
 }
 
