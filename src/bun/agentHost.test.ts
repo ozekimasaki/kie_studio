@@ -1,14 +1,18 @@
 // @vitest-environment node
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AGENT_UNAVAILABLE_MESSAGE, AGENT_UNAVAILABLE_TYPE } from '../lib/agentUnavailable.ts'
 import {
   agentAppCandidates,
+  ensureInstallWorkingDirectory,
   extractEmbeddedAgentFromAsar,
+  knownInstallBinDirs,
+  packagedAgentAppPaths,
   proxyAgentsToSidecar,
   resolveAgentAppPath,
+  STUDIO_APP_IDENTIFIER,
 } from './agentHost.ts'
 
 function buildElectrobunAsar(files: Record<string, string>): Buffer {
@@ -107,5 +111,82 @@ describe('proxyAgentsToSidecar', () => {
     const json = (await res.json()) as { error: { message: string; details: string } }
     expect(json.error.message).toBe(AGENT_UNAVAILABLE_MESSAGE)
     expect(json.error.details).toContain('asarUnpack')
+  })
+
+  it('uses the load-error details on a packaged 502', async () => {
+    const res = await proxyAgentsToSidecar(
+      new Request('http://127.0.0.1:8787/agents/health'),
+      { packaged: true, details: 'failed to load embedded Flue from C:\\app\\Resources\\agent-server\\app.mjs: boom' },
+    )
+    expect(res.status).toBe(502)
+    const json = (await res.json()) as { error: { details: string } }
+    expect(json.error.details).toContain('boom')
+  })
+})
+
+describe('knownInstallBinDirs', () => {
+  it('points at the Windows per-user Electrobun layout', () => {
+    const bins = knownInstallBinDirs(
+      { LOCALAPPDATA: 'C:\\Users\\me\\AppData\\Local' },
+      'C:\\Users\\me\\AppData\\Local\\ai.kie.studio\\canary',
+    )
+    expect(bins).toContain(
+      join('C:\\Users\\me\\AppData\\Local', STUDIO_APP_IDENTIFIER, 'canary', 'app', 'bin'),
+    )
+    expect(bins).toContain(join('C:\\Users\\me\\AppData\\Local\\ai.kie.studio\\canary', 'app', 'bin'))
+  })
+})
+
+describe('packagedAgentAppPaths', () => {
+  it('finds Resources/agent-server when cwd is Temp and LOCALAPPDATA has the install', () => {
+    const local = mkdtempSync(join(tmpdir(), 'kie-localapp-'))
+    temps.push(local)
+    const bin = join(local, STUDIO_APP_IDENTIFIER, 'canary', 'app', 'bin')
+    const appMjs = join(bin, '../Resources/agent-server/app.mjs')
+    mkdirSync(join(bin, '../Resources/agent-server'), { recursive: true })
+    writeFileSync(appMjs, 'export const loadFlueNodeApplication = 1\n')
+    const tempRoot = mkdtempSync(join(tmpdir(), 'kie-temp-'))
+    temps.push(tempRoot)
+    const paths = packagedAgentAppPaths([tempRoot], { LOCALAPPDATA: local })
+    expect(paths).toContain(appMjs)
+    const found = resolveAgentAppPath(existsSync, [tempRoot], paths)
+    expect(found).toBe(appMjs)
+  })
+})
+
+describe('ensureInstallWorkingDirectory', () => {
+  it('does not chdir from a repo checkout', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'kie-repo-'))
+    temps.push(repo)
+    writeFileSync(join(repo, 'electrobun.config.ts'), 'export default {}\n')
+    const chdir = vi.fn()
+    expect(
+      ensureInstallWorkingDirectory({
+        cwd: () => repo,
+        chdir,
+        env: { LOCALAPPDATA: join(repo, 'no-install') },
+      }),
+    ).toBe(repo)
+    expect(chdir).not.toHaveBeenCalled()
+  })
+
+  it('chdirs from a temp Worker cwd to the Windows install bin', () => {
+    const local = mkdtempSync(join(tmpdir(), 'kie-local-'))
+    temps.push(local)
+    const bin = join(local, STUDIO_APP_IDENTIFIER, 'canary', 'app', 'bin')
+    mkdirSync(join(bin, '../Resources'), { recursive: true })
+    mkdirSync(bin, { recursive: true })
+    writeFileSync(join(bin, '../Resources/version.json'), '{"identifier":"ai.kie.studio","channel":"canary"}\n')
+    const tempCwd = mkdtempSync(join(tmpdir(), 'kie-worker-'))
+    temps.push(tempCwd)
+    const chdir = vi.fn()
+    expect(
+      ensureInstallWorkingDirectory({
+        cwd: () => tempCwd,
+        chdir,
+        env: { LOCALAPPDATA: local },
+      }),
+    ).toBe(bin)
+    expect(chdir).toHaveBeenCalledWith(bin)
   })
 })
