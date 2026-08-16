@@ -4,6 +4,7 @@ import { createApp } from './app.ts'
 import { syncCatalog } from './catalog/sync.ts'
 import { getDb, getDbPath } from './db/open.ts'
 import { startBackfill } from './media/backfill.ts'
+import { proxyAgentsToSidecar } from '../src/bun/agentHost.ts'
 
 // Bun auto-loads `.env` from the project root, so no explicit dotenv step is
 // needed here. This entry is intentionally thin: it starts the shared Hono app
@@ -20,7 +21,12 @@ const app = createApp()
 const port = Number(process.env.PORT || 8787)
 
 const server = Bun.serve({
-  fetch: app.fetch,
+  fetch: (req) => {
+    if (new URL(req.url).pathname.startsWith('/agents')) {
+      return proxyAgentsToSidecar(req)
+    }
+    return app.fetch(req)
+  },
   port,
   hostname: '127.0.0.1',
 })

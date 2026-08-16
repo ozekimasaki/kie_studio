@@ -11,6 +11,7 @@ await initProviders();
 const app = new Hono();
 
 app.get('/health', (c) => c.json({ ok: true }));
+app.get('/agents/health', (c) => c.json({ ok: true }));
 
 // The studio frontend reaches agents same-origin via the dev proxy, but the
 // packaged webview calls cross-origin from views:// — mirror the main API's

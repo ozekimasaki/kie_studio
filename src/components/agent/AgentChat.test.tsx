@@ -88,7 +88,9 @@ describe('AgentChat', () => {
     const onFirstSent = vi.fn()
     renderChat({ onFirstSent })
     typeAndSubmit('失敗するメッセージ')
-    await screen.findByText('送信に失敗しました: Flue API error 502: request failed')
+    await screen.findByText(
+      '送信に失敗しました: エージェントサーバーに接続できません。アプリを再起動するか、開発時は agent sidecar 込みの npm run dev で起動してください。',
+    )
     expect(onFirstSent).not.toHaveBeenCalled()
     expect(screen.getByRole('textbox', { name: 'エージェントへのメッセージ' })).toHaveValue(
       '失敗するメッセージ',

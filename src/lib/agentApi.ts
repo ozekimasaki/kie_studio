@@ -75,6 +75,17 @@ async function parse<T>(res: Response): Promise<T> {
 export const agentConversationUrl = (id: string): string =>
   apiUrl(`/agents/studio/${encodeURIComponent(id)}`)
 
+/** Flue sidecar / embed liveness. 502 here is the same class of failure as send(). */
+export async function fetchAgentHealth(): Promise<{ ok: boolean }> {
+  const res = await fetch(apiUrl('/agents/health'))
+  if (!res.ok) {
+    throw new ApiClientError(`Request failed (${res.status})`, res.status)
+  }
+  const body = (await res.json().catch(() => null)) as { ok?: boolean } | null
+  if (!body?.ok) throw new ApiClientError('Agent health check failed', res.status)
+  return { ok: true }
+}
+
 export async function fetchAgentConversations(): Promise<AgentConversation[]> {
   const res = await fetch(apiUrl('/api/agent-conversations'))
   const data = await parse<{ items: AgentConversation[] }>(res)

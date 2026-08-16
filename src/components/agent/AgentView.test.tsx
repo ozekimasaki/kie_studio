@@ -2,10 +2,11 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AgentView } from './AgentView.tsx'
-import { createAgentConversation, fetchAgentConversations } from '../../lib/agentApi.ts'
+import { createAgentConversation, fetchAgentConversations, fetchAgentHealth } from '../../lib/agentApi.ts'
 
 vi.mock('../../lib/agentApi.ts', () => ({
   fetchAgentConversations: vi.fn().mockResolvedValue([]),
+  fetchAgentHealth: vi.fn().mockResolvedValue({ ok: true }),
   createAgentConversation: vi.fn().mockResolvedValue({}),
   deleteAgentConversation: vi.fn().mockResolvedValue(undefined),
   renameAgentConversation: vi.fn().mockResolvedValue({}),
@@ -63,7 +64,11 @@ async function openDraftChat() {
 }
 
 describe('AgentView', () => {
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    vi.mocked(fetchAgentHealth).mockResolvedValue({ ok: true })
+    vi.mocked(fetchAgentConversations).mockResolvedValue([])
+  })
 
   it('「会話を開始」は永続化せず draft のチャットを開くだけ', async () => {
     await openDraftChat()
@@ -108,5 +113,13 @@ describe('AgentView', () => {
       provider: 'xai',
       model: 'grok-4',
     })
+  })
+
+  it('Flue 不通時は送信前に警告する', async () => {
+    vi.mocked(fetchAgentHealth).mockRejectedValue(new Error('Request failed (502)'))
+    renderView()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'エージェントサーバーに接続できません',
+    )
   })
 })

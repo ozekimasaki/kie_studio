@@ -12,6 +12,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { agentConversationUrl } from '../../lib/agentApi.ts'
+import { formatAgentSendError } from '../../lib/agentUnavailable.ts'
 import { AgentMediaTaskCard } from './AgentMediaTaskCard.tsx'
 import { readMediaTaskData } from './mediaTaskData.ts'
 
@@ -235,7 +236,7 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
       } catch (error) {
         freshRef.current = true
         setInput(text)
-        setSendError(error instanceof Error ? error.message : String(error))
+        setSendError(formatAgentSendError(error))
       } finally {
         setSubmitting(false)
       }
@@ -245,7 +246,7 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
       await agent.sendMessage(text)
     } catch (error) {
       setInput(text)
-      setSendError(error instanceof Error ? error.message : String(error))
+      setSendError(formatAgentSendError(error))
     }
   }
 
