@@ -343,3 +343,42 @@ git push origin v<version>-canary --force
 | Inno Setup | `npm run desktop:installer:win` | `release/` に `.exe` |
 | .deb パッケージ | `bun run desktop:installer:deb canary` | `release/` に `.deb` |
 | CI / GitHub Releases | タグ再 push | ワークフロー成功 + 全成果物アップロード |
+
+## Cursor Cloud specific instructions
+
+Cloud Agent VM 固有の非自明な注意点のみを記す。標準コマンドは `README.md` /
+`.indexion/wiki/getting-started.md` / `package.json` scripts を参照。依存導入は起動時の
+update script（`npm install` と `npm --prefix agent install`）が済ませてある。
+
+### Node バージョン（最重要の落とし穴）
+
+- `dev:agent`（Flue sidecar）と `undici` は **Node ≥ 22.18** を要求する。VM の PATH 先頭に
+  ある `/exec-daemon/node` は **22.14** で、これだと `npm run dev:agent` が
+  `this Node ... does not support TypeScript natively` で落ちる。
+- 対策として nvm の Node 22.22.2 を指す symlink を `~/.node-shims/`（`node`/`npm`/`npx`）に
+  置き、`~/.bashrc` 末尾で PATH 先頭に prepend 済み。**login shell（`bash -l`）なら
+  自動で 22.22.2 になる**（tmux 実行はこれ）。`.bashrc` を読まない非対話 shell では
+  `export PATH="$HOME/.node-shims:$PATH"` を明示するか、`bash -lc '...'` で実行する。
+- 確認: `node -v` が `v22.22.2` を返せば正しい。`v22.14.0` なら上記 PATH を通す。
+
+### Bun（backend + CLI の実行ランタイム）
+
+- `dev:server`（`bun --watch server/index.ts`）と `kiestudio` CLI（`bun cli/index.ts`）は
+  Bun 必須。`~/.bun/bin/bun` にあり `/usr/local/bin/bun` へ symlink 済み。
+
+### 起動と疎通
+
+- `npm run dev` で 3 つ同時起動: API `127.0.0.1:8787` / Web `5173` / agent sidecar `8789`。
+  長時間プロセスなので tmux（`bash -l`）で回す。
+- **Vite は `localhost`(IPv6) に bind する。`http://localhost:5173` を使う**
+  （`http://127.0.0.1:5173` は接続不可）。agent sidecar の `/`(root) は 404 が正常（起動済みの印）。
+- 起動時にカタログ同期が走り docs.kie.ai を約 20s フェッチする（ネットワーク egress 必須）。
+  不要なら `.env` に `SYNC_MODELS_ON_START=0`。
+
+### KIE_API_KEY（生成の必須クレデンシャル）
+
+- 実際のメディア生成には kie.ai の有効な `KIE_API_KEY`（`.env` または設定画面）が要る。
+  未設定だと backend は `POST /api/generate` に **503 + `KIE_API_KEY is not set`** を返す。
+- 未設定時、CLI はこのエラーを整形表示するが、**現状の Web UI は生成クリックで
+  白画面クラッシュする**（503 の未処理）。これはキー未設定時の既存 UI 挙動であり、
+  環境不備ではない。キー無しでの検証はここまでが期待動作。
