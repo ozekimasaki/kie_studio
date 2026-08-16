@@ -17,6 +17,7 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 
 - Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）
 - ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）
+- 最適化は `-m grok-build`（Grok Build 追従エイリアス）を必ず渡す。`STUDIO_GROK_OPTIMIZE_MODEL` で上書き可
 - 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出
 - モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す
 - `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する

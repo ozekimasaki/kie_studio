@@ -14,6 +14,34 @@ const OPTIMIZE_TIMEOUT_MS = 120_000
 const OPT_START = '<<<OPTIMIZED>>>'
 const OPT_END = '<<<END>>>'
 
+/** Grok Build の追従エイリアス。CLI が上がると中身が現行モデルへ差し替わる。 */
+export const GROK_OPTIMIZE_MODEL_ALIAS = 'grok-build'
+
+export function resolveOptimizeGrokModel(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const override = env.STUDIO_GROK_OPTIMIZE_MODEL?.trim()
+  return override || GROK_OPTIMIZE_MODEL_ALIAS
+}
+
+export function buildOptimizeGrokArgs(
+  workDir: string,
+  headlessPrompt: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string[] {
+  return [
+    '--no-auto-update',
+    '--cwd',
+    workDir,
+    '-m',
+    resolveOptimizeGrokModel(env),
+    '-p',
+    headlessPrompt,
+    '--output-format',
+    'plain',
+  ]
+}
+
 export class GrokCliError extends Error {
   readonly code?: 'unavailable' | 'timeout' | 'failed' | 'empty'
 
@@ -288,15 +316,7 @@ export async function optimizePromptWithGrok(params: {
     ].join(' ')
 
     const result = await runGrok(
-      [
-        '--no-auto-update',
-        '--cwd',
-        workDir,
-        '-p',
-        headlessPrompt,
-        '--output-format',
-        'plain',
-      ],
+      buildOptimizeGrokArgs(workDir, headlessPrompt),
       { timeoutMs: OPTIMIZE_TIMEOUT_MS, cwd: workDir },
     )
 
