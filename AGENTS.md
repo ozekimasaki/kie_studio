@@ -69,6 +69,7 @@ Wiki ページ一覧（詳細は各 `.indexion/wiki/*.md`）:
 | `server-api` / `kie-integration` | Hono ルート・kie クライアント |
 | `catalog-sync` / `prompt-optimize` | カタログ同期・Grok 最適化 |
 | `agent-mode` | エージェントモード（Flue・会話ライフサイクル） |
+| `cli` | `kiestudio` CLI（公開 `/api` クライアント。結果は Gallery 履歴へ） |
 
 ## ディレクトリ構成
 
@@ -259,7 +260,7 @@ npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 - Seedance 等のリファレンスキー名・メンションタグは末尾スペースや表記ゆれに敏感
 - 履歴は bun:sqlite（既定 `data/studio.db`、デスクトップは `STUDIO_DB_PATH` で userData 配下）。ピン上限・インポート正規化・入力復元の安全策を維持する
 - provider / operation 差分は `server/kie/adapters/` で正規化し、共通 task/history 契約を維持する
-- Persona と外部音源メタデータは SQLite に保存する。メディア本体は保存しない
+- Persona と外部音源メタデータは SQLite に保存する。生成メディアは終端後に DB 隣の `media/` へアーカイブし、リモート URL 期限切れ後もローカル再生できる
 - 旧 localStorage キーは初回起動時に `POST /api/history/migrate` で移行する
 - プロンプト最適化は Grok CLI 依存。未インストール時は 503 でよい
 - エージェントの Grok は `XAI_API_KEY`（組み込み xai）と **X アカウント OAuth**（`server/grokOauth/`、Settings からログイン）が併存する。トークンは `data/grok-oauth/`（desktop は userData/`grok-oauth`）の `auth.json`。コミット禁止。`server/grok/`（CLI 最適化）と混同しない

@@ -13,6 +13,8 @@
 
 `adapters/index.ts` の registry から `ProviderAdapter` を取得する。作成結果は `taskId` と、即時完了時だけ normalized task を返す。status、複数 media、partial、期限、provider asset ID、raw payload は `NormalizedTask` へ揃える。
 
+ローカルファイル保存は adapter の外。`GET /api/task` と `/internal/agent/task` が success / partial を見たあと `archiveTaskMedia` を起動する。
+
 ## Market
 
 `market.ts` は result JSON を再帰的に走査して URL を抽出し、モデル名と URL から media kind を判定する。fail でも結果がある場合は `partial`。provider / operation を省略した既存リクエストは Market generate として扱う。
@@ -23,7 +25,7 @@ timestamped lyrics、waveform、style boost、Persona は adapter の補助関�
 
 ## Upload / archive
 
-Upload 名は timestamp を付けて一意化し、元名は表示 metadata として返す。archive は temporary download URL を都度取得し、失敗 media ごとに `.error.txt` を入れる。cached lyrics は media download の成否に関係なく ZIP へ入れる。
+Upload 名は timestamp を付けて一意化し、元名は表示 metadata として返す。ZIP archive は temporary download URL を都度取得し、失敗 media ごとに `.error.txt` を入れる。cached lyrics は media download の成否に関係なく ZIP へ入れる。
 
 ## See Also
 

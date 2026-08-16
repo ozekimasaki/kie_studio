@@ -1,6 +1,6 @@
 # Prompt Optimize
 
-Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptimizePanel`）。
+Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptimizePanel`）。エージェントの `optimize-prompt` ツールも同じ `POST /api/optimize-prompt` を呼ぶ。`server/grokOauth/`（X アカウント OAuth）とは別モジュール。
 
 ## モジュール
 
@@ -33,3 +33,4 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 - [Getting Started](wiki://getting-started)
 - [Frontend](wiki://frontend)
 - [Server API](wiki://server-api)
+- [Agent Mode](wiki://agent-mode)

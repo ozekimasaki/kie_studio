@@ -4,7 +4,9 @@
 
 | ファイル | 役割 |
 |------|------|
-| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |
+| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive。`localMediaUrl` で `/media/...` を組み立てる |
+| `agentApi.ts` | 会話メタデータ、LLM 設定、Grok OAuth、`/agents/health` |
+| `agentUnavailable.ts` | Flue 不通（即時 502）の envelope と表示文言 |
 | `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |
 | `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |
 | `taskRelations.ts` | 編集・Aleph の parent task 決定 |
@@ -13,6 +15,8 @@
 | `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |
 | `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |
 | `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |
+| `snippets.ts` | プロンプト定型文（localStorage、上限 50） |
+| `studioPresentation.ts` | モデルピッカー等の表示用整形 |
 
 ## 規約
 
@@ -21,9 +25,12 @@
 - `reference + scalar` は UI の配列から API の単一 URL へ変換
 - 未知の履歴 input key は復元時に破棄する
 - exact `expiresAt` がなければ推測日時を出さず、早めの保存だけ促す
+- `localPath` があるメディアはリモート URL よりローカル配信を優先する
 
 ## See Also
 
 - [Frontend](wiki://frontend)
 - [Core Concepts](wiki://core-concepts)
 - [Catalog Sync](wiki://catalog-sync)
+- [Agent Mode](wiki://agent-mode)
+- [CLI](wiki://cli)

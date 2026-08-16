@@ -36,7 +36,7 @@ Windows の bun エントリは `%TEMP%/electrobun-*.js` の Worker として動
 | `search-history` / `get-task-input` | 履歴検索・入力復元 |
 | `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |
 
-`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。履歴はサーバー側 upsert で通常ギャラリーにも載る。
+`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。履歴はサーバー側 upsert で通常ギャラリーにも載る。`optimize-prompt` は内部 API ではなく公開 `POST /api/optimize-prompt` を使う。
 
 ## Grok（X アカウント OAuth）
 
@@ -54,13 +54,14 @@ OAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/
 | プロキシ | `ALL /api/grok-oauth/v1/*` → `https://api.x.ai/v1` |
 | 注意 | 非公式 OAuth。SuperGrok / Premium+ で API アクセスが必要。403 時は公式キーを使う |
 
-`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。
+`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。OAuth ルートが 404 なら、動いている `:8787` が古いプロセスの可能性が高い（要再起動）。
 
 ## フロント
 
 - `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー
 - `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル
 - `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替
+- `src/lib/agentApi.ts` / `agentUnavailable.ts` — 会話 CRUD、OAuth、不通 envelope
 
 ### 会話のライフサイクル（遅延作成）
 
@@ -81,6 +82,7 @@ draft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に
 - `/api/grok-oauth/v1/*` — OAuth Bearer の OpenAI 互換プロキシ
 - `/api/internal/agent/*` — エージェント専用内部 API（トークン必須）。credentials に OAuth システムエンドポイントを注入
 - `/api/agent-conversations` — 会話メタデータ CRUD（`agent_conversations` テーブル）
+- `GET /agents/health` — Flue sidecar / embed の到達性
 
 ### エージェント不通時の見え方
 
@@ -105,3 +107,4 @@ Flue の `send()` は LLM を呼ぶ前に HTTP 202 で受付する。したが�
 - [Architecture](wiki://architecture)
 - [Frontend](wiki://frontend)
 - [Server API](wiki://server-api)
+- [Prompt Optimize](wiki://prompt-optimize)
