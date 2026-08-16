@@ -49,14 +49,13 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
-- pages update: prompt-optimize
+- pages update: architecture
 - ingest: overview
 - ingest: getting-started
-- ingest: architecture
-- ingest: catalog-sync
-- ingest: prompt-optimize
-- ingest: agent-mode
 - ingest: core-concepts
 - ingest: frontend
 - ingest: server-api
+- ingest: catalog-sync
+- ingest: prompt-optimize
+- ingest: agent-mode
 

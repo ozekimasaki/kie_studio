@@ -55,7 +55,7 @@ npm run desktop:build:stable   # Stable build
 - **Data storage**: DB is created in the app's user-data directory (`studio.db` under `Utils.paths.userData`). Dev uses `data/studio.db`.
 - **Distribution**:
   - **Windows**: Inno Setup installer `canary-win-x64-KIESTUDIO-Setup.exe` (primary channel). Generated via `npm run desktop:installer:win`. Registered in Add/Remove Programs with icon, version, and publisher; includes uninstaller and Start Menu/Desktop shortcuts. Per-user install (`%LocalAppData%\ai.kie.studio\<channel>\app`), no admin required. User DB (`studio.db`) is never removed on uninstall.
-  - **Linux**: tar.gz self-extracting archive (`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`) only. Electrobun does not support `.deb` natively.
+  - **Linux**: `.deb` (`canary-linux-x64-KIESTUDIO-<version>.deb`) is the primary installer. Electrobun itself only emits tar.gz, so `scripts/build-linux-deb.mjs` (`npm run desktop:installer:deb`) wraps the run tree into a `.deb`. The tar.gz (`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`) is still published. Installs to `/opt/kie-studio/<channel>/`.
   - Auto-update artifacts (`tar.zst` + `update.json` + patch) are served from `RELEASE_BASE_URL` as before (independent of Inno Setup).
 - **App icon**: `assets/icon-master.svg` (K monogram motif) is converted via `npm run icons` to `icon.ico` (Windows, multi-size) / `icon.png` (Linux, 512px) / `icon.iconset` (macOS, convert to .icns with iconutil) and referenced in `electrobun.config.ts`. On Windows, `scripts/embed-win-icon.mjs` embeds the icon into launcher.exe post-build to avoid Electrobun's rcedit path-resolution bug (also re-embedded during installer build).
 - **Supported architectures**:

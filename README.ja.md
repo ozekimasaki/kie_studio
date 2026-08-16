@@ -55,7 +55,7 @@ npm run desktop:build:stable   # stable ビルド
 - **データ保存先**: DB はアプリのユーザーデータ領域（`Utils.paths.userData` 配下の `studio.db`）に作成されます。dev は `data/studio.db`。
 - **配布形態**:
   - **Windows**: Inno Setup 製の `canary-win-x64-KIESTUDIO-Setup.exe`（第一導線）。`npm run desktop:installer:win` で生成します。プログラム追加/削除（ARP）にアイコン・バージョン・発行者付きで登録され、アンインストーラーとスタートメニュー/デスクトップショートカットが付きます。per-user インストール（`%LocalAppData%\ai.kie.studio\<channel>\app`）で管理者権限不要。アンインストールでもユーザー DB（`studio.db`）は削除されません。
-  - **Linux**: tar.gz 自己展開アーカイブ（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）のみ。Electrobun は `.deb` 非対応のため採用していません。
+  - **Linux**: `.deb`（`canary-linux-x64-KIESTUDIO-<version>.deb`）が第一導線。Electrobun 純正は tar.gz のみのため、`scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）で実行ツリーから後段生成する。tar.gz（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）も配布。インストール先は `/opt/kie-studio/<channel>/`。
   - 自動アップデート用（`tar.zst` + `update.json` + patch）は `RELEASE_BASE_URL` 配下へ従来通り配信します（Inno Setup に依存しません）。
 - **アプリアイコン**: `assets/icon-master.svg`（K モノグラムモチーフ）を `npm run icons` で `icon.ico`（Windows・マルチサイズ）/ `icon.png`（Linux・512px）/ `icon.iconset`（macOS・iconutil で .icns に変換）へ変換し `electrobun.config.ts` で指定します。Windows は Electrobun 本体の rcedit パス解決バグを避け、ビルド直後に `scripts/embed-win-icon.mjs` が launcher.exe へ自前でアイコンを埋め込みます（インストーラービルド時にも再埋め込み）。
 - **サポートアーキテクチャ**:

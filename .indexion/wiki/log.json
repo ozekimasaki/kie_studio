@@ -1279,5 +1279,31 @@
     "summary": "0 issues found across 11 pages",
     "details": {},
     "affected_pages": []
+  },
+  {
+    "timestamp": "1786877794885",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: architecture",
+    "details": {},
+    "affected_pages": [
+      "architecture"
+    ]
+  },
+  {
+    "timestamp": "1786877794964",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1786877799414",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 4 categories, 9 hub pages + vectors",
+    "details": {},
+    "affected_pages": []
   }
 ]
