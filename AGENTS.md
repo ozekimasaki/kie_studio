@@ -68,7 +68,7 @@ Wiki ページ一覧（詳細は各 `.indexion/wiki/*.md`）:
 | `frontend` / `client-lib` | UI・`src/lib` |
 | `server-api` / `kie-integration` | Hono ルート・kie クライアント |
 | `catalog-sync` / `prompt-optimize` | カタログ同期・Grok 最適化 |
-| `agent-mode` | エージェントモード（Flue・会話ライフサイクル） |
+| `agent-mode` | エージェントモード（AI SDK・会話ライフサイクル） |
 
 ## ディレクトリ構成
 
@@ -87,13 +87,13 @@ src/
   data/catalog.json
 src/bun/
   index.ts             # Electrobun メインプロセス（Bun.serve + BrowserWindow + updater）
-  agentHost.ts         # 埋め込み Flue ロード / sidecar プロキシ（/agents/*）
-agent/                 # Flue エージェント（'use agent' Studio + ツール群。dev sidecar / desktop 埋め込み）
+  installCwd.ts        # Windows Temp Worker から install bin へ chdir
 server/
   app.ts               # createApp(): Hono 本体（CORS・health・route 登録・onError）
   index.ts             # dev エントリ（Bun.serve で createApp を起動・起動時 sync）
-  routes/              # upload, generate, task, Suno, archive, history, settings, ...
-  db/                  # bun:sqlite（履歴・Persona・音源素材・app_settings）
+  agent/               # AI SDK エージェント（streamText + tools。Hono 同一プロセス）
+  routes/              # upload, generate, task, Suno, archive, history, settings, agentChat, ...
+  db/                  # bun:sqlite（履歴・Persona・音源素材・app_settings・エージェント本文）
   settings/            # API キー取得（保存ストア→env フォールバック）
   kie/adapters/        # Market / Suno / Veo / Runway の共通化
   grok/                # Grok CLI 最適化（プロンプト最適化専用。OAuth 同梱とは別）
@@ -118,7 +118,7 @@ cli/                   # kiestudio CLI（Studio API クライアント。結果�
 | `src/components/shell/` | レイアウト枠 |
 | `src/components/motion/` + `src/lib/motion.ts` | インタラクション / モーション |
 | `src/components/agent/` + `src/lib/agentApi.ts` | エージェントモード UI・会話 API。会話は draft → 初回送信時に遅延作成（wiki: agent-mode） |
-| `agent/` | Flue エージェント本体（`agent/src/agents/studio.ts` + ツール。`agent:build` で desktop 同梱） |
+| `server/agent/` | AI SDK エージェント（`streamText` + tools）。`POST /api/agent/chat` |
 | `src/lib/api.ts` | `/api` クライアント（キーは持たない） |
 | `src/lib/history.ts` | 履歴の純粋関数（cap・正規化）。永続化は SQLite via `/api/history` |
 | `src/lib/submissionQueue.ts` | 未送信キュー・再試行・レート制御 |
@@ -226,10 +226,8 @@ Node.js は Vite 8 / React 19 が動作する LTS（目安 20.19+ / 22.12+）。
 ## よく触るコマンド
 
 ```bash
-npm run dev              # server + web + agent sidecar（dev:server + dev:web + dev:agent）
+npm run dev              # server + web（dev:server + dev:web。エージェントは :8787）
 npm run dev:server       # Hono API のみ（bun --watch server/index.ts）
-npm run dev:agent        # Flue エージェント sidecar のみ（127.0.0.1:8789）
-npm run agent:build      # agent/dist ビルド（desktop ビルド前に必須）
 npm run desktop:dev      # Electrobun デスクトップを開発起動（要 Bun）
 npm run desktop:build:canary  # canary デスクトップビルド（vite build + electrobun build）
 npm run desktop:build:stable  # stable デスクトップビルド
@@ -265,6 +263,7 @@ npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 - エージェントの Grok は `XAI_API_KEY`（組み込み xai）と **X アカウント OAuth**（`server/grokOauth/`、Settings からログイン）が併存する。トークンは `data/grok-oauth/`（desktop は userData/`grok-oauth`）の `auth.json`。コミット禁止。`server/grok/`（CLI 最適化）と混同しない
 - `FieldType` / 特殊 UI を増やすときは `types.ts` → `DynamicForm` → 必要ならカタログ抽出を一連で見る
 - Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` と adapter を一連で見る
+- エージェントツール追加は `server/agent/tools.ts` と `server/agent/actions.ts` を一連で見る。Flue sidecar は無い
 
 ### デスクトップ配布（Electrobun + Inno Setup）
 
@@ -348,17 +347,16 @@ git push origin v<version>-canary --force
 
 Cloud Agent VM 固有の非自明な注意点のみを記す。標準コマンドは `README.md` /
 `.indexion/wiki/getting-started.md` / `package.json` scripts を参照。依存導入は起動時の
-update script（`npm install` と `npm --prefix agent install`）が済ませてある。
+update script（`npm install`）が済ませてある。
 
 ### Node バージョン（最重要の落とし穴）
 
-- `dev:agent`（Flue sidecar）と `undici` は **Node ≥ 22.18** を要求する。VM の PATH 先頭に
-  ある `/exec-daemon/node` は **22.14** で、これだと `npm run dev:agent` が
-  `this Node ... does not support TypeScript natively` で落ちる。
+- Vite 8 / `undici` は **Node ≥ 22.18** を要求する。VM の PATH 先頭に
+ ある `/exec-daemon/node` は **22.14** で不足する。
 - 対策として nvm の Node 22.22.2 を指す symlink を `~/.node-shims/`（`node`/`npm`/`npx`）に
-  置き、`~/.bashrc` 末尾で PATH 先頭に prepend 済み。**login shell（`bash -l`）なら
-  自動で 22.22.2 になる**（tmux 実行はこれ）。`.bashrc` を読まない非対話 shell では
-  `export PATH="$HOME/.node-shims:$PATH"` を明示するか、`bash -lc '...'` で実行する。
+ 置き、`~/.bashrc` 末尾で PATH 先頭に prepend 済み。**login shell（`bash -l`）なら
+ 自動で 22.22.2 になる**（tmux 実行はこれ）。`.bashrc` を読まない非対話 shell では
+ `export PATH="$HOME/.node-shims:$PATH"` を明示するか、`bash -lc '...'` で実行する。
 - 確認: `node -v` が `v22.22.2` を返せば正しい。`v22.14.0` なら上記 PATH を通す。
 
 ### Bun（backend + CLI の実行ランタイム）
@@ -368,10 +366,10 @@ update script（`npm install` と `npm --prefix agent install`）が済ませて
 
 ### 起動と疎通
 
-- `npm run dev` で 3 つ同時起動: API `127.0.0.1:8787` / Web `5173` / agent sidecar `8789`。
-  長時間プロセスなので tmux（`bash -l`）で回す。
+- `npm run dev` で 2 つ同時起動: API `127.0.0.1:8787` / Web `5173`。
+ エージェントは Hono 同一プロセス。長時間プロセスなので tmux（`bash -l`）で回す。
 - **Vite は `localhost`(IPv6) に bind する。`http://localhost:5173` を使う**
-  （`http://127.0.0.1:5173` は接続不可）。agent sidecar の `/`(root) は 404 が正常（起動済みの印）。
+ （`http://127.0.0.1:5173` は接続不可）。
 - 起動時にカタログ同期が走り docs.kie.ai を約 20s フェッチする（ネットワーク egress 必須）。
   不要なら `.env` に `SYNC_MODELS_ON_START=0`。
 

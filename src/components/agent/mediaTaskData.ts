@@ -1,4 +1,4 @@
-/** Payload of the agent's `data-media-task` part (mirrors agent/src/agents/studio.ts). */
+/** Payload of the agent's `data-media-task` part (mirrors server/agent/mediaTask.ts). */
 export interface MediaTaskData {
   taskId: string
   title?: string

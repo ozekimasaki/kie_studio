@@ -34,7 +34,6 @@
     "scripts/**/*.ts",
     "cli/**/*.ts",
     "src/bun/**/*.ts",
-    "src/lib/agentUnavailable.ts",
     "types/**/*.d.ts"
   ]
 }

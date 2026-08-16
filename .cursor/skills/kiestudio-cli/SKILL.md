@@ -19,7 +19,7 @@ KIE STUDIO の生成は **Studio API** 経由のみ。kie.ai を直接叩かな�
 
 ```bash
 kiestudio up          # API のみ（既に起動中なら何もしない）
-npm run dev           # API + Web + agent
+npm run dev           # API + Web
 ```
 
 接続先は `STUDIO_API_BASE`。未設定時は `127.0.0.1:8787-8806` の `/api/health` を探索する。

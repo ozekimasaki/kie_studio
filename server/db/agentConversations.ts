@@ -1,6 +1,6 @@
 import { getDb } from './open.ts'
 
-/** Agent chat conversation metadata (message bodies live in the Flue DB). */
+/** Agent chat conversation metadata. Message bodies live in `messages_json`. */
 export interface AgentConversation {
   id: string
   title: string
@@ -87,4 +87,25 @@ export function deleteAgentConversation(id: string): boolean {
   return (
     getDb().prepare('DELETE FROM agent_conversations WHERE id = ?').run(id).changes > 0
   )
+}
+
+export function getAgentMessages(id: string): unknown[] {
+  const row = getDb()
+    .prepare('SELECT messages_json FROM agent_conversations WHERE id = ?')
+    .get(id) as { messages_json: string | null } | undefined
+  if (!row?.messages_json) return []
+  try {
+    const parsed: unknown = JSON.parse(row.messages_json)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+export function saveAgentMessages(id: string, messages: unknown[]): void {
+  getDb()
+    .prepare(
+      'UPDATE agent_conversations SET messages_json = ?, updated_at = ? WHERE id = ?',
+    )
+    .run(JSON.stringify(messages), Date.now(), id)
 }

@@ -95,6 +95,17 @@ function migrate(database: Database): void {
     CREATE INDEX IF NOT EXISTS idx_history_parent_task
       ON history_items(parent_task_id);
   `)
+
+  const agentColumns = new Set(
+    (
+      database.prepare('PRAGMA table_info(agent_conversations)').all() as {
+        name: string
+      }[]
+    ).map((column) => column.name),
+  )
+  if (!agentColumns.has('messages_json')) {
+    database.exec('ALTER TABLE agent_conversations ADD COLUMN messages_json TEXT')
+  }
 }
 
 /** Open (or reuse) the studio SQLite database under data/studio.db. */

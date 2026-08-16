@@ -8,27 +8,27 @@ Browser (Vite :5173)
     ├─ Studio | エージェント モード切替
     ├─ SubmissionQueue (20 requests / 10 seconds)
     ├─ AudioPlayerProvider (single persistent player)
-    └─ fetch('/api/...' | '/agents/...')
-             │                    │
-             ▼                    ▼
-Hono (:8787)              Flue agent (:8789 Node / embed)
-  ├─ routes/*               createAgentRouter(Studio)
-  ├─ kie/adapters/*         → loopback /api/internal/agent/*
-  ├─ db/*                   (credentials, generate, history)
+    └─ fetch('/api/...')
+             │
+             ▼
+Hono (:8787)  Bun.serve 同一プロセス
+  ├─ routes/*               POST /api/agent/chat を含む
+  ├─ agent/                 streamText + tools（AI SDK）
+  ├─ kie/adapters/*
+  ├─ db/*                   履歴 + agent_conversations.messages_json
   ├─ catalog/*
-  └─ grok/*
+  └─ grokOauth/
 ```
 
-`KIE_API_KEY` と LLM API キーは Hono 側のみ。フロントは相対 `/api` と `/agents` だけを呼ぶ。
+`KIE_API_KEY` と LLM API キーは Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。
 
 ## Desktop 層（Electrobun）
 
 デスクトップ版は Electrobun（Bun メインプロセス `src/bun/index.ts` + ネイティブ webview）。`Bun.serve` で Hono を起動し、ビルド済み UI を `views://mainview/` でロードする。設定は `electrobun.config.ts`。
 
-- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。
-- エージェント会話 DB（`flue.db`）は `FLUE_DB_PATH` で同じ userData に配置。
-- パッケージ時は `agent/dist/` を `agent-server/` として同梱。Electrobun は asar 後に `Resources/app` を消すため `asarUnpack` だけでは足りず、`scripts/keep-agent-server.mjs`（`postBuild`）が `Resources/agent-server` へコピーする。起動時に見つからなければ `app.asar` から userData へ展開する。Windows では bun エントリが Temp の Worker になるため、`%LocalAppData%\ai.kie.studio\<ch>\app\bin` へ `chdir` してから `loadFlueNodeApplication` し、`/agents/*` を転送する。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。
-- 起動毎に `STUDIO_AGENT_TOKEN` を発行し、内部 API とエージェントで共有する。
+- DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。エージェント会話本文は同じ DB の `agent_conversations.messages_json`。
+- エージェントは Hono 内の AI SDK（`server/agent/`）。Flue sidecar / `agent-server` 同梱は無い。Windows では bun エントリが Temp の Worker になるため、`%LocalAppData%\ai.kie.studio\<ch>\app\bin` へ `chdir` して Electrobun の `version.json` を読む（`src/bun/installCwd.ts`）。
+- 起動毎に `STUDIO_AGENT_TOKEN` を発行し、残置の `/api/internal/agent/*` で使う（現行チャットは使わない）。
 - 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。
 
 ## パッケージ責務
@@ -40,10 +40,10 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 | `src/components/audio/` | 会話・ナレーション編集と常駐プレイヤー |
 | `src/components/History*` | 複数メディア、同期歌詞、Before/After、API 詳細 |
 | `src/lib/` | API、型、履歴、キュー、検証、親子関係、agentApi |
-| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater + agent embed） |
+| `src/bun/index.ts` | Electrobun メインプロセス（Bun.serve + BrowserWindow + updater） |
+| `src/bun/installCwd.ts` | Windows Temp Worker から install `bin/` へ chdir |
 | `cli/` | `kiestudio` CLI（公開 `/api` クライアント。生成結果は履歴 Gallery へ） |
-| `src/bun/agentHost.ts` | Flue `app.mjs` 解決・読込・sidecar プロキシ |
-| `agent/` | Flue サブプロジェクト（Studio エージェント・ツール・プロバイダ） |
+| `server/agent/` | AI SDK エージェント（model / tools / chat stream） |
 | `server/kie/adapters/` | provider 差分の正規化 |
 | `server/db/` | 加算マイグレーションを行う SQLite |
 | `server/catalog/` | Market カタログと専用 workflow の統合 |
@@ -61,9 +61,9 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 - Linux `.deb` は `scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）。インストール先 `/opt/kie-studio/<ch>/`。`.desktop` / アイコンは `/usr/share/` 配下。
 - アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。
 - arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。
-- アンインストールは `app\` のみ削除し、親ディレクトリの `studio.db` / `flue.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。
+- アンインストールは `app\` のみ削除し、親ディレクトリの `studio.db`（および旧版の `flue.db`）は保持する（親削除は DB 破壊のため禁止）。
 - `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。
-- デスクトップビルドは `agent:build` を前段で実行する（CI は `bun install --cwd agent` も実施）。
+- デスクトップビルドに別途エージェント成果物は不要（チャットは Hono に同梱）。
 
 ## 拡張ポイント
 
@@ -71,7 +71,7 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 - workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き
 - 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新
 - DB 変更: `server/db/open.ts` の加算マイグレーションを使う
-- エージェントツール追加: `agent/src/agents/studio.ts` + 必要なら `server/routes/agentInternal.ts`
+- エージェントツール追加: `server/agent/tools.ts` + `server/agent/actions.ts`
 
 ## See Also
 

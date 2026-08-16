@@ -18,6 +18,7 @@ import { settingsRoutes } from './routes/settings.ts'
 import { llmSettingsRoutes } from './routes/llmSettings.ts'
 import { grokOauthRoutes } from './routes/grokOauth.ts'
 import { agentConversationsRoutes } from './routes/agentConversations.ts'
+import { agentChatRoutes } from './routes/agentChat.ts'
 import { agentInternalRoutes } from './routes/agentInternal.ts'
 import { updateRoutes, isUpdateHandlerRegistered } from './routes/update.ts'
 import { mediaRoutes } from './routes/media.ts'
@@ -62,6 +63,10 @@ export function createApp(): Hono {
         }
         return DEV_ORIGINS.has(origin) ? origin : ''
       },
+      exposeHeaders: [
+        'X-Vercel-AI-UI-Message-Stream',
+        'X-Vercel-AI-Data-Stream',
+      ],
     }),
   )
 
@@ -88,6 +93,7 @@ export function createApp(): Hono {
   app.route('/api', llmSettingsRoutes)
   app.route('/api', grokOauthRoutes)
   app.route('/api', agentConversationsRoutes)
+  app.route('/api', agentChatRoutes)
   app.route('/api', agentInternalRoutes)
   app.route('/api', updateRoutes)
   app.route('/api', backfillRoutes)

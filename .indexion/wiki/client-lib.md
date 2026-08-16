@@ -13,6 +13,8 @@
 | `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |
 | `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |
 | `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |
+| `agentApi.ts` | エージェント会話 CRUD、`/api/agent/chat`、health、メッセージ hydrate |
+| `agentUnavailable.ts` | API 不通時の表示文言 |
 
 ## 規約
 

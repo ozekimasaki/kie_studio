@@ -71,19 +71,26 @@ async function parse<T>(res: Response): Promise<T> {
   return (wrapped.data ?? body) as T
 }
 
-/** Conversation URL on the agent server (dev: /agents proxy, desktop: same origin). */
-export const agentConversationUrl = (id: string): string =>
-  apiUrl(`/agents/studio/${encodeURIComponent(id)}`)
+/** Conversation messages on the studio API (same origin / desktop loopback). */
+export const agentChatUrl = (): string => apiUrl('/api/agent/chat')
 
-/** Flue sidecar / embed liveness. 502 here is the same class of failure as send(). */
+/** Agent runtime liveness. Same Hono process as /api — 502 means the API is down. */
 export async function fetchAgentHealth(): Promise<{ ok: boolean }> {
-  const res = await fetch(apiUrl('/agents/health'))
+  const res = await fetch(apiUrl('/api/agent/health'))
   if (!res.ok) {
     throw new ApiClientError(`Request failed (${res.status})`, res.status)
   }
   const body = (await res.json().catch(() => null)) as { ok?: boolean } | null
   if (!body?.ok) throw new ApiClientError('Agent health check failed', res.status)
   return { ok: true }
+}
+
+export async function fetchAgentMessages(id: string): Promise<unknown[]> {
+  const res = await fetch(
+    apiUrl(`/api/agent-conversations/${encodeURIComponent(id)}/messages`),
+  )
+  const data = await parse<{ messages: unknown[] }>(res)
+  return Array.isArray(data.messages) ? data.messages : []
 }
 
 export async function fetchAgentConversations(): Promise<AgentConversation[]> {

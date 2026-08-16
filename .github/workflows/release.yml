@@ -45,12 +45,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      # Prefer npm + package-lock.json. bun install --cwd agent migrates the
-      # npm lockfile poorly (Ignoring lockfile) and can fail resolving
-      # @aws-sdk/credential-provider-sso on Linux/macOS.
-      - name: Install agent dependencies
-        run: npm ci --prefix agent
-
       - name: Build desktop app
         env:
           # Static host for differential auto-updates. Empty disables updates.
