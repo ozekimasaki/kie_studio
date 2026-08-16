@@ -59,7 +59,7 @@ export function createStudioTools(hooks: StudioToolHooks = {}) {
     }),
     'generate-media': tool({
       description:
-        '画像/動画/音声の生成タスクを作成する。必須: workflowId と input。実行前にユーザーへモデル・主要パラメータ・クレジット消費の見通しを提示して確認を取ること。taskId を即時返す(生成は非同期)。',
+        '画像/動画/音声の生成タスクを作成する。必須: workflowId と input。実行前にユーザーへモデル・主要パラメータ・クレジット消費の見通しを提示して確認を取ること。戻り値の taskId / provider / operation を get-task-status に渡す(生成は非同期)。',
       inputSchema: z.object({
         workflowId: z.string(),
         input: z.record(z.string(), z.unknown()),
@@ -81,6 +81,8 @@ export function createStudioTools(hooks: StudioToolHooks = {}) {
           return {
             taskId: created.taskId,
             workflow: created.workflow,
+            provider: created.schema.provider,
+            operation: created.schema.operation ?? 'generate',
             note: created.note,
           }
         } catch (error) {
@@ -90,7 +92,7 @@ export function createStudioTools(hooks: StudioToolHooks = {}) {
     }),
     'get-task-status': tool({
       description:
-        '生成タスクの状態を確認する。成功時は結果メディアの URL を返す。taskId だけでなく provider/operation も generate-media 時の値を使うこと。',
+        '生成タスクの状態を確認する。成功時は結果メディアの URL を返す。provider/operation は generate-media の戻り値を使う。省略時は履歴から補う。',
       inputSchema: z.object({
         taskId: z.string(),
         provider: z.string().optional(),
@@ -120,6 +122,8 @@ export function createStudioTools(hooks: StudioToolHooks = {}) {
           return {
             taskId: task.taskId,
             state: task.state,
+            provider: task.provider,
+            operation: task.operation,
             resultUrls: task.resultUrls,
             ...(task.failMsg ? { failMsg: task.failMsg } : {}),
             ...(task.creditsConsumed !== undefined

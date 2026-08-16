@@ -39,7 +39,9 @@ Frontend (Vite :5173)
 | `search-history` / `get-task-input` | 履歴検索・入力復元 |
 | `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |
 
-`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。履歴はサーバー側 upsert で通常ギャラリーにも載る。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。
+`generate-media` は `taskId` に加え `provider` / `operation` を返す。`get-task-status` はそれを使う。省略時や LLM が誤った provider を渡しても、履歴（`studio.db`）の値を優先する。
+
+`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。カード自体はクライアントポーリングせず、`get-task-status` が同じ `taskId` の data を更新する。履歴はサーバー側 upsert で通常ギャラリーにも載り、ギャラリー側のポーリングが進捗を反映する。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。
 
 ## Grok（X アカウント OAuth）
 
@@ -76,7 +78,7 @@ OAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/
 | 初回メッセージ送信 | `useChat` の `sendMessage` → `POST /api/agent/chat`（サーバーが会話 upsert + `messages_json` 保存）→ 成功後に `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |
 | 2 通目以降 | 同じ `sendMessage` |
 
-draft 中の `AgentChat` は履歴 GET をしない。送信失敗時は入力を復元し、永続化コールバックを呼ばない。既存会話を開いた場合は `GET /api/agent-conversations/:id/messages` で hydrate する。
+draft 中の `AgentChat` は履歴 GET をしない。送信失敗時は入力を復元し、永続化コールバックを呼ばない。既存会話を開いた場合は `GET /api/agent-conversations/:id/messages` で hydrate する。読み込み失敗時は空チャットにせずエラーと再試行を出す。LLM キー不足など `POST /api/agent/chat` の 400 `{ error }` はフロントで本文を取り出して表示する。
 
 旧 Flue（`flue.db`）の本文は移行しない。メタデータだけ残った会話は空チャット時に案内を出す。
 

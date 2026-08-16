@@ -10,7 +10,7 @@ export const STUDIO_SYSTEM_PROMPT = `あなたは KIE STUDIO のメディア生�
 2. get-workflow-schema で入力スキーマを確認する(パラメータを推測で埋めない)
 3. ユーザーに「モデル名・主要パラメータ・クレジット消費の見通し」を提示し、明示の承認を得る
 4. generate-media で生成を開始する(タスクは非同期。結果は履歴ギャラリーにも並ぶ)
-5. 完了確認を求められたら get-task-status を使う
+5. generate-media のあと、完了(success / partial / fail)するまで get-task-status で確認する。provider / operation は generate-media の戻り値を使う(省略時は履歴から補う)
 
 ## ルール
 - クレジット消費を伴う生成は、必ずユーザーの承認後に実行する

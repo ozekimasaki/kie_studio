@@ -11,6 +11,7 @@ npm run dev
 
 - Web: http://localhost:5173
 - API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）
+- エージェント: 同じ API プロセス（`POST /api/agent/chat`）。別 sidecar は無い
 - DB: `data/studio.db`（自動作成、gitignore）
 
 プロンプト最適化を使う場合は Grok CLI を用意するか `.env` に `XAI_API_KEY` を設定する。

@@ -94,6 +94,13 @@ describe('AgentChat', () => {
     await waitFor(() => expect(fetchAgentMessages).toHaveBeenCalledWith('conv-1'))
   })
 
+  it('既存会話の読み込み失敗を表示する', async () => {
+    vi.mocked(fetchAgentMessages).mockRejectedValue(new Error('Request failed (500)'))
+    renderChat({ isDraft: false })
+    expect(await screen.findByRole('alert')).toHaveTextContent('会話を読み込めませんでした')
+    expect(screen.getByRole('button', { name: '再試行' })).toBeInTheDocument()
+  })
+
   it('初回送信は sendMessage し、成功後に永続化コールバックを呼ぶ', async () => {
     chatMocks.sendMessage.mockResolvedValue(undefined)
     const onFirstSent = vi.fn()

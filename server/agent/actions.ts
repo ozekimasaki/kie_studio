@@ -134,13 +134,46 @@ export async function generateMedia(input: {
   }
 }
 
+function asProvider(value: string | undefined): Provider {
+  switch (value) {
+    case 'market':
+    case 'suno':
+    case 'veo':
+    case 'runway':
+      return value
+    default:
+      return 'market'
+  }
+}
+
+function asOperation(value: string | undefined): Operation {
+  switch (value) {
+    case 'generate':
+    case 'extend':
+    case 'upload-cover':
+    case 'upload-extend':
+    case 'replace-section':
+    case 'cover-art':
+    case 'lyrics':
+    case 'upscale-1080p':
+    case 'upscale-4k':
+    case 'aleph':
+      return value
+    default:
+      return 'generate'
+  }
+}
+
 export async function getTaskStatus(params: {
   taskId: string
   provider?: string
   operation?: string
 }) {
-  const provider = (params.provider ?? 'market') as Provider
-  const operation = (params.operation ?? 'generate') as Operation
+  const item = getHistoryItem(params.taskId)
+  // History is the source of truth: a hallucinated market/generate must not
+  // override the adapter used when the task was created.
+  const provider = asProvider(item?.provider ?? params.provider)
+  const operation = asOperation(item?.operation ?? params.operation)
   const task = await getProviderAdapter(provider).getTask(params.taskId, operation)
 
   if (

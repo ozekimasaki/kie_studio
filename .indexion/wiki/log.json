@@ -1305,5 +1305,171 @@
     "summary": "Built index: 4 categories, 9 hub pages + vectors",
     "details": {},
     "affected_pages": []
+  },
+  {
+    "timestamp": "1786881784602",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "9 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "overview",
+      "getting-started",
+      "core-concepts",
+      "architecture",
+      "frontend",
+      "server-api",
+      "catalog-sync",
+      "prompt-optimize",
+      "agent-mode"
+    ]
+  },
+  {
+    "timestamp": "1786881784684",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1786881811376",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention (dry-run)",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1786882157319",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: overview",
+    "details": {},
+    "affected_pages": [
+      "overview"
+    ]
+  },
+  {
+    "timestamp": "1786882157340",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: getting-started",
+    "details": {},
+    "affected_pages": [
+      "getting-started"
+    ]
+  },
+  {
+    "timestamp": "1786882157359",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: architecture",
+    "details": {},
+    "affected_pages": [
+      "architecture"
+    ]
+  },
+  {
+    "timestamp": "1786882157380",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "1786882157401",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: client-lib",
+    "details": {},
+    "affected_pages": [
+      "client-lib"
+    ]
+  },
+  {
+    "timestamp": "1786882157420",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: server-api",
+    "details": {},
+    "affected_pages": [
+      "server-api"
+    ]
+  },
+  {
+    "timestamp": "1786882157441",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: agent-mode",
+    "details": {},
+    "affected_pages": [
+      "agent-mode"
+    ]
+  },
+  {
+    "timestamp": "1786882162430",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1786882162582",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 9 hub pages + vectors",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1786882162668",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention (dry-run)",
+    "details": {},
+    "affected_pages": [
+      "server-api"
+    ]
+  },
+  {
+    "timestamp": "1786882171249",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention (dry-run)",
+    "details": {},
+    "affected_pages": [
+      "server-api"
+    ]
+  },
+  {
+    "timestamp": "1786882183287",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "1 pages need attention",
+    "details": {},
+    "affected_pages": [
+      "server-api"
+    ]
+  },
+  {
+    "timestamp": "1786882183373",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "0 pages need attention (dry-run)",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1786882183453",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
   }
 ]

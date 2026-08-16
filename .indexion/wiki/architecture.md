@@ -71,7 +71,7 @@ Hono (:8787)  Bun.serve 同一プロセス
 - workflow 追加: `server/catalog/dedicated.ts`。Market schema は同期カタログを優先して UI メタデータだけ上書き
 - 特殊 UI: `FieldType` / `DynamicForm` / workflow validation を一連で更新
 - DB 変更: `server/db/open.ts` の加算マイグレーションを使う
-- エージェントツール追加: `server/agent/tools.ts` + `server/agent/actions.ts`
+- エージェントツール追加: `server/agent/tools.ts` + `server/agent/actions.ts`。`get-task-status` は履歴の provider / operation を優先する
 
 ## See Also
 

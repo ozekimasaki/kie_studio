@@ -30,16 +30,13 @@ Most-linked pages that serve as knowledge hubs:
 - [Frontend](wiki://frontend)
 - [Client Lib](wiki://client-lib)
 
-### agent
-
-- [Agent Mode](wiki://agent-mode)
-
 ### server
 
 - [Server API](wiki://server-api)
 - [Kie Integration](wiki://kie-integration)
 - [Catalog Sync](wiki://catalog-sync)
 - [Prompt Optimize](wiki://prompt-optimize)
+- [Agent Mode](wiki://agent-mode)
 
 ### Uncategorized
 
@@ -49,13 +46,14 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: agent-mode
+- pages update: server-api
+- pages update: client-lib
+- pages update: frontend
 - pages update: architecture
-- ingest: overview
-- ingest: getting-started
+- pages update: getting-started
+- pages update: overview
 - ingest: core-concepts
-- ingest: frontend
-- ingest: server-api
 - ingest: catalog-sync
 - ingest: prompt-optimize
-- ingest: agent-mode
 

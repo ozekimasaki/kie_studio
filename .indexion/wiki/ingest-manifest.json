@@ -2,101 +2,104 @@
   "version": "1",
   "page_states": {
     "overview": {
-      "page_hash": "d6fe923928bf718c681b9576526166ea",
+      "page_hash": "70b08a4c39d9cef4d05e733816a4d7f4",
       "source_hashes": {
-        "README.md": "a5af9ae40ef1a620f02753ef042a561b",
-        "AGENTS.md": "932eb83a9f47ee920f4d88104dfcb217",
-        "package.json": "551a840c810b237e48f398d19d993680"
+        "README.md": "e73fdb1b6d4848a011f10227ae773e19",
+        "AGENTS.md": "028c67f8b72bc48d187152c1b8fb86ab",
+        "package.json": "3b3669de58aa7b6dc43aa4dd5184a013"
       }
     },
     "getting-started": {
-      "page_hash": "204ffa2b5603f49af36584a071c570f5",
+      "page_hash": "a7e65ec65402ed154228f80b4c52cb28",
       "source_hashes": {
-        ".env.example": "fddf3c194ecba8b751a6bc3a84674cec",
-        "package.json": "551a840c810b237e48f398d19d993680",
-        "README.md": "a5af9ae40ef1a620f02753ef042a561b",
-        "vite.config.ts": "81ddb3f5c5e0bea052eb31e60bc64df6"
+        ".env.example": "b5015b9470878110b2f0b2ffe6ba738b",
+        "package.json": "3b3669de58aa7b6dc43aa4dd5184a013",
+        "README.md": "e73fdb1b6d4848a011f10227ae773e19",
+        "vite.config.ts": "01dbcf00adaddcd417cff5c0ad76fcf2"
       }
     },
     "core-concepts": {
-      "page_hash": "26ee3559e74e9db9f90218984ed7a633",
+      "page_hash": "b4439787a587555276c57af496e6a801",
       "source_hashes": {
-        "src/lib/models/types.ts": "eb97599e82c6434985565786ba3f9718",
-        "src/lib/history.ts": "b4cbfbf04126be31ce0eb5b3d44a45bc",
-        "src/lib/models/mentions.ts": "af7fe9767d994b47815012839284a8c2",
-        "src/components/DynamicForm.tsx": "f6aa13e98759e6ff1c3376214291e958",
-        "server/db/history.ts": "3329873b70def48af7f2669dc117b59f"
+        "src/lib/models/types.ts": "e826c12733c6a133233c394f4f1804e1",
+        "src/lib/history.ts": "79f6bce1c74af3b0db6bcff0e3c55f69",
+        "src/lib/models/mentions.ts": "4c86fa3b6d2d82b793871da42d6c8c7e",
+        "src/components/DynamicForm.tsx": "743910da20898d4b34b5cc4ef704adad",
+        "server/db/history.ts": "25204463a165b554e04ebad14ceb0de1"
       }
     },
     "architecture": {
-      "page_hash": "e29b85ce9eb9664711efe3067a82f361",
+      "page_hash": "fcea2be9d142c25a4e4c401749ad23ef",
       "source_hashes": {
-        "AGENTS.md": "932eb83a9f47ee920f4d88104dfcb217",
-        "server/index.ts": "50e64e0478880cc94a0784846a244997",
-        "vite.config.ts": "81ddb3f5c5e0bea052eb31e60bc64df6",
-        "src/App.tsx": "a705af502f4cc688ea81f85e5c2df157",
-        "src/bun/index.ts": "3d29fb669827c1ecb49369a90d1b8e86",
-        "src/bun/agentHost.ts": "5a701ada99e586d87335014a4c0e4837",
-        "electrobun.config.ts": "f52a30dec5a8032bbcd857a28bfce0c1"
+        "AGENTS.md": "028c67f8b72bc48d187152c1b8fb86ab",
+        "server/index.ts": "90fd76dbd7c70bce2e98a4f8dc16c323",
+        "vite.config.ts": "01dbcf00adaddcd417cff5c0ad76fcf2",
+        "src/App.tsx": "931c624e8c9dbb8df6384fcd2d9ea517",
+        "src/bun/index.ts": "219b2ab7766a8d2a8d6df95de38200c6",
+        "src/bun/installCwd.ts": "57e5f28152f515dc1a27fc11155fc65f",
+        "electrobun.config.ts": "545ff8f4d89459372247bfeb15ba3eb0"
       }
     },
     "frontend": {
-      "page_hash": "9e0959ccf9d56d01c491378601bc112e",
+      "page_hash": "ff0f63f1c0e1f40e246a1e2d57c7b946",
       "source_hashes": {
-        "src/App.tsx": "a705af502f4cc688ea81f85e5c2df157",
-        "src/lib/motion.ts": "070b7d31bdf0f995ee2c715bc50a1296",
-        "src/main.tsx": "cc78044525aa90f256efd3cbe03444cd",
-        "src/lib/studioPresentation.ts": "cf3de3b04390e4c0d956a5b7711ce13a",
-        "src/index.css": "9f089f68ea75bd47558dbca5f539e9c1"
+        "src/App.tsx": "931c624e8c9dbb8df6384fcd2d9ea517",
+        "src/lib/motion.ts": "67c5ea9e36ffd20705827eaca379b541",
+        "src/main.tsx": "edd54af5bd991061cffa57467e3b060f",
+        "src/lib/studioPresentation.ts": "fcbc61b784e116cb0d54ed673a006fd7",
+        "src/index.css": "a65ee287b85dd77f11436d37675ceaf7"
       }
     },
     "client-lib": {
-      "page_hash": "8b937b21e279b15e8930921650618737",
+      "page_hash": "c75a1034aff0f92af97b5591075bef32",
       "source_hashes": {}
     },
     "server-api": {
-      "page_hash": "26388be99249602e85a4bad7ed97efb1",
+      "page_hash": "285de7923bb0603e3a2fcc04a11bf35e",
       "source_hashes": {
-        "server/app.ts": "456bb93ad2ae02ec88fd8da70e1d01c9",
-        "server/index.ts": "50e64e0478880cc94a0784846a244997",
-        "server/routes/agentInternal.ts": "bdff92677b364afd8f927fed72c35a03",
-        "server/routes/llmSettings.ts": "04bab3f2dabf31760560fbd501ce181f",
-        "server/routes/agentConversations.ts": "41bf4968b11a8bc194553cb8b28b3a49"
+        "server/app.ts": "996aafad40c575c86abcd971db7003ba",
+        "server/index.ts": "90fd76dbd7c70bce2e98a4f8dc16c323",
+        "server/routes/agentChat.ts": "2788721d529452f51dade9510d6d407e",
+        "server/routes/agentInternal.ts": "3708ddcc217604a86cb483f1042766da",
+        "server/routes/llmSettings.ts": "35f95ba1ddfbe4996a6528fba389c2e1",
+        "server/routes/agentConversations.ts": "1f1be55d4a4d5948a80d9bad4dddddfb"
       }
     },
     "kie-integration": {
-      "page_hash": "b27be1f2c44d355f83cfd3203201f316",
+      "page_hash": "5bbc68775bce661f9df968a92d69f8cc",
       "source_hashes": {}
     },
     "catalog-sync": {
-      "page_hash": "04280d367a35d8369f915be6f9e720be",
+      "page_hash": "cded40d6e6af41da7e0cd50a57cc1976",
       "source_hashes": {
-        "server/catalog/sync.ts": "6d01b6138b96aff05ee4977515950c8d",
+        "server/catalog/sync.ts": "14b2e9017ab283cf64207f995d044420",
         "scripts/sync-models.ts": "33b691cf2c2cba5d58e450ff14561532",
-        "src/lib/models/from-openapi.ts": "a42e4555bc2574f395c0d2dc9679e39a",
+        "src/lib/models/from-openapi.ts": "acf930d215d89191a737a1c37a86b413",
         "src/data/catalog.json": "d8f5dc0451a02eaba7ffeaf5e5430e9f"
       }
     },
     "prompt-optimize": {
-      "page_hash": "f706c9e1ede8bc16f7254e5a2ef3adfc",
+      "page_hash": "684d5b00462744c3fac437ecb3eb3f7c",
       "source_hashes": {
-        "server/grok/optimize-profiles.ts": "ee58b8b38d2578297f6b25ce33a24b89",
-        "server/grok/guides/seedance.ts": "85c650af94c67caca3789404228a4be1",
-        "server/grok/guides/seedance-2-5.ts": "1eddecb8acdcfa608470452c130dee94",
-        "server/grok/cli.ts": "3a9ce6222f1e619734fe417957cb51f2",
-        "server/routes/optimize-prompt.ts": "f02ea79a59f99ac4b5cbd02f290f0662",
-        "src/components/PromptOptimizePanel.tsx": "3ab4c7ddf32c5e5244e618b0398733eb"
+        "server/grok/optimize-profiles.ts": "67123942659b26946ebabb87d79ed8e6",
+        "server/grok/guides/seedance.ts": "83b0d22add11445c95577d4df50ff2b6",
+        "server/grok/guides/seedance-2-5.ts": "fc3dcd87bdd7c19535bc1337c65be99b",
+        "server/grok/cli.ts": "e2ba679b053b59ae58f5c5ebf175a071",
+        "server/routes/optimize-prompt.ts": "73cd998502d5d1ebd7c8cfc21f77fec2",
+        "src/components/PromptOptimizePanel.tsx": "09cfb9cb8765d1dda9dcac88cd664cb3"
       }
     },
     "agent-mode": {
-      "page_hash": "bd8b646a5777ef965298660cd53b17b2",
+      "page_hash": "b993ab2450610d56ef89827475e20bd7",
       "source_hashes": {
-        "src/bun/agentHost.ts": "5a701ada99e586d87335014a4c0e4837",
-        "src/bun/index.ts": "3d29fb669827c1ecb49369a90d1b8e86",
-        "server/routes/agentInternal.ts": "bdff92677b364afd8f927fed72c35a03",
-        "server/routes/llmSettings.ts": "04bab3f2dabf31760560fbd501ce181f",
-        "server/routes/agentConversations.ts": "41bf4968b11a8bc194553cb8b28b3a49",
-        "electrobun.config.ts": "f52a30dec5a8032bbcd857a28bfce0c1"
+        "src/lib/agentApi.ts": "9a0d294cc3ed84687bd00da4157c74ac",
+        "src/bun/index.ts": "219b2ab7766a8d2a8d6df95de38200c6",
+        "src/bun/installCwd.ts": "57e5f28152f515dc1a27fc11155fc65f",
+        "server/routes/agentChat.ts": "2788721d529452f51dade9510d6d407e",
+        "server/routes/agentInternal.ts": "3708ddcc217604a86cb483f1042766da",
+        "server/routes/llmSettings.ts": "35f95ba1ddfbe4996a6528fba389c2e1",
+        "server/routes/agentConversations.ts": "1f1be55d4a4d5948a80d9bad4dddddfb",
+        "electrobun.config.ts": "545ff8f4d89459372247bfeb15ba3eb0"
       }
     }
   }
