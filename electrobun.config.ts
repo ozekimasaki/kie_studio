@@ -22,8 +22,9 @@ export default {
       'dist/favicon.svg': 'views/mainview/favicon.svg',
       'agent/dist/': 'agent-server/',
     },
-    // Keep agent-server on disk so Bun can dynamic-import app.mjs at runtime.
-    asarUnpack: ['agent-server/**'],
+    // Native modules must stay unpacked. `agent-server/**` is also listed, but
+    // Electrobun deletes Resources/app after packing so postBuild copies it out.
+    asarUnpack: ['*.node', '*.dll', '*.dylib', '*.so', 'agent-server/**'],
     watchIgnore: ['dist/**'],
     // Code signing / notarization are out of scope (unsigned distribution).
     mac: {
@@ -44,6 +45,10 @@ export default {
       // App icon for installer / shortcuts / taskbar (multi-size ICO).
       icon: 'assets/icon.ico',
     },
+  },
+  scripts: {
+    // Copy agent-server out of Resources/app before Electrobun packs+deletes it.
+    postBuild: 'scripts/keep-agent-server.mjs',
   },
   release: {
     // Static host for differential auto-updates; empty disables updates.

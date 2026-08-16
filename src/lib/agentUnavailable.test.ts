@@ -7,7 +7,7 @@ import {
 } from './agentUnavailable.ts'
 
 describe('formatAgentSendError', () => {
-  it('maps generic Flue 502 request failed to the sidecar guidance', () => {
+  it('maps generic Flue 502 request failed to the restart guidance', () => {
     expect(formatAgentSendError(new Error('Flue API error 502: request failed'))).toBe(
       AGENT_UNAVAILABLE_MESSAGE,
     )

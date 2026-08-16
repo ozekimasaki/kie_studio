@@ -1,16 +1,24 @@
 /** Flue SDK reads `error.type` / `error.message` from the JSON envelope. */
 export const AGENT_UNAVAILABLE_TYPE = 'agent_unavailable'
 
+/** Packaged desktop: embed missing. Restart is the real next step. */
 export const AGENT_UNAVAILABLE_MESSAGE =
-  'エージェントサーバーに接続できません。アプリを再起動するか、開発時は agent sidecar 込みの npm run dev で起動してください。'
+  'エージェントを起動できませんでした。アプリを再起動してください。'
 
-export function agentUnavailableBody(details: string): {
+/** Vite / `npm run dev` without the Flue sidecar. */
+export const AGENT_UNAVAILABLE_DEV_HINT =
+  '開発時は agent sidecar 込みの npm run dev で起動してください。'
+
+export function agentUnavailableBody(
+  details: string,
+  message: string = AGENT_UNAVAILABLE_MESSAGE,
+): {
   error: { type: string; message: string; details: string }
 } {
   return {
     error: {
       type: AGENT_UNAVAILABLE_TYPE,
-      message: AGENT_UNAVAILABLE_MESSAGE,
+      message,
       details,
     },
   }
@@ -32,7 +40,7 @@ export function formatAgentSendError(error: unknown): string {
     status === '502' &&
     (type === AGENT_UNAVAILABLE_TYPE || message === 'request failed')
   ) {
-    return AGENT_UNAVAILABLE_MESSAGE
+    return message && message !== 'request failed' ? message : AGENT_UNAVAILABLE_MESSAGE
   }
   if (message && message !== 'request failed') return message
   return raw

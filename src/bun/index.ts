@@ -85,7 +85,9 @@ const server = startServer()
 process.env.STUDIO_API_BASE = `http://127.0.0.1:${server.port}`
 console.log(`KIE STUDIO API listening on http://127.0.0.1:${server.port}`)
 
-agentApp = await loadEmbeddedAgentApp(process.env)
+agentApp = await loadEmbeddedAgentApp(process.env, {
+  extractDir: join(userData, 'agent-server'),
+})
 
 let db: ReturnType<typeof getDb> | null = null
 try {

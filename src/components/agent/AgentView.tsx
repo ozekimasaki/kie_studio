@@ -9,7 +9,7 @@ import {
   newConversationId,
   type AgentConversation,
 } from '../../lib/agentApi.ts'
-import { AGENT_UNAVAILABLE_MESSAGE } from '../../lib/agentUnavailable.ts'
+import { AGENT_UNAVAILABLE_DEV_HINT, AGENT_UNAVAILABLE_MESSAGE } from '../../lib/agentUnavailable.ts'
 import { AgentChat } from './AgentChat.tsx'
 import { AgentModelPicker, type ModelSelection } from './AgentModelPicker.tsx'
 
@@ -200,6 +200,9 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
         >
           <AlertTriangle size={13} aria-hidden />
           {AGENT_UNAVAILABLE_MESSAGE}
+          {typeof location !== 'undefined' && location.protocol.startsWith('http')
+            ? ` ${AGENT_UNAVAILABLE_DEV_HINT}`
+            : null}
         </p>
       )}
 

@@ -89,7 +89,7 @@ describe('AgentChat', () => {
     renderChat({ onFirstSent })
     typeAndSubmit('失敗するメッセージ')
     await screen.findByText(
-      '送信に失敗しました: エージェントサーバーに接続できません。アプリを再起動するか、開発時は agent sidecar 込みの npm run dev で起動してください。',
+      '送信に失敗しました: エージェントを起動できませんでした。アプリを再起動してください。',
     )
     expect(onFirstSent).not.toHaveBeenCalled()
     expect(screen.getByRole('textbox', { name: 'エージェントへのメッセージ' })).toHaveValue(
@@ -117,7 +117,7 @@ describe('AgentChat', () => {
       refresh: flueMocks.refresh,
     }))
     renderChat({ isDraft: false })
-    expect(screen.getByText(/エージェントサーバーに接続できません/)).toBeInTheDocument()
+    expect(screen.getByText(/エージェントを起動できませんでした/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '送信' })).toBeInTheDocument()
   })
 })
