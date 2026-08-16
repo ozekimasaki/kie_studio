@@ -2,7 +2,7 @@
   "name": "kie_studio",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n server,web,agent -c blue,green,magenta \"npm run dev:server\" \"npm run dev:web\" \"npm run dev:agent\"",
