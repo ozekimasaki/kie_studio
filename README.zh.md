@@ -109,8 +109,8 @@ npm run sync:models -- --force
 | POST | `/api/upload` | 转发至 File Upload API；音频注册到素材架 |
 | GET | `/api/audio-assets` | 列出外部音频素材 |
 | DELETE | `/api/audio-assets/:id` | 删除外部音频素材 |
-| POST | `/api/generate` | 通过 provider / operation adapter 创建任务 |
-| GET | `/api/task?provider=&operation=&taskId=` | 将各 provider 状态标准化为通用格式 |
+| POST | `/api/generate` | 通过 provider / operation adapter 创建任务并写入历史 |
+| GET | `/api/task?provider=&operation=&taskId=` | 将各 provider 状态标准化；终态会 mirror 到历史 |
 | GET | `/api/credits` | 剩余积分 |
 | POST | `/api/download-url` | 临时下载 URL（20 分钟） |
 | POST | `/api/archive` | 将多媒体 + 歌词导出为 ZIP |
@@ -128,7 +128,9 @@ npm run sync:models -- --force
 | GET | `/api/optimize-profile?modelId=` | 按模型的优化配置 |
 | POST | `/api/optimize-prompt` | 提示词优化 / 生成 |
 | GET | `/api/history` | 历史列表（SQLite） |
-| PUT | `/api/history` | 批量替换历史 |
+| PUT | `/api/history` | upsert 历史（不会删除未知 taskId） |
+| DELETE | `/api/history/:taskId` | 删除一条历史 |
+| POST | `/api/history/clear-unpinned` | 删除未固定历史 |
 | POST | `/api/history/import` | 从 JSON 导入历史 |
 | POST | `/api/history/migrate` | 迁移旧 localStorage 历史 |
 | GET | `/api/settings` | API 密钥保存状态 & 脱敏显示 |
@@ -170,8 +172,23 @@ npm run sync:models -- --force
 | `npm test` | 运行一次 Vitest |
 | `npm run test:watch` | Vitest watch 模式 |
 | `npm run sync:models` | 手动目录同步 |
+| `npm run kiestudio` | KIE STUDIO CLI（`bun cli/index.ts`） |
 
 仅类型检查：`npx tsc -b`（包含在 `npm run build` 中）。
+
+## CLI
+
+`kiestudio` 连接正在运行的 Studio API。生成结果写入与 Gallery 相同的 SQLite 历史。
+
+```bash
+npm run kiestudio -- --help
+kiestudio up
+kiestudio models --category image
+kiestudio generate -m flux-kontext-pro -p "a red bicycle" --wait
+kiestudio history
+```
+
+API 未启动时先运行 `kiestudio up` 或 `npm run dev`。代理说明见 `.cursor/skills/kiestudio-cli/SKILL.md`。
 
 ## 项目结构
 
@@ -201,6 +218,7 @@ scripts/embed-win-icon.mjs     # 构建后图标嵌入 launcher.exe + tar.zst �
 scripts/build-win-installer.mjs # tar.zst 解压 → 图标嵌入 → Inno Setup 编译
 scripts/collect-release.mjs    # 将构建产物收集到持久 release/ 目录
 scripts/sync-models.ts  # 目录同步 CLI
+cli/                    # kiestudio CLI（Studio API 客户端，结果进入 Gallery）
 .github/workflows/release.yml  # 3 OS 矩阵构建 + Releases 发布
 .indexion/wiki/         # 项目知识库（indexion wiki）
 ```

@@ -13,6 +13,8 @@ process.env.STUDIO_DB_PATH = join(
 )
 
 const {
+  clearUnpinnedHistory,
+  deleteHistoryItem,
   historyCount,
   importHistoryItems,
   listHistory,
@@ -20,6 +22,8 @@ const {
   migrateHistoryItems,
   replaceAllFromUnknown,
   updateMediaLocalPaths,
+  upsertHistoryItem,
+  upsertHistoryItemsFromUnknown,
 } = await import('./history.ts')
 
 function makeItem(
@@ -223,5 +227,92 @@ describe('server/db/history', () => {
       ])
       expect(listUnarchivedMedia(2)).toHaveLength(2)
     })
+  })
+
+  describe('upsertHistoryItemsFromUnknown', () => {
+    it('keeps rows the payload does not mention', () => {
+      replaceAllFromUnknown([
+        makeItem('t-cli', 1_000),
+        makeItem('t-ui', 2_000),
+      ])
+      const stored = upsertHistoryItemsFromUnknown([
+        makeItem('t-ui', 2_000, { prompt: 'updated' }),
+      ])
+      expect(stored.map((i) => i.taskId).sort()).toEqual(['t-cli', 't-ui'])
+      expect(stored.find((i) => i.taskId === 't-ui')?.prompt).toBe('updated')
+    })
+
+    it('does not regress a terminal row to a pending state', () => {
+      replaceAllFromUnknown([
+        makeItem('t-done', 1_000, {
+          state: 'success',
+          resultUrls: ['https://cdn.example.com/a.png'],
+        }),
+      ])
+      upsertHistoryItemsFromUnknown([
+        makeItem('t-done', 1_000, { state: 'generating' }),
+      ])
+      const item = listHistory().find((i) => i.taskId === 't-done')
+      expect(item?.state).toBe('success')
+      expect(item?.resultUrls).toEqual(['https://cdn.example.com/a.png'])
+    })
+
+    it('updates pin flags without wiping sibling rows', () => {
+      replaceAllFromUnknown([
+        makeItem('t-a', 1_000),
+        makeItem('t-b', 2_000),
+      ])
+      upsertHistoryItemsFromUnknown([makeItem('t-a', 1_000, { pinned: true })])
+      const items = listHistory()
+      expect(items.find((i) => i.taskId === 't-a')?.pinned).toBe(true)
+      expect(items.some((i) => i.taskId === 't-b')).toBe(true)
+    })
+
+    it('preserves server-managed localPath when the client omits it', () => {
+      const now = Date.now()
+      replaceAllFromUnknown([
+        makeItem('t-preserve', now, {
+          media: [{ kind: 'image', url: 'https://cdn.example.com/p.png' }],
+        }),
+      ])
+      updateMediaLocalPaths('t-preserve', [
+        { kind: 'image', url: 'https://cdn.example.com/p.png', localPath: 'media/t-preserve/0.png' },
+      ])
+      upsertHistoryItemsFromUnknown([
+        makeItem('t-preserve', now, {
+          media: [{ kind: 'image', url: 'https://cdn.example.com/p.png' }],
+        }),
+      ])
+      const item = listHistory().find((i) => i.taskId === 't-preserve')
+      expect(item?.media?.[0]?.localPath).toBe('media/t-preserve/0.png')
+    })
+  })
+
+  describe('deleteHistoryItem and clearUnpinnedHistory', () => {
+    it('deletes one row by taskId', () => {
+      replaceAllFromUnknown([
+        makeItem('t-keep', 1_000),
+        makeItem('t-drop', 2_000),
+      ])
+      expect(deleteHistoryItem('t-drop')).toBe(true)
+      expect(deleteHistoryItem('missing')).toBe(false)
+      expect(listHistory().map((i) => i.taskId)).toEqual(['t-keep'])
+    })
+
+    it('clears unpinned rows and keeps pins', () => {
+      replaceAllFromUnknown([
+        makeItem('t-pin', 1_000, { pinned: true }),
+        makeItem('t-gone', 2_000),
+      ])
+      const remaining = clearUnpinnedHistory()
+      expect(remaining.map((i) => i.taskId)).toEqual(['t-pin'])
+    })
+  })
+
+  it('upsertHistoryItem writes a single row', () => {
+    replaceAllFromUnknown([])
+    upsertHistoryItem(makeItem('t-one', 1_000, { prompt: 'hi' }))
+    expect(listHistory()).toHaveLength(1)
+    expect(listHistory()[0]?.prompt).toBe('hi')
   })
 })

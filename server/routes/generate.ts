@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { assertPlainObject, assertSafeHttpsUrl } from '../kie/safe.ts'
 import { KieApiError } from '../kie/client.ts'
 import { getProviderAdapter } from '../kie/adapters/index.ts'
+import { recordCreatedTask } from '../db/recordTask.ts'
 import { validateJson } from './validation.ts'
 
 export const generateRoutes = new Hono()
@@ -26,6 +27,7 @@ const generateSchema = z.object({
       'aleph',
     ])
     .default('generate'),
+  workflowId: z.string().optional(),
 })
 
 generateRoutes.post('/generate', validateJson(generateSchema), async (c) => {
@@ -64,6 +66,19 @@ generateRoutes.post('/generate', validateJson(generateSchema), async (c) => {
     input: body.input,
     callBackUrl,
   })
+
+  try {
+    await recordCreatedTask({
+      provider,
+      operation,
+      model: body.model,
+      input: body.input as Record<string, unknown>,
+      created,
+      workflowId: body.workflowId,
+    })
+  } catch (err) {
+    console.error('[history] failed to record created task', created.taskId, err)
+  }
 
   return c.json({ data: created })
 })

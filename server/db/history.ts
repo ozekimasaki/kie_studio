@@ -1,6 +1,7 @@
 import type { HistoryItem, MediaAsset } from '../../src/lib/models/types.ts'
 import {
   capItems,
+  isTerminalState,
   mergeHistory,
   normalizeHistoryItems,
 } from '../../src/lib/history.ts'
@@ -169,6 +170,7 @@ export function upsertHistoryItem(item: HistoryItem): void {
         fail_msg = excluded.fail_msg,
         model_id = excluded.model_id,
         input = excluded.input,
+        pinned = excluded.pinned,
         provider = excluded.provider,
         operation = excluded.operation,
         parent_task_id = excluded.parent_task_id,
@@ -180,6 +182,79 @@ export function upsertHistoryItem(item: HistoryItem): void {
         raw_result = excluded.raw_result`,
     )
     .run(itemToParams(item))
+}
+
+function preserveLocalPaths(item: HistoryItem, existing: HistoryItem | null): HistoryItem {
+  if (!existing?.media?.length || !item.media?.length) return item
+  const urlMap = new Map<string, string>()
+  for (const asset of existing.media) {
+    if (asset.localPath) {
+      const key = asset.url ?? asset.streamUrl ?? ''
+      if (key) urlMap.set(key, asset.localPath)
+    }
+  }
+  if (urlMap.size === 0) return item
+  return {
+    ...item,
+    media: item.media.map((asset) => {
+      if (asset.localPath) return asset
+      const key = asset.url ?? asset.streamUrl ?? ''
+      const stored = key ? urlMap.get(key) : undefined
+      return stored ? { ...asset, localPath: stored } : asset
+    }),
+  }
+}
+
+function mergeIncomingHistoryItem(
+  incoming: HistoryItem,
+  existing: HistoryItem | null,
+): HistoryItem {
+  const withPaths = preserveLocalPaths(incoming, existing)
+  if (!existing) return withPaths
+  if (isTerminalState(existing.state) && !isTerminalState(withPaths.state)) {
+    return {
+      ...existing,
+      pinned: withPaths.pinned ?? existing.pinned,
+    }
+  }
+  return {
+    ...withPaths,
+    createdAt: existing.createdAt,
+    pinned: withPaths.pinned ?? existing.pinned,
+  }
+}
+
+/**
+ * Upsert incoming items without deleting rows the client does not know about.
+ * Terminal rows are not overwritten by pending states. Returns the full list.
+ */
+export function upsertHistoryItemsFromUnknown(raw: unknown): HistoryItem[] {
+  if (!Array.isArray(raw)) {
+    throw new Error('items must be an array')
+  }
+  const normalized = normalizeHistoryItems(raw, 'local')
+  const db = getDb()
+  db.transaction(() => {
+    for (const item of normalized) {
+      const existing = getHistoryItem(item.taskId)
+      upsertHistoryItem(mergeIncomingHistoryItem(item, existing))
+    }
+  })()
+  return listHistory()
+}
+
+/** Delete one history row. Returns false when the taskId was not stored. */
+export function deleteHistoryItem(taskId: string): boolean {
+  const result = getDb()
+    .prepare('DELETE FROM history_items WHERE task_id = ?')
+    .run(taskId)
+  return result.changes > 0
+}
+
+/** Drop every non-pinned row. Returns the remaining (pinned) list. */
+export function clearUnpinnedHistory(): HistoryItem[] {
+  getDb().prepare('DELETE FROM history_items WHERE pinned = 0').run()
+  return listHistory()
 }
 
 /** Read one history item by task id. */

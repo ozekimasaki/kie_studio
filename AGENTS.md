@@ -102,6 +102,7 @@ server/
 electrobun.config.ts   # Electrobun ビルド設定
 scripts/sync-models.ts
 docs/PRE_RELEASE.md    # リリース前チェックリスト
+cli/                   # kiestudio CLI（Studio API クライアント。結果は Gallery 履歴へ）
 .indexion/wiki/        # プロジェクト知識ベース
 ```
 
@@ -132,6 +133,7 @@ docs/PRE_RELEASE.md    # リリース前チェックリスト
 | `server/grok/` | Grok CLI（プロンプト最適化） |
 | `server/grokOauth/` | X OAuth ログイン + `/api/grok-oauth/v1` プロキシ（エージェント用。`server/grok/` とは別） |
 | `server/catalog/` + `scripts/` | カタログ同期 |
+| `cli/` | `kiestudio` CLI。公開 `/api` のクライアント。生成は履歴へ記録され Gallery で管理する |
 | `docs/PRE_RELEASE.md` | Pre-release チェックリスト |
 | `.indexion/wiki/` | indexion 知識ベース |
 
@@ -174,6 +176,9 @@ docs/PRE_RELEASE.md    # リリース前チェックリスト
 | デザイン | `impeccable`, `baseline-ui`, `emil-design-eng`, `make-interfaces-feel-better`, `apple-design` | UI 品質（DESIGN.md 優先順位に従う） |
 | モーション | `animation-principles`, `mastering-animate-presence` | Motion / AnimatePresence |
 | 型 | `typescript-advanced-types` | 高度な型設計 |
+| CLI | `kiestudio-cli` | ターミナルから生成・モデル一覧・履歴確認（`.cursor/skills/kiestudio-cli`） |
+| CLI 実装 | `kiestudio-cli-maintain` | CLI / 履歴 upsert / Gallery merge を触るとき |
+| CLI 検証 | `verify-kiestudio-cli` | CLI の doctor と generate→history の証明 |
 | デバッグ | `diagnosing-bugs`, `systematic-debugging` | 障害診断 |
 | リファクタ | `refactor`, `improve-codebase-architecture` | 安全なリファクタリング |
 
@@ -243,6 +248,7 @@ npm run build            # tsc -b + vite build
 npm run preview          # ビルド成果物をプレビュー
 npm run sync:models      # カタログ同期
 npm run sync:models -- --force
+npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 ```
 
 - 検証は `npm run lint` + `npm test` + `npx tsc -b` + `npm run build` を基本とする。

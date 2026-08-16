@@ -35,9 +35,23 @@ npm run lint
 npm run build
 npm run sync:models
 npm run sync:models -- --force
+npm run kiestudio -- --help
 ```
 
 起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。
+
+## CLI
+
+`kiestudio` は起動中の Studio API のクライアント。生成結果は同じ SQLite 履歴に載り、Gallery で管理する。
+
+```bash
+kiestudio up
+kiestudio models --category image
+kiestudio generate -m flux-kontext-pro -p "a red bicycle" --wait
+kiestudio history
+```
+
+API 未起動時は `kiestudio up` または `npm run dev`。エージェント向け手順は `.cursor/skills/kiestudio-cli/SKILL.md`。
 
 ## See Also
 

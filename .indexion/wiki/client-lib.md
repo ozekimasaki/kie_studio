@@ -8,7 +8,7 @@
 | `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |
 | `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |
 | `taskRelations.ts` | 編集・Aleph の parent task 決定 |
-| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化 |
+| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化、`mergeServerHistory`（CLI 件の Gallery 反映） |
 | `form.ts` | default、dirty、schema 制約検証、先頭 error focus |
 | `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |
 | `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |

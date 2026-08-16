@@ -46,7 +46,9 @@ bun.lock
 # Local agent / skill tooling (not part of the app)
 .agents/
 .claude/
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 .kiro/
 .qoder/
 skills-lock.json

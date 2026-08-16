@@ -12,8 +12,8 @@ import {
   getHistoryItem,
   listHistory,
   updateMediaLocalPaths,
-  upsertHistoryItem,
 } from '../db/history.ts'
+import { mirrorTaskIntoHistory, recordCreatedTask } from '../db/recordTask.ts'
 import {
   getCustomLlmEndpoints,
   getDefaultLlmModel,
@@ -166,31 +166,14 @@ agentInternalRoutes.post('/internal/agent/generate', validateJson(generateBodySc
     input: body.input as Record<string, unknown>,
   })
 
-  // Resolve catalog metadata for a useful history entry.
-  const merged = await listMergedModels()
-  const definition =
-    (body.workflowId
-      ? merged?.models.find((m) => m.id === body.workflowId)
-      : undefined) ??
-    merged?.models.find(
-      (m) => m.provider === body.provider && m.model === body.model,
-    )
-  const input = body.input as Record<string, unknown>
-  const prompt = typeof input.prompt === 'string' ? input.prompt : undefined
-
-  upsertHistoryItem({
-    taskId: created.taskId,
-    model: body.title ?? definition?.title ?? body.model,
-    category: definition?.category ?? 'image',
-    state: created.task?.state ?? 'waiting',
-    createdAt: created.task?.createTime ?? Date.now(),
+  await recordCreatedTask({
     provider: body.provider,
     operation: body.operation,
-    modelId: definition?.id ?? body.workflowId ?? body.model,
-    input,
-    ...(prompt !== undefined ? { prompt } : {}),
-    ...(created.task?.resultUrls?.length ? { resultUrls: created.task.resultUrls } : {}),
-    ...(created.task?.media?.length ? { media: created.task.media } : {}),
+    model: body.model,
+    input: body.input as Record<string, unknown>,
+    created,
+    workflowId: body.workflowId,
+    title: body.title,
   })
 
   return c.json({ data: { taskId: created.taskId } })
@@ -213,23 +196,7 @@ agentInternalRoutes.get('/internal/agent/task', async (c) => {
       .catch((err) => console.error('[media-archive]', taskId, err))
   }
 
-  // Mirror terminal states into history so agent-created tasks stay correct
-  // even when no studio client is polling.
-  if (task.state === 'success' || task.state === 'partial' || task.state === 'fail') {
-    const existing = getHistoryItem(taskId)
-    if (existing && existing.state !== task.state) {
-      upsertHistoryItem({
-        ...existing,
-        state: task.state,
-        resultUrls: task.resultUrls.length ? task.resultUrls : existing.resultUrls,
-        media: task.media.length ? task.media : existing.media,
-        failMsg: task.failMsg ?? existing.failMsg,
-        creditsConsumed: task.creditsConsumed ?? existing.creditsConsumed,
-        expiresAt: task.expiresAt ?? existing.expiresAt,
-        partial: task.partial ?? existing.partial,
-      })
-    }
-  }
+  mirrorTaskIntoHistory(task)
 
   return c.json({ data: task })
 })

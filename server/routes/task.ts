@@ -3,6 +3,7 @@ import { getProviderAdapter } from '../kie/adapters/index.ts'
 import type { Operation, Provider } from '../kie/types.ts'
 import { archiveTaskMedia } from '../media/archiver.ts'
 import { updateMediaLocalPaths } from '../db/history.ts'
+import { mirrorTaskIntoHistory } from '../db/recordTask.ts'
 
 export const taskRoutes = new Hono()
 
@@ -21,6 +22,12 @@ taskRoutes.get('/task', async (c) => {
     void archiveTaskMedia(taskId, task.media)
       .then((archived) => updateMediaLocalPaths(taskId, archived))
       .catch((err) => console.error('[media-archive]', taskId, err))
+  }
+
+  try {
+    mirrorTaskIntoHistory(task)
+  } catch (err) {
+    console.error('[history] failed to mirror task', taskId, err)
   }
 
   return c.json({ data: task })

@@ -5,9 +5,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { generateRoutes } from './generate.ts'
 
 const create = vi.fn(async () => ({ taskId: 't-1' }))
+const recordCreatedTask = vi.fn(async () => undefined)
 
 vi.mock('../kie/adapters/index.ts', () => ({
   getProviderAdapter: () => ({ create }),
+}))
+
+vi.mock('../db/recordTask.ts', () => ({
+  recordCreatedTask: (...args: unknown[]) => recordCreatedTask(...args),
 }))
 
 function makeApp() {
@@ -67,6 +72,14 @@ describe('POST /generate validation', () => {
       input: { prompt: 'hi' },
       callBackUrl: undefined,
     })
+    expect(recordCreatedTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'market',
+        operation: 'generate',
+        model: 'test/model',
+        created: { taskId: 't-1' },
+      }),
+    )
   })
 
   it('rejects a non-https callBackUrl', async () => {

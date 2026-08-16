@@ -41,7 +41,7 @@ React UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO �
 
 Runway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。
 
-ギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。
+ギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。ウィンドウフォーカス時に `GET /api/history` を merge し、CLI やエージェントが追加した taskId をギャラリーへ載せる。
 
 ## 軽量化
 

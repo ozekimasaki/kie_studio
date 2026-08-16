@@ -337,7 +337,25 @@ export async function putHistory(
     body: JSON.stringify({ items }),
   })
   return parseJson<{
-    data: { items: HistoryItem[] }
+    data: { items: HistoryItem[]; count?: number }
+  }>(res)
+}
+
+export async function deleteHistoryItem(taskId: string) {
+  const res = await fetch(apiUrl(`/api/history/${encodeURIComponent(taskId)}`), {
+    method: 'DELETE',
+  })
+  return parseJson<{
+    data: { items: HistoryItem[]; count: number }
+  }>(res)
+}
+
+export async function clearUnpinnedHistory() {
+  const res = await fetch(apiUrl('/api/history/clear-unpinned'), {
+    method: 'POST',
+  })
+  return parseJson<{
+    data: { items: HistoryItem[]; count: number }
   }>(res)
 }
 

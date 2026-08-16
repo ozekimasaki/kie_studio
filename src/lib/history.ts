@@ -18,6 +18,62 @@ export const UNKNOWN_STALE_MS = 10 * 60 * 1000
 /** Cap for waiting/queuing/generating — stops eternal polling. */
 export const PENDING_STALE_MS = 60 * 60 * 1000
 
+/** Terminal gallery states that must not be overwritten by in-flight polls. */
+export function isTerminalState(state: TaskState): boolean {
+  switch (state) {
+    case 'success':
+    case 'fail':
+    case 'partial':
+    case 'expired':
+      return true
+    case 'waiting':
+    case 'queuing':
+    case 'generating':
+    case 'unknown':
+      return false
+    default: {
+      const _exhaustive: never = state
+      return _exhaustive
+    }
+  }
+}
+
+function shouldPreferServerItem(local: HistoryItem, remote: HistoryItem): boolean {
+  if (isTerminalState(remote.state) && !isTerminalState(local.state)) return true
+  if (isTerminalState(local.state) && !isTerminalState(remote.state)) return false
+  if (remote.state !== local.state) return true
+  const remoteMedia = remote.media?.length ?? remote.resultUrls?.length ?? 0
+  const localMedia = local.media?.length ?? local.resultUrls?.length ?? 0
+  return remoteMedia > localMedia
+}
+
+/**
+ * Fold a server history snapshot into the in-memory gallery list.
+ * Unknown taskIds are added; terminal remote state wins over local pending;
+ * local pin flags are kept.
+ */
+export function mergeServerHistory(
+  local: HistoryItem[],
+  server: HistoryItem[],
+): HistoryItem[] {
+  const byId = new Map<string, HistoryItem>()
+  for (const item of local) byId.set(item.taskId, item)
+  for (const remote of server) {
+    const current = byId.get(remote.taskId)
+    if (!current) {
+      byId.set(remote.taskId, remote)
+      continue
+    }
+    const next = shouldPreferServerItem(current, remote)
+      ? { ...remote, pinned: current.pinned ?? remote.pinned }
+      : current
+    byId.set(remote.taskId, next)
+  }
+  return capItems(
+    [...byId.values()].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
+  )
+}
+
 /**
  * Normalize API/local timestamps to milliseconds.
  * Values below 1e12 are treated as Unix seconds.

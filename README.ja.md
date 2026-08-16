@@ -109,8 +109,8 @@ npm run sync:models -- --force
 | POST | `/api/upload` | File Upload API へ転送。音源は素材棚へ登録 |
 | GET | `/api/audio-assets` | 外部音源素材棚の一覧 |
 | DELETE | `/api/audio-assets/:id` | 外部音源素材を削除 |
-| POST | `/api/generate` | provider / operation adapter でタスク作成 |
-| GET | `/api/task?provider=&operation=&taskId=` | provider ごとの状態を共通形式へ正規化 |
+| POST | `/api/generate` | provider / operation adapter でタスク作成し履歴へ upsert |
+| GET | `/api/task?provider=&operation=&taskId=` | provider ごとの状態を共通形式へ正規化。終端は履歴へ mirror |
 | GET | `/api/credits` | 残クレジット |
 | POST | `/api/download-url` | 一時 DL URL（20分） |
 | POST | `/api/archive` | 複数メディアと歌詞を ZIP 出力 |
@@ -128,7 +128,9 @@ npm run sync:models -- --force
 | GET | `/api/optimize-profile?modelId=` | モデル別最適化プロファイル |
 | POST | `/api/optimize-prompt` | プロンプト最適化 / 生成 |
 | GET | `/api/history` | 履歴一覧（SQLite） |
-| PUT | `/api/history` | 履歴を一括置換 |
+| PUT | `/api/history` | 履歴 upsert（未知の taskId は消さない） |
+| DELETE | `/api/history/:taskId` | 履歴を 1 件削除 |
+| POST | `/api/history/clear-unpinned` | 未ピンの履歴を削除 |
 | POST | `/api/history/import` | JSON から履歴をインポート |
 | POST | `/api/history/migrate` | 旧 localStorage 履歴を移行 |
 | GET | `/api/settings` | API キーの保存有無とマスク表示 |
@@ -170,8 +172,23 @@ npm run sync:models -- --force
 | `npm test` | Vitest を1回実行 |
 | `npm run test:watch` | Vitest を watch モードで実行 |
 | `npm run sync:models` | カタログ手動同期 |
+| `npm run kiestudio` | KIE STUDIO CLI（`bun cli/index.ts`） |
 
 型チェックのみ実行したい場合は `npx tsc -b`（`npm run build` に含まれる）。
+
+## CLI
+
+`kiestudio` は起動中の Studio API のクライアント。生成結果は Gallery と同じ SQLite 履歴に載る。
+
+```bash
+npm run kiestudio -- --help
+kiestudio up
+kiestudio models --category image
+kiestudio generate -m flux-kontext-pro -p "a red bicycle" --wait
+kiestudio history
+```
+
+API が止まっているときは先に `kiestudio up` または `npm run dev`。エージェント向け手順は `.cursor/skills/kiestudio-cli/SKILL.md`。
 
 ## 構成
 
@@ -201,6 +218,7 @@ scripts/embed-win-icon.mjs     # ビルド後に launcher.exe へアイコン埋
 scripts/build-win-installer.mjs # tar.zst 展開 → launcher.exe へアイコン埋め込み → Inno Setup コンパイル
 scripts/collect-release.mjs    # ビルド成果物を永続的な release/ へ集積
 scripts/sync-models.ts  # カタログ同期 CLI
+cli/                    # kiestudio CLI（Studio API クライアント。結果は Gallery へ）
 .github/workflows/release.yml  # 3 OS マトリクスビルド + Releases 公開
 .indexion/wiki/         # プロジェクト知識ベース（indexion wiki）
 ```
