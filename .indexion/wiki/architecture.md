@@ -54,10 +54,11 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 | プラットフォーム | 成果物 | 備考 |
 |------|------|------|
 | Windows x64 | `canary-win-x64-KIESTUDIO-Setup.exe`（Inno Setup） | 第一導線。ARP 登録・アンインストーラー・ショートカット・アイコン。per-user（`%LocalAppData%\ai.kie.studio\<ch>\app`、管理者権限不要） |
-| Linux x64 | `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | tar.gz 自己展開のみ（`.deb` は Electrobun 非対応） |
+| Linux x64 | `canary-linux-x64-KIESTUDIO-<version>.deb`（推奨） / `canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz` | `.deb` は `scripts/build-linux-deb.mjs` で後段生成。Electrobun 純正は tar.gz のみ。インストール先 `/opt/kie-studio/<ch>/` |
 | 自動アップデート | `*.tar.zst` + `update.json` + patch | `RELEASE_BASE_URL` 配下へ配信（Inno Setup 非依存） |
 
 - Windows インストーラーは `installer/win/kie-studio.iss` + `scripts/build-win-installer.mjs`（tar.zst 展開 → launcher.exe へ rcedit アイコン埋め込み → ISCC コンパイル）。`npm run desktop:installer:win`。
+- Linux `.deb` は `scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）。インストール先 `/opt/kie-studio/<ch>/`。`.desktop` / アイコンは `/usr/share/` 配下。
 - アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。
 - arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。
 - アンインストールは `app\` のみ削除し、親ディレクトリの `studio.db` / `flue.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。

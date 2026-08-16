@@ -55,7 +55,7 @@ npm run desktop:build:stable   # Stable 构建
 - **数据存储**：DB 创建在应用用户数据目录（`Utils.paths.userData` 下的 `studio.db`）。开发模式使用 `data/studio.db`。
 - **分发形式**：
   - **Windows**：Inno Setup 安装包 `canary-win-x64-KIESTUDIO-Setup.exe`（首选渠道）。通过 `npm run desktop:installer:win` 生成。在"添加或删除程序"中注册图标、版本和发布者信息；附带卸载程序及开始菜单/桌面快捷方式。Per-user 安装（`%LocalAppData%\ai.kie.studio\<channel>\app`），无需管理员权限。卸载时不会删除用户 DB（`studio.db`）。
-  - **Linux**：仅 tar.gz 自解压归档（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）。Electrobun 原生不支持 `.deb`。
+  - **Linux**：`.deb`（`canary-linux-x64-KIESTUDIO-<version>.deb`）为第一安装包。Electrobun 本身只输出 tar.gz，因此由 `scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）从运行树后段生成 `.deb`。tar.gz（`canary-linux-x64-KIESTUDIO-canary-Setup.tar.gz`）仍一并发布。安装路径为 `/opt/kie-studio/<channel>/`。
   - 自动更新产物（`tar.zst` + `update.json` + patch）照常从 `RELEASE_BASE_URL` 分发（不依赖 Inno Setup）。
 - **应用图标**：`assets/icon-master.svg`（K 字母组合图案）通过 `npm run icons` 转换为 `icon.ico`（Windows，多尺寸）/ `icon.png`（Linux，512px）/ `icon.iconset`（macOS，用 iconutil 转 .icns），并在 `electrobun.config.ts` 中引用。Windows 上由 `scripts/embed-win-icon.mjs` 在构建后将图标嵌入 launcher.exe，以规避 Electrobun 的 rcedit 路径解析 bug（安装包构建时同样重新嵌入）。
 - **支持架构**：
