@@ -27,7 +27,7 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 
 - DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。
 - エージェント会話 DB（`flue.db`）は `FLUE_DB_PATH` で同じ userData に配置。
-- パッケージ時は `agent/dist/` を `agent-server/` として同梱。Electrobun は asar 後に `Resources/app` を消すため `asarUnpack` だけでは足りず、`scripts/keep-agent-server.mjs`（`postBuild`）が `Resources/agent-server` へコピーする。起動時に見つからなければ `app.asar` から userData へ展開する。`loadFlueNodeApplication` で埋め込み、`/agents/*` を転送。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。
+- パッケージ時は `agent/dist/` を `agent-server/` として同梱。Electrobun は asar 後に `Resources/app` を消すため `asarUnpack` だけでは足りず、`scripts/keep-agent-server.mjs`（`postBuild`）が `Resources/agent-server` へコピーする。起動時に見つからなければ `app.asar` から userData へ展開する。Windows では bun エントリが Temp の Worker になるため、`%LocalAppData%\\ai.kie.studio\\<ch>\\app\\bin` へ `chdir` してから `loadFlueNodeApplication` し、`/agents/*` を転送する。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。
 - 起動毎に `STUDIO_AGENT_TOKEN` を発行し、内部 API とエージェントで共有する。
 - 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。
 

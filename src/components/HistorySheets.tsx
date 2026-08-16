@@ -105,6 +105,7 @@ function ViewerImage({
       src={src}
       alt={alt}
       decoding="async"
+      referrerPolicy="no-referrer"
       className="mx-auto max-h-[55vh] w-full object-contain"
       onError={() => setFailed(true)}
     />
@@ -774,6 +775,7 @@ export function HistorySheets({
                           alt={item.prompt || shortModel(item.model)}
                           loading="lazy"
                           decoding="async"
+                          referrerPolicy="no-referrer"
                           className="aspect-square w-full object-contain"
                         />
                       )

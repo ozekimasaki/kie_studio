@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
 import {
+  ensureInstallWorkingDirectory,
+  getLastEmbeddedAgentError,
   loadEmbeddedAgentApp,
   proxyAgentsToSidecar,
   type FlueNodeApplication,
@@ -11,6 +13,11 @@ import {
 
 // Electrobun main process entry (build.bun.entrypoint). Boots the shared Hono
 // app inside Bun and points a native webview at the pre-built React UI.
+
+// Windows packaged: bun/index.js runs as a Worker whose cwd is %TEMP%.
+// Electrobun then fails to read ../Resources/version.json and userData loses
+// identifier/channel. Locate the install bin before touching Utils.paths.
+ensureInstallWorkingDirectory()
 
 // Persist the SQLite DB in the writable userData directory. This MUST be set
 // before the server modules load, because server/db/open.ts reads
@@ -61,7 +68,10 @@ function dispatch(req: Request): Response | Promise<Response> {
   const path = new URL(req.url).pathname
   if (path.startsWith('/agents')) {
     if (agentApp) return agentApp.fetch(req)
-    return proxyAgentsToSidecar(req)
+    return proxyAgentsToSidecar(req, {
+      packaged: true,
+      details: getLastEmbeddedAgentError() ?? undefined,
+    })
   }
   return app.fetch(req)
 }
@@ -87,6 +97,7 @@ console.log(`KIE STUDIO API listening on http://127.0.0.1:${server.port}`)
 
 agentApp = await loadEmbeddedAgentApp(process.env, {
   extractDir: join(userData, 'agent-server'),
+  userData,
 })
 
 let db: ReturnType<typeof getDb> | null = null
