@@ -6,6 +6,7 @@ import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
 import {
   ensureInstallWorkingDirectory,
   getLastEmbeddedAgentError,
+  isPackagedDesktopRuntime,
   loadEmbeddedAgentApp,
   proxyAgentsToSidecar,
   type FlueNodeApplication,
@@ -69,7 +70,7 @@ function dispatch(req: Request): Response | Promise<Response> {
   if (path.startsWith('/agents')) {
     if (agentApp) return agentApp.fetch(req)
     return proxyAgentsToSidecar(req, {
-      packaged: true,
+      packaged: isPackagedDesktopRuntime(),
       details: getLastEmbeddedAgentError() ?? undefined,
     })
   }

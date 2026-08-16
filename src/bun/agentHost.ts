@@ -258,6 +258,25 @@ export function ensureInstallWorkingDirectory(options: {
   return null
 }
 
+/**
+ * `desktop:dev` runs from the repo and should fall back to the Flue sidecar.
+ * Packaged installs — including Windows Temp Workers whose cwd is not the
+ * install — must not. Walk up from cwd looking for the repo marker.
+ */
+export function isPackagedDesktopRuntime(
+  exists: (path: string) => boolean = existsSync,
+  cwd: () => string = () => process.cwd(),
+): boolean {
+  let dir = cwd()
+  for (let depth = 0; depth < 8; depth++) {
+    if (exists(join(dir, 'electrobun.config.ts'))) return false
+    const parent = dirname(dir)
+    if (parent === dir) break
+    dir = parent
+  }
+  return true
+}
+
 export type LoadEmbeddedAgentOptions = {
   /** Writable fallback when Resources/ is read-only (userData/agent-server). */
   extractDir?: string

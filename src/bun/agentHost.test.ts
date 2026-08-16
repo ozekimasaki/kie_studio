@@ -8,6 +8,7 @@ import {
   agentAppCandidates,
   ensureInstallWorkingDirectory,
   extractEmbeddedAgentFromAsar,
+  isPackagedDesktopRuntime,
   knownInstallBinDirs,
   packagedAgentAppPaths,
   proxyAgentsToSidecar,
@@ -188,5 +189,21 @@ describe('ensureInstallWorkingDirectory', () => {
       }),
     ).toBe(bin)
     expect(chdir).toHaveBeenCalledWith(bin)
+  })
+})
+
+describe('isPackagedDesktopRuntime', () => {
+  it('is false in a repo checkout so desktop:dev can use the sidecar', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'kie-repo-'))
+    temps.push(repo)
+    writeFileSync(join(repo, 'electrobun.config.ts'), 'export default {}\n')
+    expect(isPackagedDesktopRuntime(existsSync, () => repo)).toBe(false)
+    expect(isPackagedDesktopRuntime(existsSync, () => join(repo, 'src', 'bun'))).toBe(false)
+  })
+
+  it('is true from a Temp Worker cwd with no repo marker', () => {
+    const tempCwd = mkdtempSync(join(tmpdir(), 'kie-worker-'))
+    temps.push(tempCwd)
+    expect(isPackagedDesktopRuntime(existsSync, () => tempCwd)).toBe(true)
   })
 })
