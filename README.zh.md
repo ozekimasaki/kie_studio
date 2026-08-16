@@ -125,6 +125,10 @@ npm run sync:models -- --force
 | POST | `/api/settings/grok-oauth/login/poll` | 轮询授权 |
 | POST | `/api/settings/grok-oauth/logout` | 清除 OAuth 令牌 |
 | ALL | `/api/grok-oauth/v1/*` | 使用 OAuth Bearer 的 OpenAI 兼容代理 |
+| GET | `/api/agent/health` | Agent 运行时（与 Hono 同一进程） |
+| POST | `/api/agent/chat` | AI SDK UI message stream |
+| GET/POST/PATCH/DELETE | `/api/agent-conversations` | Agent 会话元数据 |
+| GET | `/api/agent-conversations/:id/messages` | 已保存的聊天正文 |
 | GET | `/api/optimize-profile?modelId=` | 按模型的优化配置 |
 | POST | `/api/optimize-prompt` | 提示词优化 / 生成 |
 | GET | `/api/history` | 历史列表（SQLite） |
@@ -154,11 +158,9 @@ npm run sync:models -- --force
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 同时启动 API + Web + 代理 sidecar（`dev:server` + `dev:web` + `dev:agent`） |
+| `npm run dev` | 同时启动 API + Web（`dev:server` + `dev:web`；Agent 聊天在 API 进程内） |
 | `npm run dev:server` | 仅 Hono API（`bun --watch server/index.ts`） |
 | `npm run dev:web` | 仅 Vite 开发服务器 |
-| `npm run dev:agent` | 仅 Flue 代理 sidecar（`127.0.0.1:8789`） |
-| `npm run agent:build` | 构建 `agent/dist`（桌面构建前必需） |
 | `npm run desktop:dev` | 开发模式启动 Electrobun 桌面（`electrobun run --env=dev`） |
 | `npm run desktop:build:canary` | Canary 桌面构建（`vite build` + `electrobun build`） |
 | `npm run desktop:build:stable` | Stable 桌面构建 |
@@ -208,6 +210,7 @@ server/         # Hono API（Bun 运行时，127.0.0.1:8787）
   db/           # bun:sqlite（历史、Persona、音频素材、app_settings）
   grok/         # Grok CLI 集成（提示词优化）
   grokOauth/    # X 账号 OAuth + OpenAI 兼容代理（Agent）
+  agent/        # 同进程 AI SDK Agent（streamText + tools）
   catalog/      # docs OpenAPI + 专用 workflow 集成
 electrobun.config.ts    # Electrobun 构建与分发配置（含 win/linux 图标路径）
 docs/PRE_RELEASE.md     # 发布前检查清单

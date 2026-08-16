@@ -1,30 +1,36 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useFlueAgent } from '@flue/react'
+import { useChat } from '@ai-sdk/react'
 import { AgentChat } from './AgentChat.tsx'
+import { fetchAgentMessages } from '../../lib/agentApi.ts'
 
-const flueMocks = vi.hoisted(() => ({
-  send: vi.fn(),
-  abort: vi.fn(),
+const chatMocks = vi.hoisted(() => ({
   sendMessage: vi.fn(),
-  refresh: vi.fn(),
+  stop: vi.fn(),
+  setMessages: vi.fn(),
 }))
 
-vi.mock('@flue/sdk', () => ({
-  createFlueClient: vi.fn(() => ({ send: flueMocks.send, abort: flueMocks.abort })),
+vi.mock('../../lib/agentApi.ts', () => ({
+  agentChatUrl: () => '/api/agent/chat',
+  fetchAgentMessages: vi.fn().mockResolvedValue([]),
 }))
 
-vi.mock('@flue/react', () => ({
-  useFlueAgent: vi.fn(() => ({
+vi.mock('ai', () => ({
+  DefaultChatTransport: class {
+    constructor(_opts: unknown) {}
+  },
+}))
+
+vi.mock('@ai-sdk/react', () => ({
+  useChat: vi.fn(() => ({
+    id: 'conv-1',
     messages: [],
-    status: 'idle',
-    historyReady: true,
+    status: 'ready',
+    sendMessage: chatMocks.sendMessage,
+    stop: chatMocks.stop,
     error: undefined,
-    failedSends: [],
-    settlements: [],
-    sendMessage: flueMocks.sendMessage,
-    refresh: flueMocks.refresh,
+    setMessages: chatMocks.setMessages,
   })),
 }))
 
@@ -54,70 +60,93 @@ function typeAndSubmit(text: string) {
 }
 
 describe('AgentChat', () => {
+  beforeEach(() => {
+    chatMocks.sendMessage.mockReset()
+    chatMocks.stop.mockReset()
+    chatMocks.setMessages.mockReset()
+    vi.mocked(useChat).mockReset()
+    vi.mocked(useChat).mockImplementation(
+      () =>
+        ({
+          id: 'conv-1',
+          messages: [],
+          status: 'ready',
+          sendMessage: chatMocks.sendMessage,
+          stop: chatMocks.stop,
+          error: undefined,
+          setMessages: chatMocks.setMessages,
+        }) as never,
+    )
+    vi.mocked(fetchAgentMessages).mockReset()
+    vi.mocked(fetchAgentMessages).mockResolvedValue([])
+  })
+
   afterEach(cleanup)
 
-  it('draft 中は observation を dormant に保つ（client 未注入）', () => {
+  it('draft 中は会話履歴を取得しない', async () => {
     renderChat()
-    expect(vi.mocked(useFlueAgent).mock.calls[0]?.[0]).toEqual({ client: undefined })
+    await screen.findByRole('textbox', { name: 'エージェントへのメッセージ' })
+    expect(fetchAgentMessages).not.toHaveBeenCalled()
   })
 
-  it('既存会話ではマウント時に client を注入して observe を開始する', () => {
+  it('既存会話ではマウント時にメッセージを読み込む', async () => {
     renderChat({ isDraft: false })
-    expect(vi.mocked(useFlueAgent).mock.calls[0]?.[0]?.client).toBeTruthy()
+    await waitFor(() => expect(fetchAgentMessages).toHaveBeenCalledWith('conv-1'))
   })
 
-  it('初回送信は initialData を載せ、成功後に observation を有効化する', async () => {
-    flueMocks.send.mockResolvedValue({ submissionId: 'sub-1' })
+  it('既存会話の読み込み失敗を表示する', async () => {
+    vi.mocked(fetchAgentMessages).mockRejectedValue(new Error('Request failed (500)'))
+    renderChat({ isDraft: false })
+    expect(await screen.findByRole('alert')).toHaveTextContent('会話を読み込めませんでした')
+    expect(screen.getByRole('button', { name: '再試行' })).toBeInTheDocument()
+  })
+
+  it('初回送信は sendMessage し、成功後に永続化コールバックを呼ぶ', async () => {
+    chatMocks.sendMessage.mockResolvedValue(undefined)
     const onFirstSent = vi.fn()
     renderChat({ onFirstSent })
     typeAndSubmit('夕焼けの海の画像を作って')
     await waitFor(() =>
-      expect(flueMocks.send).toHaveBeenCalledWith({
-        message: { kind: 'user', body: '夕焼けの海の画像を作って' },
-        initialData: { provider: 'xai', model: 'grok-4' },
-      }),
+      expect(chatMocks.sendMessage).toHaveBeenCalledWith({ text: '夕焼けの海の画像を作って' }),
     )
     await waitFor(() => expect(onFirstSent).toHaveBeenCalledWith('夕焼けの海の画像を作って'))
-    const calls = vi.mocked(useFlueAgent).mock.calls
-    expect(calls.at(-1)?.[0]?.client).toBeTruthy()
-    expect(flueMocks.sendMessage).not.toHaveBeenCalled()
   })
 
   it('初回送信が失敗したら入力を復元し、永続化コールバックを呼ばない', async () => {
-    flueMocks.send.mockRejectedValue(new Error('Flue API error 502: request failed'))
+    chatMocks.sendMessage.mockRejectedValue(new Error('API キーがありません'))
     const onFirstSent = vi.fn()
     renderChat({ onFirstSent })
     typeAndSubmit('失敗するメッセージ')
-    await screen.findByText(
-      '送信に失敗しました: エージェントを起動できませんでした。アプリを再起動してください。',
-    )
+    await screen.findByText('送信に失敗しました: API キーがありません')
     expect(onFirstSent).not.toHaveBeenCalled()
     expect(screen.getByRole('textbox', { name: 'エージェントへのメッセージ' })).toHaveValue(
       '失敗するメッセージ',
     )
   })
 
-  it('2 通目以降は session の sendMessage を使う', async () => {
-    flueMocks.sendMessage.mockResolvedValue(undefined)
+  it('2 通目以降も sendMessage を使う', async () => {
+    chatMocks.sendMessage.mockResolvedValue(undefined)
     renderChat({ isDraft: false })
+    await screen.findByRole('textbox', { name: 'エージェントへのメッセージ' })
     typeAndSubmit('続きのメッセージ')
-    await waitFor(() => expect(flueMocks.sendMessage).toHaveBeenCalledWith('続きのメッセージ'))
-    expect(flueMocks.send).not.toHaveBeenCalled()
+    await waitFor(() => expect(chatMocks.sendMessage).toHaveBeenCalledWith({ text: '続きのメッセージ' }))
   })
 
-  it('接続不能時は警告を表示し、送信欄をブロックしない', () => {
-    vi.mocked(useFlueAgent).mockImplementation(() => ({
-      messages: [],
-      status: 'connecting',
-      historyReady: false,
-      error: new Error('Flue API error 502: request failed'),
-      failedSends: [],
-      settlements: [],
-      sendMessage: flueMocks.sendMessage,
-      refresh: flueMocks.refresh,
-    }))
+  it('error 状態では警告を表示し、送信欄をブロックしない', async () => {
+    vi.mocked(useChat).mockImplementation(
+      () =>
+        ({
+          id: 'conv-1',
+          messages: [],
+          status: 'error',
+          sendMessage: chatMocks.sendMessage,
+          stop: chatMocks.stop,
+          error: new Error('接続できません'),
+          setMessages: chatMocks.setMessages,
+        }) as never,
+    )
     renderChat({ isDraft: false })
-    expect(screen.getByText(/エージェントを起動できませんでした/)).toBeInTheDocument()
+    expect(await screen.findByText('接続できません')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '送信' })).toBeInTheDocument()
   })
 })

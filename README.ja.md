@@ -125,6 +125,10 @@ npm run sync:models -- --force
 | POST | `/api/settings/grok-oauth/login/poll` | 承認ポーリング |
 | POST | `/api/settings/grok-oauth/logout` | OAuth トークン削除 |
 | ALL | `/api/grok-oauth/v1/*` | OAuth Bearer の OpenAI 互換プロキシ |
+| GET | `/api/agent/health` | エージェントランタイム（Hono 同一プロセス） |
+| POST | `/api/agent/chat` | AI SDK UI message stream |
+| GET/POST/PATCH/DELETE | `/api/agent-conversations` | エージェント会話メタデータ |
+| GET | `/api/agent-conversations/:id/messages` | 保存済みチャット本文 |
 | GET | `/api/optimize-profile?modelId=` | モデル別最適化プロファイル |
 | POST | `/api/optimize-prompt` | プロンプト最適化 / 生成 |
 | GET | `/api/history` | 履歴一覧（SQLite） |
@@ -154,11 +158,9 @@ npm run sync:models -- --force
 
 | コマンド | 説明 |
 |----------|------|
-| `npm run dev` | API + Web + エージェント sidecar を同時起動（`dev:server` + `dev:web` + `dev:agent`） |
+| `npm run dev` | API + Web を同時起動（`dev:server` + `dev:web`。エージェントは API プロセス内） |
 | `npm run dev:server` | Hono API のみ（`bun --watch server/index.ts`） |
 | `npm run dev:web` | Vite 開発サーバーのみ |
-| `npm run dev:agent` | Flue エージェント sidecar のみ（`127.0.0.1:8789`） |
-| `npm run agent:build` | `agent/dist` をビルド（desktop ビルド前に必須） |
 | `npm run desktop:dev` | Electrobun デスクトップを開発起動（`electrobun run --env=dev`） |
 | `npm run desktop:build:canary` | canary デスクトップビルド（`vite build` + `electrobun build`） |
 | `npm run desktop:build:stable` | stable デスクトップビルド |
@@ -208,6 +210,7 @@ server/         # Hono API（Bun ランタイム、127.0.0.1:8787）
   db/           # bun:sqlite（履歴・Persona・音源素材・app_settings）
   grok/         # Grok CLI 連携（プロンプト最適化）
   grokOauth/    # X アカウント OAuth + OpenAI 互換プロキシ（エージェント）
+  agent/        # 同一プロセスの AI SDK エージェント（streamText + tools）
   catalog/      # docs OpenAPI と専用 workflow の統合
 electrobun.config.ts    # Electrobun ビルド・配布設定（win/linux のアイコン指定を含む）
 docs/PRE_RELEASE.md     # リリース前チェックリスト

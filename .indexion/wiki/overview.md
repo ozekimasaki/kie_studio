@@ -13,6 +13,7 @@ API キーはサーバー側（`.env` の `KIE_API_KEY`）だけに置き、フ�
 - VIDEO: Aleph、延長、高画質化、リップシンクの Quick Action
 - SQLite 履歴、親子タスク、複数メディア、部分成功、元レスポンス診断
 - ローカル送信キュー、期限表示、生成グループの ZIP 保存
+- エージェントモード: Hono 同一プロセスの Vercel AI SDK で生成を会話駆動（Flue sidecar は無い）
 
 チャット系エンドポイントと、DAW 寄りの stem / MIDI / Music Video は対象外。
 

@@ -12,7 +12,6 @@ npm run lint && npm test && npx tsc -b
 
 ```bash
 npm run build
-npm run agent:build
 ```
 
 ## 2. 機能スモーク

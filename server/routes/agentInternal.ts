@@ -24,10 +24,11 @@ import { mergeCustomEndpointsWithGrokOauth } from '../grokOauth/systemEndpoint.t
 import { validateJson } from './validation.ts'
 
 /**
- * Internal API consumed by the agent server (Flue) over loopback.
- * The custom token header forces a CORS preflight, so arbitrary web pages
- * cannot read this API cross-origin. The token is shared with the agent
- * server via STUDIO_AGENT_TOKEN; the packaged desktop generates one per boot.
+ * Internal API consumed by in-process tools historically over loopback.
+ * Kept for debugging / future external agents. The custom token header
+ * forces a CORS preflight, so arbitrary web pages cannot read this API
+ * cross-origin. The token is STUDIO_AGENT_TOKEN; the packaged desktop
+ * generates one per boot.
  */
 export const INTERNAL_TOKEN_ENV = 'STUDIO_AGENT_TOKEN'
 export const INTERNAL_TOKEN_DEFAULT = 'kie-studio-agent-dev'

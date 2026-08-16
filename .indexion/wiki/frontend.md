@@ -19,7 +19,7 @@ React UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO �
 | コンポーネント | 役割 |
 |------|------|
 | `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体 |
-| `components/agent/AgentChat.tsx` | `useFlueAgent` による送受信・SSE |
+| `components/agent/AgentChat.tsx` | `useChat`（AI SDK）による送受信。`POST /api/agent/chat`。既存会話の messages GET 失敗時はエラーと再試行 |
 | `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |
 | `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |
 | `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |

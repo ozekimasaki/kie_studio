@@ -1,6 +1,6 @@
 # Server API
 
-Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。デスクトップでは Electrobun メインが同じプロセスで Hono を起動し、`/agents/*` は埋め込み Flue へ転送する。
+Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。`127.0.0.1:8787` で待受し、API key はサーバーだけが保持する。デスクトップでは Electrobun メインが同じプロセスで Hono を起動する。エージェントチャットもこのプロセス内（`POST /api/agent/chat`）。
 
 ## 主要ルート
 
@@ -25,8 +25,11 @@ Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。
 | GET | `/api/credits` | 残高 |
 | POST | `/api/download-url` | 一時 download URL |
 | GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |
-| GET/POST/PATCH/DELETE | `/api/agent/conversations` | エージェント会話メタデータ |
-| * | `/api/internal/agent/*` | Flue エージェント専用（`x-studio-agent-token` 必須） |
+| GET | `/api/agent/health` | エージェントランタイム（Hono 生存確認） |
+| POST | `/api/agent/chat` | AI SDK UI message stream |
+| GET/POST/PATCH/DELETE | `/api/agent-conversations` | エージェント会話メタデータ |
+| GET | `/api/agent-conversations/:id/messages` | 保存済みチャット本文 |
+| * | `/api/internal/agent/*` | 旧内部 API（`x-studio-agent-token` 必須）。現行チャットは使わない |
 
 ## 内部エージェント API
 
@@ -45,7 +48,7 @@ Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。
 
 ## DB
 
-`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。メディア本体は保存しない。Flue 会話本体は別 DB（`FLUE_DB_PATH` / `flue.db`）。
+`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。エージェント本文は `agent_conversations.messages_json`（additive）。メディア本体は保存しない。旧 `flue.db` は読まない。
 
 ## エラー
 

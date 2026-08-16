@@ -12,7 +12,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "getting-started",
@@ -26,7 +26,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "core-concepts",
@@ -54,8 +54,8 @@
         "src/App.tsx",
         "src/components/shell/",
         "src/bun/index.ts",
-        "src/bun/agentHost.ts",
-        "agent/",
+        "src/bun/installCwd.ts",
+        "server/agent/",
         "electrobun.config.ts",
         "server/db/"
       ],
@@ -91,7 +91,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "server-api",
@@ -102,9 +102,11 @@
         "server/index.ts",
         "server/routes/",
         "server/db/",
+        "server/routes/agentChat.ts",
         "server/routes/agentInternal.ts",
         "server/routes/llmSettings.ts",
-        "server/routes/agentConversations.ts"
+        "server/routes/agentConversations.ts",
+        "server/agent/"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -156,10 +158,12 @@
       "title": "Agent Mode",
       "file": "agent-mode.md",
       "sources": [
-        "agent/",
+        "server/agent/",
         "src/components/agent/",
-        "src/bun/agentHost.ts",
+        "src/lib/agentApi.ts",
         "src/bun/index.ts",
+        "src/bun/installCwd.ts",
+        "server/routes/agentChat.ts",
         "server/routes/agentInternal.ts",
         "server/routes/llmSettings.ts",
         "server/routes/agentConversations.ts",
@@ -167,7 +171,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:kimi"
+      "last_actor": "agent:cursor"
     }
   ]
 }

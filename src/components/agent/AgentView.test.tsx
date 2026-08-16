@@ -11,7 +11,8 @@ vi.mock('../../lib/agentApi.ts', () => ({
   deleteAgentConversation: vi.fn().mockResolvedValue(undefined),
   renameAgentConversation: vi.fn().mockResolvedValue({}),
   newConversationId: vi.fn(() => 'draft-conv-1'),
-  agentConversationUrl: (id: string) => `/agents/studio/${id}`,
+  agentChatUrl: () => '/api/agent/chat',
+  fetchAgentMessages: vi.fn().mockResolvedValue([]),
 }))
 
 vi.mock('./AgentModelPicker.tsx', () => ({
@@ -115,11 +116,11 @@ describe('AgentView', () => {
     })
   })
 
-  it('Flue 不通時は送信前に警告する', async () => {
+  it('API 不通時は送信前に警告する', async () => {
     vi.mocked(fetchAgentHealth).mockRejectedValue(new Error('Request failed (502)'))
     renderView()
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'エージェントを起動できませんでした',
+      'エージェントに接続できませんでした',
     )
   })
 })

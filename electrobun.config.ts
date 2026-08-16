@@ -5,7 +5,7 @@ export default {
   app: {
     name: 'KIE STUDIO',
     identifier: 'ai.kie.studio',
-    version: '1.0.16'
+    version: '1.0.17'
   },
   build: {
     useAsar: true,
@@ -15,16 +15,12 @@ export default {
     },
     views: {},
     // Vite build output (base: '/') → packaged webview under views://mainview/.
-    // agent/dist is the self-contained Flue embed (ssr.noExternal); no node_modules staging.
     copy: {
       'dist/index.html': 'views/mainview/index.html',
       'dist/assets/': 'views/mainview/assets/',
       'dist/favicon.svg': 'views/mainview/favicon.svg',
-      'agent/dist/': 'agent-server/',
     },
-    // Native modules must stay unpacked. `agent-server/**` is also listed, but
-    // Electrobun deletes Resources/app after packing so postBuild copies it out.
-    asarUnpack: ['*.node', '*.dll', '*.dylib', '*.so', 'agent-server/**'],
+    asarUnpack: ['*.node', '*.dll', '*.dylib', '*.so'],
     watchIgnore: ['dist/**'],
     // Code signing / notarization are out of scope (unsigned distribution).
     mac: {
@@ -45,10 +41,6 @@ export default {
       // App icon for installer / shortcuts / taskbar (multi-size ICO).
       icon: 'assets/icon.ico',
     },
-  },
-  scripts: {
-    // Copy agent-server out of Resources/app before Electrobun packs+deletes it.
-    postBuild: 'scripts/keep-agent-server.mjs',
   },
   release: {
     // Static host for differential auto-updates; empty disables updates.

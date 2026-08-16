@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { createFlueClient, type FlueClient } from '@flue/sdk'
-import { useFlueAgent, type FlueConversationMessage, type FlueConversationPart } from '@flue/react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport, type UIMessage } from 'ai'
 import {
   AlertTriangle,
   Brain,
@@ -11,15 +11,32 @@ import {
   Square,
   Wrench,
 } from 'lucide-react'
-import { agentConversationUrl } from '../../lib/agentApi.ts'
+import { agentChatUrl, fetchAgentMessages } from '../../lib/agentApi.ts'
 import { AGENT_UNAVAILABLE_MESSAGE, formatAgentSendError } from '../../lib/agentUnavailable.ts'
 import { AgentMediaTaskCard } from './AgentMediaTaskCard.tsx'
-import { readMediaTaskData } from './mediaTaskData.ts'
+import { readMediaTaskData, type MediaTaskData } from './mediaTaskData.ts'
 
-type ToolPart = Extract<FlueConversationPart, { type: 'dynamic-tool' }>
+type ToolLikePart = {
+  type: string
+  toolName?: string
+  state?: string
+  input?: unknown
+  output?: unknown
+  errorText?: string
+}
 
-/** One-line `verb arg` summary of a tool call (demo tool-display pattern). */
-function toolSummary(part: ToolPart): string {
+function isToolPart(part: { type: string }): part is ToolLikePart {
+  return part.type === 'dynamic-tool' || part.type.startsWith('tool-')
+}
+
+function toolNameOf(part: ToolLikePart): string {
+  if (typeof part.toolName === 'string' && part.toolName) return part.toolName
+  if (part.type.startsWith('tool-')) return part.type.slice('tool-'.length)
+  return part.type
+}
+
+function toolSummary(part: ToolLikePart): string {
+  const name = toolNameOf(part)
   const input = part.input
   const field = (key: string): string | undefined => {
     if (input && typeof input === 'object' && key in input) {
@@ -29,7 +46,7 @@ function toolSummary(part: ToolPart): string {
     }
     return undefined
   }
-  switch (part.toolName) {
+  switch (name) {
     case 'list-workflows':
       return `ワークフロー検索 ${field('capability') ?? field('q') ?? field('category') ?? ''}`.trim()
     case 'get-workflow-schema':
@@ -47,13 +64,13 @@ function toolSummary(part: ToolPart): string {
     case 'optimize-prompt':
       return 'プロンプト最適化'
     default:
-      return part.toolName
+      return name
   }
 }
 
-function ToolCard({ part }: { part: ToolPart }) {
+function ToolCard({ part }: { part: ToolLikePart }) {
   const [open, setOpen] = useState(false)
-  const running = part.state === 'input-available'
+  const running = part.state === 'input-available' || part.state === 'input-streaming'
   const errored = part.state === 'output-error'
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] text-xs">
@@ -117,35 +134,39 @@ function ReasoningBlock({ text, streaming }: { text: string; streaming: boolean 
   )
 }
 
-function MessagePart({ part }: { part: FlueConversationPart }) {
-  switch (part.type) {
-    case 'text':
-      return <p className="whitespace-pre-wrap break-words">{part.text}</p>
-    case 'reasoning':
-      return <ReasoningBlock text={part.text} streaming={part.state === 'streaming'} />
-    case 'file':
-      if (part.url && part.mediaType.startsWith('image/')) {
-        return (
-          <img
-            src={part.url}
-            alt={part.filename ?? '添付'}
-            className="max-h-48 rounded-[var(--radius-md)]"
-          />
-        )
-      }
-      return <span className="text-xs text-[var(--text-muted)]">{part.filename ?? part.mediaType}</span>
-    case 'dynamic-tool':
-      return <ToolCard part={part} />
-    default:
-      if (part.type === 'data-media-task') {
-        const data = readMediaTaskData((part as { data: unknown }).data)
-        if (data) return <AgentMediaTaskCard data={data} />
-      }
-      return null
+type StudioChatMessage = UIMessage<unknown, { 'media-task': MediaTaskData }>
+type ChatPart = StudioChatMessage['parts'][number]
+
+function MessagePart({ part }: { part: ChatPart }) {
+  if (part.type === 'text') {
+    return <p className="whitespace-pre-wrap break-words">{part.text}</p>
   }
+  if (part.type === 'reasoning') {
+    return <ReasoningBlock text={part.text} streaming={part.state === 'streaming'} />
+  }
+  if (part.type === 'file' && part.url && part.mediaType.startsWith('image/')) {
+    return (
+      <img
+        src={part.url}
+        alt={part.filename ?? '添付'}
+        className="max-h-48 rounded-[var(--radius-md)]"
+      />
+    )
+  }
+  if (part.type === 'file') {
+    return <span className="text-xs text-[var(--text-muted)]">{part.filename ?? part.mediaType}</span>
+  }
+  if (isToolPart(part)) {
+    return <ToolCard part={part} />
+  }
+  if (part.type === 'data-media-task') {
+    const data = readMediaTaskData(part.data)
+    if (data) return <AgentMediaTaskCard data={data} />
+  }
+  return null
 }
 
-function MessageBubble({ message }: { message: FlueConversationMessage }) {
+function MessageBubble({ message }: { message: StudioChatMessage }) {
   const isUser = message.role === 'user'
   return (
     <div className={isUser ? 'flex justify-end' : 'flex justify-start'}>
@@ -168,37 +189,59 @@ export interface AgentChatProps {
   conversationId: string
   provider: string
   model: string
-  /** True while the conversation is a local draft: nothing persisted, no agent instance. */
+  /** True while the conversation is a local draft: nothing persisted. */
   isDraft: boolean
   /** Called once the draft's first message was accepted, so the caller can persist it. */
   onFirstSent?: (text: string) => void
 }
 
-export function AgentChat({ conversationId, provider, model, isDraft, onFirstSent }: AgentChatProps) {
+function asUiMessages(value: unknown): StudioChatMessage[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is StudioChatMessage => {
+    if (!item || typeof item !== 'object') return false
+    const message = item as { id?: unknown; role?: unknown; parts?: unknown }
+    return typeof message.id === 'string' && typeof message.role === 'string' && Array.isArray(message.parts)
+  })
+}
+
+function AgentChatSession({
+  conversationId,
+  provider,
+  model,
+  isDraft,
+  onFirstSent,
+  initialMessages,
+}: AgentChatProps & { initialMessages: StudioChatMessage[] }) {
   const queryClient = useQueryClient()
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  // Drafts have no agent instance yet: keep the observation dormant (zero
-  // requests) until the first send creates it, then hydrate + follow live.
-  const [activated, setActivated] = useState(!isDraft)
   const freshRef = useRef(isDraft)
   const seenTaskIdsRef = useRef(new Set<string>())
   const scrollRef = useRef<HTMLDivElement>(null)
+  const snapshotRef = useRef<StudioChatMessage[]>(initialMessages)
 
-  const client: FlueClient = useMemo(
-    () => createFlueClient({ url: agentConversationUrl(conversationId) }),
-    [conversationId],
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: agentChatUrl(),
+        body: { conversationId, provider, model },
+      }),
+    [conversationId, provider, model],
   )
-  const agent = useFlueAgent({ client: activated ? client : undefined })
 
-  // Invalidate the studio history when the agent created a task, so the
-  // gallery and its polling pick it up without a manual refresh.
+  const { messages, sendMessage, status, stop, error, setMessages } = useChat<StudioChatMessage>({
+    id: conversationId,
+    messages: initialMessages,
+    transport,
+  })
+
+  snapshotRef.current = messages
+
   useEffect(() => {
-    for (const message of agent.messages) {
+    for (const message of messages) {
       for (const part of message.parts) {
-        if (part.type !== 'dynamic-tool' || part.state !== 'output-available') continue
-        if (part.toolName !== 'generate-media') continue
+        if (!isToolPart(part) || part.state !== 'output-available') continue
+        if (toolNameOf(part) !== 'generate-media') continue
         const output = part.output as { taskId?: unknown } | undefined
         const taskId = output && typeof output.taskId === 'string' ? output.taskId : null
         if (taskId && !seenTaskIdsRef.current.has(taskId)) {
@@ -207,46 +250,33 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
         }
       }
     }
-  }, [agent.messages, queryClient])
+  }, [messages, queryClient])
 
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [agent.messages])
+  }, [messages])
 
-  const responding = agent.status === 'submitted' || agent.status === 'streaming'
-  const busy = submitting || responding
+  const responding = status === 'submitted' || status === 'streaming'
+  const migratedEmpty = !isDraft && initialMessages.length === 0 && messages.length === 0
 
   async function submit() {
     const text = input.trim()
-    if (!text || busy) return
+    if (!text || responding) return
+    const previous = snapshotRef.current
     setInput('')
     setSendError(null)
-    if (freshRef.current) {
-      freshRef.current = false
-      setSubmitting(true)
-      try {
-        // First send carries the model selection as instance-creation data.
-        await client.send({
-          message: { kind: 'user', body: text },
-          initialData: { provider, model },
-        })
-        setActivated(true)
-        onFirstSent?.(text)
-      } catch (error) {
-        freshRef.current = true
-        setInput(text)
-        setSendError(formatAgentSendError(error))
-      } finally {
-        setSubmitting(false)
-      }
-      return
-    }
     try {
-      await agent.sendMessage(text)
-    } catch (error) {
+      await sendMessage({ text })
+      if (freshRef.current) {
+        freshRef.current = false
+        onFirstSent?.(text)
+      }
+    } catch (err) {
+      freshRef.current = isDraft
+      setMessages(previous)
       setInput(text)
-      setSendError(formatAgentSendError(error))
+      setSendError(formatAgentSendError(err))
     }
   }
 
@@ -254,37 +284,29 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
     <div className="flex min-h-0 flex-1 flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         <div className="mx-auto grid max-w-3xl gap-4">
-          {agent.messages.length === 0 && (
+          {messages.length === 0 && (
             <div className="py-16 text-center">
               <p className="studio-empty-title">エージェントに話しかけましょう</p>
               <p className="studio-empty-body mt-2">
-                例: 「夕焼けの海の画像を作って」「この写真を動画にして」「曲の続きを作って」
+                {migratedEmpty
+                  ? 'この会話の本文は旧エージェントに保存されていました。新しいメッセージから、ここへ記録します。'
+                  : '例: 「夕焼けの海の画像を作って」「この写真を動画にして」「曲の続きを作って」'}
               </p>
             </div>
           )}
-          {agent.messages.map((message) => (
+          {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
-          {(busy || agent.status === 'connecting') && (
+          {responding && (
             <p className="flex items-center gap-2 px-1 text-xs text-[var(--text-muted)]">
               <Loader2 size={13} className="animate-spin" aria-hidden />
-              {agent.status === 'streaming'
-                ? '応答を生成中…'
-                : agent.status === 'connecting'
-                  ? 'エージェントサーバーに接続中…'
-                  : '送信中…'}
+              {status === 'streaming' ? '応答を生成中…' : '送信中…'}
             </p>
           )}
-          {agent.status === 'connecting' && agent.error && (
+          {status === 'error' && (
             <p className="flex items-center gap-2 px-1 text-xs text-[var(--danger)]" role="alert">
               <AlertTriangle size={13} aria-hidden />
-              {AGENT_UNAVAILABLE_MESSAGE} 自動で再試行します。
-            </p>
-          )}
-          {agent.status === 'error' && (
-            <p className="flex items-center gap-2 px-1 text-xs text-[var(--danger)]" role="alert">
-              <AlertTriangle size={13} aria-hidden />
-              エージェントとの通信でエラーが発生しました。もう一度送信してください。
+              {error ? formatAgentSendError(error) : AGENT_UNAVAILABLE_MESSAGE}
             </p>
           )}
         </div>
@@ -315,7 +337,7 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
             {responding ? (
               <button
                 type="button"
-                onClick={() => void client.abort().catch(() => {})}
+                onClick={() => void stop()}
                 className="studio-btn w-auto shrink-0 px-3 py-2"
                 aria-label="応答を停止"
               >
@@ -325,7 +347,7 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
               <button
                 type="button"
                 onClick={() => void submit()}
-                disabled={!input.trim() || submitting}
+                disabled={!input.trim()}
                 className="studio-btn-primary studio-btn-compact"
                 aria-label="送信"
               >
@@ -342,3 +364,48 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
   )
 }
 
+export function AgentChat(props: AgentChatProps) {
+  const messagesQuery = useQuery({
+    queryKey: ['agent-messages', props.conversationId],
+    queryFn: () => fetchAgentMessages(props.conversationId),
+    enabled: !props.isDraft,
+  })
+
+  if (!props.isDraft && messagesQuery.isLoading) {
+    return (
+      <div className="grid flex-1 place-items-center text-xs text-[var(--text-muted)]">
+        <p className="flex items-center gap-2">
+          <Loader2 size={14} className="animate-spin" aria-hidden />
+          会話を読み込み中…
+        </p>
+      </div>
+    )
+  }
+
+  if (!props.isDraft && messagesQuery.isError) {
+    return (
+      <div className="grid flex-1 place-items-center px-4 text-xs text-[var(--danger)]">
+        <div className="grid gap-3 text-center">
+          <p className="flex items-center justify-center gap-2" role="alert">
+            <AlertTriangle size={14} aria-hidden />
+            会話を読み込めませんでした: {formatAgentSendError(messagesQuery.error)}
+          </p>
+          <button
+            type="button"
+            className="studio-btn mx-auto w-auto px-3 py-1.5"
+            onClick={() => void messagesQuery.refetch()}
+          >
+            再試行
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <AgentChatSession
+      {...props}
+      initialMessages={props.isDraft ? [] : asUiMessages(messagesQuery.data)}
+    />
+  )
+}

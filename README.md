@@ -125,6 +125,10 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | POST | `/api/settings/grok-oauth/login/poll` | Poll device-code approval |
 | POST | `/api/settings/grok-oauth/logout` | Clear stored OAuth tokens |
 | ALL | `/api/grok-oauth/v1/*` | OpenAI-compatible proxy using OAuth bearer |
+| GET | `/api/agent/health` | Agent runtime (same Hono process) |
+| POST | `/api/agent/chat` | AI SDK UI message stream |
+| GET/POST/PATCH/DELETE | `/api/agent-conversations` | Agent conversation metadata |
+| GET | `/api/agent-conversations/:id/messages` | Saved agent chat messages |
 | GET | `/api/optimize-profile?modelId=` | Per-model optimization profile |
 | POST | `/api/optimize-prompt` | Prompt optimization / generation |
 | GET | `/api/history` | List history (SQLite) |
@@ -154,11 +158,9 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start API + Web + agent sidecar together (`dev:server` + `dev:web` + `dev:agent`) |
+| `npm run dev` | Start API + Web together (`dev:server` + `dev:web`; agent chat is in the API process) |
 | `npm run dev:server` | Hono API only (`bun --watch server/index.ts`) |
 | `npm run dev:web` | Vite dev server only |
-| `npm run dev:agent` | Flue agent sidecar only (`127.0.0.1:8789`) |
-| `npm run agent:build` | Build `agent/dist` (required before desktop builds) |
 | `npm run desktop:dev` | Launch Electrobun desktop in dev mode (`electrobun run --env=dev`) |
 | `npm run desktop:build:canary` | Canary desktop build (`vite build` + `electrobun build`) |
 | `npm run desktop:build:stable` | Stable desktop build |
@@ -208,6 +210,7 @@ server/         # Hono API (Bun runtime, 127.0.0.1:8787)
   db/           # bun:sqlite (history, Persona, audio assets, app_settings)
   grok/         # Grok CLI integration (prompt optimization)
   grokOauth/    # X-account OAuth + OpenAI-compatible proxy (agent mode)
+  agent/        # In-process AI SDK agent (streamText + tools)
   catalog/      # docs OpenAPI + dedicated workflow integration
 electrobun.config.ts    # Electrobun build & distribution config (win/linux icon paths)
 docs/PRE_RELEASE.md     # Pre-release checklist (lint/test/UI/docs)
