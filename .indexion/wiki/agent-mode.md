@@ -82,7 +82,11 @@ draft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に
 
 ### エージェント不通時の見え方
 
-`/agents/*` が 502（埋め込み未ロード + sidecar 未起動）でも、SDK の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。`AgentChat` は status `connecting` + error 時に「接続できません」警告を出し、送信欄は blocking しない（送信すれば 502 エラー表示で入力を復元）。
+Flue の `send()` は LLM を呼ぶ前に HTTP 202 で受付する。したがって「送信に失敗しました: Flue API error 502: request failed」は **Grok / X OAuth の応答ではなく**、`POST /agents/studio/:id` が Flue に届いていない（埋め込み未ロード + sidecar 未起動、または Vite の `/agents` プロキシが ECONNREFUSED）。Settings の X ログインは `/api`（:8787）なので成功しても、エージェント送信は別プロセス（:8789 / embed）を使う。
+
+`GET /agents/health` で到達性を見る。不通なら AgentView が送信前に警告する。502 本文は Flue の error envelope（`type: agent_unavailable`）にし、SDK が `request failed` に潰さない。sidecar プロキシは起動レース向けに短く再試行する。
+
+既存会話の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。draft は observe しないので、初回送信の 502 が唯一の兆候だった（入力は復元する）。
 
 ## コマンド
 

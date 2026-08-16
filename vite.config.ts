@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { agentUnavailableBody } from './src/lib/agentUnavailable.ts'
 
 const pkg = JSON.parse(
   readFileSync(
@@ -35,6 +36,29 @@ export default defineConfig(() => ({
       '/agents': {
         target: 'http://127.0.0.1:8789',
         changeOrigin: true,
+        timeout: 0,
+        proxyTimeout: 0,
+        configure(proxy) {
+          proxy.on('error', (err, _req, res) => {
+            const payload = JSON.stringify(
+              agentUnavailableBody(err instanceof Error ? err.message : String(err)),
+            )
+            if (
+              res &&
+              'headersSent' in res &&
+              !res.headersSent &&
+              'writeHead' in res &&
+              typeof res.writeHead === 'function'
+            ) {
+              res.writeHead(502, { 'Content-Type': 'application/json' })
+              res.end(payload)
+              return
+            }
+            if (res && 'end' in res && typeof res.end === 'function') {
+              res.end()
+            }
+          })
+        },
       },
     },
   },

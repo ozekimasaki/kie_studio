@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ApiClientError } from './api.ts'
 import {
+  fetchAgentHealth,
   fetchGrokOauthStatus,
   GROK_OAUTH_MISSING_MESSAGE,
   messageForGrokOauthError,
@@ -50,5 +51,22 @@ describe('agentApi.parse via Grok OAuth', () => {
       expiresAt: null,
       lastRefresh: null,
     })
+  })
+})
+
+describe('fetchAgentHealth', () => {
+  it('succeeds on { ok: true }', async () => {
+    stubFetch(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    await expect(fetchAgentHealth()).resolves.toEqual({ ok: true })
+  })
+
+  it('throws on 502 so the agent view can warn before send', async () => {
+    stubFetch(new Response('bad gateway', { status: 502 }))
+    await expect(fetchAgentHealth()).rejects.toMatchObject({ status: 502 })
   })
 })

@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bot, MessageSquarePlus, PanelLeft, Settings, Trash2 } from 'lucide-react'
+import { AlertTriangle, Bot, MessageSquarePlus, PanelLeft, Settings, Trash2 } from 'lucide-react'
 import {
   createAgentConversation,
   deleteAgentConversation,
   fetchAgentConversations,
+  fetchAgentHealth,
   newConversationId,
   type AgentConversation,
 } from '../../lib/agentApi.ts'
+import { AGENT_UNAVAILABLE_MESSAGE } from '../../lib/agentUnavailable.ts'
 import { AgentChat } from './AgentChat.tsx'
 import { AgentModelPicker, type ModelSelection } from './AgentModelPicker.tsx'
 
@@ -62,6 +64,12 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const conversationsQuery = useQuery({
     queryKey: ['agent-conversations'],
     queryFn: fetchAgentConversations,
+  })
+  const agentHealthQuery = useQuery({
+    queryKey: ['agent-health'],
+    queryFn: fetchAgentHealth,
+    retry: false,
+    refetchInterval: 10_000,
   })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isNewFlow, setIsNewFlow] = useState(false)
@@ -184,6 +192,16 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
           </button>
         </div>
       </div>
+
+      {agentHealthQuery.isError && (
+        <p
+          className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] px-3 py-2 text-xs text-[var(--danger)]"
+          role="alert"
+        >
+          <AlertTriangle size={13} aria-hidden />
+          {AGENT_UNAVAILABLE_MESSAGE}
+        </p>
+      )}
 
       <div className="relative flex min-h-0 flex-1">
         {sidebarOpen && (

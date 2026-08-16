@@ -36,8 +36,8 @@
     "kiestudio": "./cli/index.ts"
   },
   "dependencies": {
-    "@flue/react": "^2.0.1",
-    "@flue/sdk": "^2.0.1",
+    "@flue/react": "^2.0.3",
+    "@flue/sdk": "^2.0.3",
     "@hono/zod-validator": "^0.9.0",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-virtual": "^3.14.9",
