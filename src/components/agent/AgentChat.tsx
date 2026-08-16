@@ -12,7 +12,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { agentConversationUrl } from '../../lib/agentApi.ts'
-import { formatAgentSendError } from '../../lib/agentUnavailable.ts'
+import { AGENT_UNAVAILABLE_MESSAGE, formatAgentSendError } from '../../lib/agentUnavailable.ts'
 import { AgentMediaTaskCard } from './AgentMediaTaskCard.tsx'
 import { readMediaTaskData } from './mediaTaskData.ts'
 
@@ -278,8 +278,7 @@ export function AgentChat({ conversationId, provider, model, isDraft, onFirstSen
           {agent.status === 'connecting' && agent.error && (
             <p className="flex items-center gap-2 px-1 text-xs text-[var(--danger)]" role="alert">
               <AlertTriangle size={13} aria-hidden />
-              エージェントサーバーに接続できません。アプリを再起動するか、開発時は agent sidecar
-              込みの npm run dev で起動してください。自動で再試行します。
+              {AGENT_UNAVAILABLE_MESSAGE} 自動で再試行します。
             </p>
           )}
           {agent.status === 'error' && (

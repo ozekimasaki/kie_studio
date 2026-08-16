@@ -16,7 +16,7 @@ Frontend (Vite :5173)
                              /api/internal/agent/*
 ```
 
-デスクトップ（Electrobun）では `agent/dist/app.mjs` を `loadFlueNodeApplication` で埋め込み、同じ Bun.serve が `/agents/*` を転送する。`FLUE_DB_PATH` は userData の `flue.db`（`studio.db` と同階層。アンインストールで親 dir を消さない）。
+デスクトップ（Electrobun）では `agent/dist/app.mjs` を `Resources/agent-server` として同梱し `loadFlueNodeApplication` で埋め込む。同じ Bun.serve が `/agents/*` を転送する。Electrobun は asar 後に `Resources/app` を削除するため、`postBuild` で `Resources/agent-server` へ退避する（`asarUnpack` だけではインストーラーに残らない）。見つからない場合は `app.asar` から userData/`agent-server` へ展開する。`FLUE_DB_PATH` は userData の `flue.db`（`studio.db` と同階層。アンインストールで親 dir を消さない）。
 
 ## エージェント (`agent/`)
 
@@ -82,9 +82,9 @@ draft 中の `AgentChat` は `useFlueAgent` を dormant（client 未注入）に
 
 ### エージェント不通時の見え方
 
-Flue の `send()` は LLM を呼ぶ前に HTTP 202 で受付する。したがって「送信に失敗しました: Flue API error 502: request failed」は **Grok / X OAuth の応答ではなく**、`POST /agents/studio/:id` が Flue に届いていない（埋め込み未ロード + sidecar 未起動、または Vite の `/agents` プロキシが ECONNREFUSED）。Settings の X ログインは `/api`（:8787）なので成功しても、エージェント送信は別プロセス（:8789 / embed）を使う。
+Flue の `send()` は LLM を呼ぶ前に HTTP 202 で受付する。したがって送信直後の失敗は **Grok / X OAuth の応答ではなく**、`POST /agents/studio/:id` が Flue に届いていない。原因は (1) インストーラー版で embed（`Resources/agent-server`）が無い (2) 開発時に sidecar `:8789` 未起動、または Vite の `/agents` プロキシが ECONNREFUSED。Settings の X ログインは `/api`（:8787）なので成功しても、エージェント送信は embed / sidecar を使う。
 
-`GET /agents/health` で到達性を見る。不通なら AgentView が送信前に警告する。502 本文は Flue の error envelope（`type: agent_unavailable`）にし、SDK が `request failed` に潰さない。sidecar プロキシは起動レース向けに短く再試行する。
+`GET /agents/health` で到達性を見る。不通なら AgentView が送信前に警告する。502 本文は Flue の error envelope（`type: agent_unavailable`）にし、SDK が `request failed` に潰さない。sidecar プロキシは起動レース向けに短く再試行する。インストーラー版で embed が無いときは sidecar（:8789）へは飛ばず、再起動を案内する。
 
 既存会話の observe() は指数バックオフ（1s→2s→…→30s 上限）で自動再試行する。draft は observe しないので、初回送信の 502 が唯一の兆候だった（入力は復元する）。
 

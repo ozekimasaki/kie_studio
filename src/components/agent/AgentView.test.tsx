@@ -119,7 +119,7 @@ describe('AgentView', () => {
     vi.mocked(fetchAgentHealth).mockRejectedValue(new Error('Request failed (502)'))
     renderView()
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'エージェントサーバーに接続できません',
+      'エージェントを起動できませんでした',
     )
   })
 })
