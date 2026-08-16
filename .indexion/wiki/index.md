@@ -1,6 +1,6 @@
 # Wiki Index
 
-This index catalogs all 11 pages in this wiki.
+This index catalogs all 12 pages in this wiki.
 
 ## How to Navigate This Wiki
 
@@ -12,17 +12,22 @@ For specific topics, browse the **Categories** section.
 
 Most-linked pages that serve as knowledge hubs:
 
-- [Architecture](wiki://architecture) — 7 incoming links
-- [Core Concepts](wiki://core-concepts) — 6 incoming links
-- [Server API](wiki://server-api) — 6 incoming links
-- [Frontend](wiki://frontend) — 5 incoming links
-- [Getting Started](wiki://getting-started) — 3 incoming links
+- [Architecture](wiki://architecture) — 9 incoming links
+- [Core Concepts](wiki://core-concepts) — 7 incoming links
+- [Agent Mode](wiki://agent-mode) — 7 incoming links
+- [Server API](wiki://server-api) — 7 incoming links
+- [CLI](wiki://cli) — 6 incoming links
+- [Frontend](wiki://frontend) — 6 incoming links
+- [Getting Started](wiki://getting-started) — 4 incoming links
 - [Catalog Sync](wiki://catalog-sync) — 3 incoming links
 - [Client Lib](wiki://client-lib) — 3 incoming links
-- [Agent Mode](wiki://agent-mode) — 3 incoming links
 - [Kie Integration](wiki://kie-integration) — 2 incoming links
 
 ## Categories
+
+### cli
+
+- [CLI](wiki://cli)
 
 ### src
 
@@ -49,13 +54,16 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: agent-mode
+- pages update: prompt-optimize
+- pages update: catalog-sync
+- pages update: kie-integration
+- pages update: server-api
+- pages update: client-lib
+- pages update: frontend
+- pages update: core-concepts
 - pages update: architecture
-- ingest: overview
-- ingest: getting-started
-- ingest: core-concepts
-- ingest: frontend
-- ingest: server-api
-- ingest: catalog-sync
-- ingest: prompt-optimize
-- ingest: agent-mode
+- pages update: getting-started
+- pages update: overview
+- pages add: cli
 

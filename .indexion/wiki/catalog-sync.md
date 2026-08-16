@@ -12,6 +12,8 @@ docs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json`
 | `server/catalog/dedicated.ts` | provider 専用 workflow fallback |
 | `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |
 
+書き込み先は `getCatalogPath()`。dev / CLI はリポジトリの `src/data/catalog.json`。デスクトップは `STUDIO_CATALOG_PATH`（userData の writable path）へ bundle スナップショットを seed してから同期する。
+
 ## 抽出
 
 - category は image / video / audio
@@ -35,3 +37,4 @@ Market の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の sch
 - [Core Concepts](wiki://core-concepts)
 - [Client Lib](wiki://client-lib)
 - [Server API](wiki://server-api)
+- [Architecture](wiki://architecture)

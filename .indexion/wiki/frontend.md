@@ -13,16 +13,19 @@ React UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO �
 - Quick Action は入力を復元するだけで、自動送信・自動課金しない
 - 未送信 / API受付済み / 生成中を分離し、未送信だけキャンセル可能
 - 402 / 400 / 413 / 429 / 531 を購入、入力修正、再送、残高再取得へ分類
+- スニペット（`src/lib/snippets.ts`）はよく使うフレーズを localStorage に保持し、プロンプトへ挿入する
 
 ## エージェントモード
 
 | コンポーネント | 役割 |
 |------|------|
-| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体 |
-| `components/agent/AgentChat.tsx` | `useFlueAgent` による送受信・SSE |
+| `components/agent/AgentView.tsx` | 会話一覧・draft 開始・チャット本体 |
+| `components/agent/AgentChat.tsx` | `useFlueAgent` による送受信・SSE。draft 中は dormant |
 | `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |
-| `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |
-| `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |
+| `components/agent/AgentModelPicker.tsx` | draft / 会話の LLM 選択 |
+| `components/LlmSettingsSection.tsx` | Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル |
+
+会話は「開始」時点ではローカル draft のみ。初回送信で Flue インスタンスと `POST /api/agent-conversations` が走る。詳細は [Agent Mode](wiki://agent-mode)。
 
 エージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。
 
@@ -41,7 +44,7 @@ React UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO �
 
 Runway Aleph は親タスクと Before/After を表示。動画と音声の両方があるときだけリップシンクを提示する。履歴詳細は provider 状態、送信 parameter、元 response、error をコピーできる。
 
-ギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。ウィンドウフォーカス時に `GET /api/history` を merge し、CLI やエージェントが追加した taskId をギャラリーへ載せる。
+ギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。`localPath` があるメディアは `GET /media/...` を優先し、リモート期限切れ後も再生する。ウィンドウフォーカス時に `GET /api/history` を merge し、CLI やエージェントが追加した taskId をギャラリーへ載せる。
 
 ## 軽量化
 

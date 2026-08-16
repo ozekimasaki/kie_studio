@@ -12,7 +12,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "getting-started",
@@ -22,11 +22,12 @@
         ".env.example",
         "package.json",
         "README.md",
-        "vite.config.ts"
+        "vite.config.ts",
+        "cli/"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "core-concepts",
@@ -37,11 +38,12 @@
         "src/lib/history.ts",
         "src/lib/models/mentions.ts",
         "src/components/DynamicForm.tsx",
-        "server/db/history.ts"
+        "server/db/history.ts",
+        "server/media/archiver.ts"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "architecture",
@@ -57,7 +59,10 @@
         "src/bun/agentHost.ts",
         "agent/",
         "electrobun.config.ts",
-        "server/db/"
+        "server/db/",
+        "server/media/",
+        "server/grokOauth/",
+        "cli/"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -76,7 +81,8 @@
         "src/lib/motion.ts",
         "src/main.tsx",
         "src/lib/studioPresentation.ts",
-        "src/index.css"
+        "src/index.css",
+        "src/lib/snippets.ts"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -91,7 +97,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "server-api",
@@ -104,7 +110,9 @@
         "server/db/",
         "server/routes/agentInternal.ts",
         "server/routes/llmSettings.ts",
-        "server/routes/agentConversations.ts"
+        "server/routes/agentConversations.ts",
+        "server/routes/grokOauth.ts",
+        "server/media/"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -115,11 +123,12 @@
       "title": "Kie Integration",
       "file": "kie-integration.md",
       "sources": [
-        "server/kie/"
+        "server/kie/",
+        "server/media/archiver.ts"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "catalog-sync",
@@ -129,11 +138,12 @@
         "server/catalog/sync.ts",
         "scripts/sync-models.ts",
         "src/lib/models/from-openapi.ts",
-        "src/data/catalog.json"
+        "src/data/catalog.json",
+        "server/catalog/dedicated.ts"
       ],
       "children": [],
-      "provenance": "manual",
-      "last_actor": "agent:codex"
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
     },
     {
       "id": "prompt-optimize",
@@ -145,7 +155,8 @@
         "server/grok/guides/seedance-2-5.ts",
         "server/grok/cli.ts",
         "server/routes/optimize-prompt.ts",
-        "src/components/PromptOptimizePanel.tsx"
+        "src/components/PromptOptimizePanel.tsx",
+        "agent/src/kieClient.ts"
       ],
       "children": [],
       "provenance": "synthesized",
@@ -163,11 +174,27 @@
         "server/routes/agentInternal.ts",
         "server/routes/llmSettings.ts",
         "server/routes/agentConversations.ts",
-        "electrobun.config.ts"
+        "electrobun.config.ts",
+        "src/lib/agentApi.ts",
+        "src/lib/agentUnavailable.ts",
+        "server/grokOauth/"
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:kimi"
+      "last_actor": "agent:cursor"
+    },
+    {
+      "id": "cli",
+      "title": "CLI",
+      "file": "cli.md",
+      "sources": [
+        "cli/",
+        ".cursor/skills/kiestudio-cli/SKILL.md",
+        "README.md"
+      ],
+      "children": [],
+      "provenance": "synthesized",
+      "last_actor": "agent:cursor"
     }
   ]
 }

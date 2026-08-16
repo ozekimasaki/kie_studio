@@ -16,10 +16,12 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
   ├─ kie/adapters/*         → loopback /api/internal/agent/*
   ├─ db/*                   (credentials, generate, history)
   ├─ catalog/*
-  └─ grok/*
+  ├─ grok/                  (Grok CLI プロンプト最適化)
+  ├─ grokOauth/             (X アカウント OAuth プロキシ)
+  └─ media/                 (localPath アーカイブ + /media 配信)
 ```
 
-`KIE_API_KEY` と LLM API キーは Hono 側のみ。フロントは相対 `/api` と `/agents` だけを呼ぶ。
+`KIE_API_KEY` と LLM API キーは Hono 側のみ。フロントは相対 `/api` と `/agents` だけを呼ぶ。`kiestudio` CLI も同じ公開 `/api` を使う。
 
 ## Desktop 層（Electrobun）
 
@@ -27,9 +29,16 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 
 - DB（`studio.db`）は `STUDIO_DB_PATH` で userData 配下（`Utils.paths.userData`）に配置。dev は `data/studio.db`。
 - エージェント会話 DB（`flue.db`）は `FLUE_DB_PATH` で同じ userData に配置。
+- カタログは `STUDIO_CATALOG_PATH`（userData の writable path）へ bundle スナップショットを seed して同期する。アプリ bundle 内の `catalog.json` は読み取り専用のため。
 - パッケージ時は `agent/dist/` を `agent-server/` として同梱。Electrobun は asar 後に `Resources/app` を消すため `asarUnpack` だけでは足りず、`scripts/keep-agent-server.mjs`（`postBuild`）が `Resources/agent-server` へコピーする。起動時に見つからなければ `app.asar` から userData へ展開する。Windows では bun エントリが Temp の Worker になるため、`%LocalAppData%\ai.kie.studio\<ch>\app\bin` へ `chdir` してから `loadFlueNodeApplication` し、`/agents/*` を転送する。dev で embed が無い場合は `127.0.0.1:8789` へプロキシ。
 - 起動毎に `STUDIO_AGENT_TOKEN` を発行し、内部 API とエージェントで共有する。
 - 自動アップデート: `RELEASE_BASE_URL` 設定時に bsdiff + zstd の差分更新。未設定時はスキップ。
+
+## ローカルメディア
+
+生成が `success` / `partial` になると `server/media/archiver.ts` が一時 download URL からファイルを取得し、DB と同じ階層の `media/{taskId}/` へ保存する。履歴の `MediaAsset.localPath`（例: `media/<taskId>/0.mp4`）がポインタ。Gallery / プレイヤーは `localPath` があれば `GET /media/...` を優先する。
+
+起動時（と `POST /api/media/backfill`）は `localPath` が無い既存件を埋める。リモート URL は kie.ai 側で期限切れするが、ローカルコピーがあれば再生できる。ZIP archive は従来どおり一時 URL からストリーミングする。
 
 ## パッケージ責務
 
@@ -47,6 +56,8 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 | `server/kie/adapters/` | provider 差分の正規化 |
 | `server/db/` | 加算マイグレーションを行う SQLite |
 | `server/catalog/` | Market カタログと専用 workflow の統合 |
+| `server/media/` | ローカルアーカイブ、`/media` 配信、backfill |
+| `server/grokOauth/` | X アカウント OAuth + OpenAI 互換プロキシ |
 | `server/routes/archive.ts` | 一時 URL から ZIP をストリーミング |
 
 ## デスクトップ配布
@@ -61,7 +72,7 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 - Linux `.deb` は `scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）。インストール先 `/opt/kie-studio/<ch>/`。`.desktop` / アイコンは `/usr/share/` 配下。
 - アイコン: `assets/icon-master.svg` → `npm run icons`（sharp + png-to-ico）→ `icon.ico`（Win）/ `icon.png`（Linux）。Electrobun 本体の rcedit パス解決バグを避け launcher.exe へ自前埋め込み。
 - arm64: win-arm64 は x64 版が OS エミュレーションで動作（個別ビルド不要）。linux-arm64 はクロスビルド不可のため一旦見送り。
-- アンインストールは `app\` のみ削除し、親ディレクトリの `studio.db` / `flue.db`（ユーザー DB）は保持する（親削除は DB 破壊のため禁止）。
+- アンインストールは `app\` のみ削除し、親ディレクトリの `studio.db` / `flue.db` / `media/`（ユーザーデータ）は保持する（親削除は破壊のため禁止）。
 - `release/` 集積: Electrobun はビルドごとに `artifacts/` を削除・再生成するため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする。
 - デスクトップビルドは `agent:build` を前段で実行する（CI は `bun install --cwd agent` も実施）。
 
@@ -80,3 +91,4 @@ Hono (:8787)              Flue agent (:8789 Node / embed)
 - [Kie Integration](wiki://kie-integration)
 - [Frontend](wiki://frontend)
 - [Agent Mode](wiki://agent-mode)
+- [CLI](wiki://cli)
