@@ -49,6 +49,7 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: prompt-optimize
 - ingest: overview
 - ingest: getting-started
 - ingest: architecture

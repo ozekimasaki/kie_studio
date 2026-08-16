@@ -149,7 +149,7 @@
       ],
       "children": [],
       "provenance": "synthesized",
-      "last_actor": "agent:codex"
+      "last_actor": "agent:cursor"
     },
     {
       "id": "agent-mode",

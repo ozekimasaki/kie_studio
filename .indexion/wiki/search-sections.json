@@ -639,7 +639,7 @@
       "section": {
         "id": "prompt-optimize#-3",
         "title": "挙動",
-        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n\n",
+        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化は `-m grok-build`（Grok Build 追従エイリアス）を必ず渡す。`STUDIO_GROK_OPTIMIZE_MODEL` で上書き可\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n\n",
         "page_id": "prompt-optimize",
         "level": 2
       },
