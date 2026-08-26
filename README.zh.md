@@ -25,7 +25,7 @@
 - Node.js（支持 Vite 8 / React 19 的近期 LTS，建议 20.19+ 或 22.12+）及 npm
 - kie.ai API 密钥（<https://kie.ai/api-key>）。桌面版也可在应用内设置面板保存。
 - 可选：[Grok CLI](https://docs.x.ai/build/overview)（用于提示词优化，通过 `grok login` 或 `XAI_API_KEY` 认证）
-- 可选：Agent 模式的 Grok 可通过设置中的 **X 账号 OAuth**（SuperGrok / Premium+，无需 API 密钥）或 `XAI_API_KEY`
+- 可选：Agent 模式的 Grok 使用设置或 `.env` 中的 `XAI_API_KEY`
 
 ## 快速开始
 
@@ -120,11 +120,6 @@ npm run sync:models -- --force
 | GET | `/api/personas` | 列出 Persona 素材架 |
 | DELETE | `/api/personas/:id` | 删除 Persona |
 | GET | `/api/grok/status` | Grok CLI 可用性 |
-| GET | `/api/settings/grok-oauth` | X 账号 OAuth 状态（Agent Grok） |
-| POST | `/api/settings/grok-oauth/login/start` | 开始 device-code OAuth |
-| POST | `/api/settings/grok-oauth/login/poll` | 轮询授权 |
-| POST | `/api/settings/grok-oauth/logout` | 清除 OAuth 令牌 |
-| ALL | `/api/grok-oauth/v1/*` | 使用 OAuth Bearer 的 OpenAI 兼容代理 |
 | GET | `/api/agent/health` | Agent 运行时（与 Hono 同一进程） |
 | POST | `/api/agent/chat` | AI SDK UI message stream |
 | GET/POST/PATCH/DELETE | `/api/agent-conversations` | Agent 会话元数据 |
@@ -149,7 +144,7 @@ npm run sync:models -- --force
 | `PORT` | API 端口（默认 `8787`） |
 | `STUDIO_DB_PATH` | 可选。覆盖 SQLite 路径（桌面版自动设置；开发用 `data/studio.db`） |
 | `RELEASE_BASE_URL` | 可选。Electrobun 自动更新的静态托管 URL（留空禁用） |
-| `XAI_API_KEY` | 可选。Grok CLI 未登录时的认证 |
+| `XAI_API_KEY` | 可选。Agent 模式 Grok（内置 xai）以及 Grok CLI 未登录时的认证 |
 | `SYNC_MODELS_ON_START` | `0` 禁用启动同步（默认开启） |
 | `SYNC_MODELS_FORCE` | `1` 启动时强制全量同步 |
 | `SYNC_CONCURRENCY` | 模型页面抓取并发数（默认 `12`，最大 32） |
@@ -209,7 +204,6 @@ server/         # Hono API（Bun 运行时，127.0.0.1:8787）
   settings/     # API 密钥获取（持久存储 → 环境变量回退）
   db/           # bun:sqlite（历史、Persona、音频素材、app_settings）
   grok/         # Grok CLI 集成（提示词优化）
-  grokOauth/    # X 账号 OAuth + OpenAI 兼容代理（Agent）
   agent/        # 同进程 AI SDK Agent（streamText + tools）
   catalog/      # docs OpenAPI + 专用 workflow 集成
 electrobun.config.ts    # Electrobun 构建与分发配置（含 win/linux 图标路径）

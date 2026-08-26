@@ -25,7 +25,7 @@ A Studio for **IMAGE / VIDEO / AUDIO** generation powered by kie.ai's Market API
 - Node.js (recent LTS that supports Vite 8 / React 19; recommended 20.19+ or 22.12+) and npm
 - kie.ai API key (<https://kie.ai/api-key>). The desktop app can also save it from the in-app settings panel.
 - Optional: [Grok CLI](https://docs.x.ai/build/overview) for prompt optimization (authenticate via `grok login` or `XAI_API_KEY`)
-- Optional: Agent-mode Grok via **X account OAuth** in Settings (SuperGrok / Premium+; no `XAI_API_KEY` required), or via an `XAI_API_KEY`
+- Optional: Agent-mode Grok via `XAI_API_KEY` in Settings or `.env`
 
 ## Setup
 
@@ -120,11 +120,6 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | GET | `/api/personas` | List Persona shelf |
 | DELETE | `/api/personas/:id` | Delete a Persona |
 | GET | `/api/grok/status` | Grok CLI availability |
-| GET | `/api/settings/grok-oauth` | X-account OAuth login status (agent Grok) |
-| POST | `/api/settings/grok-oauth/login/start` | Start device-code OAuth |
-| POST | `/api/settings/grok-oauth/login/poll` | Poll device-code approval |
-| POST | `/api/settings/grok-oauth/logout` | Clear stored OAuth tokens |
-| ALL | `/api/grok-oauth/v1/*` | OpenAI-compatible proxy using OAuth bearer |
 | GET | `/api/agent/health` | Agent runtime (same Hono process) |
 | POST | `/api/agent/chat` | AI SDK UI message stream |
 | GET/POST/PATCH/DELETE | `/api/agent-conversations` | Agent conversation metadata |
@@ -149,7 +144,7 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | `PORT` | API port (default `8787`) |
 | `STUDIO_DB_PATH` | Optional. Override SQLite path (desktop sets automatically; dev uses `data/studio.db`) |
 | `RELEASE_BASE_URL` | Optional. Static host URL for Electrobun auto-update (empty to disable) |
-| `XAI_API_KEY` | Optional. Auth for Grok CLI when not logged in |
+| `XAI_API_KEY` | Optional. Agent-mode Grok (builtin xai) and Grok CLI when not logged in |
 | `SYNC_MODELS_ON_START` | `0` to disable startup sync (default on) |
 | `SYNC_MODELS_FORCE` | `1` to force full sync on startup |
 | `SYNC_CONCURRENCY` | Concurrency for model page fetching (default `12`, max 32) |
@@ -209,7 +204,6 @@ server/         # Hono API (Bun runtime, 127.0.0.1:8787)
   settings/     # API key retrieval (persistent store → env fallback)
   db/           # bun:sqlite (history, Persona, audio assets, app_settings)
   grok/         # Grok CLI integration (prompt optimization)
-  grokOauth/    # X-account OAuth + OpenAI-compatible proxy (agent mode)
   agent/        # In-process AI SDK agent (streamText + tools)
   catalog/      # docs OpenAPI + dedicated workflow integration
 electrobun.config.ts    # Electrobun build & distribution config (win/linux icon paths)

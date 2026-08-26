@@ -1,5 +1,3 @@
-import { mkdirSync } from 'node:fs'
-import { join } from 'node:path'
 import { createApp } from './app.ts'
 import { syncCatalog } from './catalog/sync.ts'
 import { getDb, getDbPath } from './db/open.ts'
@@ -9,12 +7,6 @@ import { startBackfill } from './media/backfill.ts'
 // needed here. This entry is intentionally thin: it starts the shared Hono app
 // (see `server/app.ts`) via `Bun.serve` for local development. The packaged
 // desktop build boots the same app from `src/bun/index.ts`.
-
-if (!process.env.GROK_OAUTH_PROXY_HOME?.trim()) {
-  const home = join(process.cwd(), 'data', 'grok-oauth')
-  mkdirSync(home, { recursive: true })
-  process.env.GROK_OAUTH_PROXY_HOME = home
-}
 
 const app = createApp()
 const port = Number(process.env.PORT || 8787)

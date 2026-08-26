@@ -20,10 +20,6 @@ const userData = Utils.paths.userData
 mkdirSync(userData, { recursive: true })
 process.env.STUDIO_DB_PATH = join(userData, 'studio.db')
 
-// Grok OAuth tokens (auth.json) — sibling of studio.db.
-process.env.GROK_OAUTH_PROXY_HOME = join(userData, 'grok-oauth')
-mkdirSync(process.env.GROK_OAUTH_PROXY_HOME, { recursive: true })
-
 // Per-boot token for the leftover internal agent HTTP API (loopback).
 process.env.STUDIO_AGENT_TOKEN = randomUUID()
 

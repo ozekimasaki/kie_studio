@@ -1,21 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ExternalLink, KeyRound, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { Check, KeyRound, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import {
-  cancelGrokOauthLogin,
   deleteLlmApiKey,
-  fetchGrokOauthStatus,
   fetchLlmSettings,
-  logoutGrokOauth,
-  messageForGrokOauthError,
-  pollGrokOauthLogin,
   saveDefaultLlmModel,
   saveLlmApiKey,
   saveLlmCustomEndpoints,
   savePreferredLlmModel,
-  startGrokOauthLogin,
   type CustomEndpointInput,
-  type GrokOauthLoginStart,
   type LlmProviderSettings,
 } from '../lib/agentApi.ts'
 import { Pressable } from './motion/Pressable.tsx'
@@ -399,222 +392,6 @@ function DefaultModelSelect({ onSaved }: { onSaved: () => void }) {
   )
 }
 
-function GrokOauthPanel({ onChanged }: { onChanged: () => void }) {
-  const statusQuery = useQuery({
-    queryKey: ['grok-oauth-status'],
-    queryFn: fetchGrokOauthStatus,
-  })
-  const [pending, setPending] = useState<GrokOauthLoginStart | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const cancelled = useRef(false)
-
-  useEffect(() => {
-    return () => {
-      cancelled.current = true
-      if (pollTimer.current) clearTimeout(pollTimer.current)
-    }
-  }, [])
-
-  function clearPoll() {
-    if (pollTimer.current) {
-      clearTimeout(pollTimer.current)
-      pollTimer.current = null
-    }
-  }
-
-  function schedulePoll(sessionId: string, intervalSec: number) {
-    clearPoll()
-    pollTimer.current = setTimeout(() => {
-      void runPoll(sessionId)
-    }, Math.max(1, intervalSec) * 1000)
-  }
-
-  async function runPoll(sessionId: string) {
-    if (cancelled.current) return
-    try {
-      const result = await pollGrokOauthLogin(sessionId)
-      if (cancelled.current) return
-      if (result.status === 'pending') {
-        schedulePoll(sessionId, result.interval)
-        return
-      }
-      clearPoll()
-      setPending(null)
-      setBusy(false)
-      if (result.status === 'success') {
-        setError(null)
-        void statusQuery.refetch()
-        onChanged()
-        return
-      }
-      setError(result.message)
-    } catch (e) {
-      if (cancelled.current) return
-      clearPoll()
-      setPending(null)
-      setBusy(false)
-      setError(messageForGrokOauthError(e, 'ログインに失敗しました'))
-    }
-  }
-
-  async function handleStart() {
-    setError(null)
-    setBusy(true)
-    cancelled.current = false
-    try {
-      const started = await startGrokOauthLogin()
-      setPending(started)
-      const url = started.verificationUriComplete || started.verificationUri
-      window.open(url, '_blank', 'noopener,noreferrer')
-      schedulePoll(started.sessionId, started.interval)
-    } catch (e) {
-      setBusy(false)
-      setError(messageForGrokOauthError(e, 'ログインを開始できませんでした'))
-    }
-  }
-
-  async function handleCancel() {
-    const sessionId = pending?.sessionId
-    cancelled.current = true
-    clearPoll()
-    setPending(null)
-    setBusy(false)
-    if (sessionId) {
-      try {
-        await cancelGrokOauthLogin(sessionId)
-      } catch {
-        // best-effort
-      }
-    }
-    cancelled.current = false
-  }
-
-  async function handleLogout() {
-    setError(null)
-    setBusy(true)
-    try {
-      await logoutGrokOauth()
-      void statusQuery.refetch()
-      onChanged()
-    } catch (e) {
-      setError(messageForGrokOauthError(e, 'ログアウトに失敗しました'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const status = statusQuery.data
-  const statusError =
-    statusQuery.isError
-      ? messageForGrokOauthError(statusQuery.error, '状態の取得に失敗しました')
-      : null
-  const expiresLabel =
-    status?.expiresAt != null
-      ? new Date(status.expiresAt * 1000).toLocaleString()
-      : null
-
-  return (
-    <div className="mt-3 grid gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-[var(--text)]">Grok (X アカウント)</span>
-        {status?.loggedIn ? (
-          <span className="inline-flex items-center gap-1 text-[10px] text-[var(--accent)]">
-            <ShieldCheck size={11} strokeWidth={2} aria-hidden />
-            ログイン済み
-          </span>
-        ) : (
-          <span className="text-[10px] text-[var(--text-muted)]">未ログイン</span>
-        )}
-      </div>
-      <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-        SuperGrok / Premium+ の X アカウントでサインインすると、API キーなしでエージェントから
-        Grok を使えます（非公式 OAuth。403 の場合は公式の XAI_API_KEY を使ってください）。
-      </p>
-
-      {pending ? (
-        <div className="grid gap-2">
-          <p className="text-[11px] text-[var(--text)]">
-            ブラウザで承認してください。コード:{' '}
-            <code className="rounded bg-[var(--surface-raised)] px-1.5 py-0.5 font-mono text-[var(--accent)]">
-              {pending.userCode}
-            </code>
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Pressable
-              type="button"
-              className="studio-btn w-auto gap-1 px-3 py-1.5 text-xs"
-              scaleTo={0.96}
-              onClick={() => {
-                const url = pending.verificationUriComplete || pending.verificationUri
-                window.open(url, '_blank', 'noopener,noreferrer')
-              }}
-            >
-              <ExternalLink size={12} strokeWidth={2} aria-hidden />
-              ブラウザで開く
-            </Pressable>
-            <Pressable
-              type="button"
-              className="studio-btn w-auto px-3 py-1.5 text-xs"
-              scaleTo={0.96}
-              onClick={() => {
-                void navigator.clipboard?.writeText(
-                  pending.verificationUriComplete || pending.verificationUri,
-                )
-              }}
-            >
-              URL をコピー
-            </Pressable>
-            <Pressable
-              type="button"
-              className="studio-btn w-auto px-3 py-1.5 text-xs text-[var(--danger)]"
-              scaleTo={0.96}
-              onClick={() => void handleCancel()}
-            >
-              キャンセル
-            </Pressable>
-          </div>
-          <p className="text-[10px] text-[var(--text-muted)]">承認を待機中…</p>
-        </div>
-      ) : status?.loggedIn ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {expiresLabel && (
-            <span className="text-[10px] text-[var(--text-muted)]">
-              トークン期限: {expiresLabel}
-            </span>
-          )}
-          <Pressable
-            type="button"
-            className="studio-btn w-auto px-3 py-1.5 text-xs text-[var(--danger)]"
-            scaleTo={0.96}
-            disabled={busy}
-            onClick={() => void handleLogout()}
-          >
-            ログアウト
-          </Pressable>
-        </div>
-      ) : (
-        <Pressable
-          type="button"
-          className="studio-btn-primary w-auto gap-1 px-3 py-1.5 text-xs disabled:opacity-50"
-          scaleTo={0.96}
-          disabled={busy || statusQuery.isLoading}
-          onClick={() => void handleStart()}
-        >
-          {busy ? '開始中…' : 'X アカウントでログイン'}
-        </Pressable>
-      )}
-
-      {(error || statusError) && (
-        <p className="studio-field-error" role="alert">
-          {error ?? statusError}
-        </p>
-      )}
-    </div>
-  )
-}
-
 export function LlmSettingsSection() {
   const queryClient = useQueryClient()
   const settingsQuery = useQuery({ queryKey: ['llm-settings'], queryFn: fetchLlmSettings })
@@ -663,7 +440,6 @@ export function LlmSettingsSection() {
                 preferredModel={settings.preferredModels[provider.id]}
                 onSaved={refresh}
               />
-              {provider.id === 'xai' && <GrokOauthPanel onChanged={refresh} />}
             </div>
           ))}
 
@@ -672,7 +448,6 @@ export function LlmSettingsSection() {
             <CustomEndpointsEditor
               endpoints={
                 settings?.customEndpoints
-                  .filter((e) => !e.system)
                   .map((e) => ({
                     id: e.id,
                     label: e.label,
