@@ -18,8 +18,8 @@ npm run build
 
 今回の変更面だけを手で確認する。例:
 
-- Grok OAuth: Settings → LLM →「X アカウントでログイン」→ 承認 → エージェントのモデルピッカーに「Grok (X アカウント)」→ 短いチャット 1 往復
-- 公式 `XAI_API_KEY` 経路が壊れていないこと（併存）
+- エージェント Grok: Settings → LLM → xAI Grok に `XAI_API_KEY` を保存 → モデルピッカーに「xAI Grok」
+- プロンプト最適化の Grok CLI（`server/grok/`）は別経路。`grok login` または同じ `XAI_API_KEY`
 
 ## 3. UI/UX ゲート（崩れ・被り）
 
@@ -29,8 +29,7 @@ npm run build
 2. シート／モーダル内でスクロールと折り返しが破綻しない
 3. ボタン群が重ならない
 4. SpringSheet / FloatingChrome など既存 chrome と z-index が競合しない
-5. 似たラベルの併存（例: xAI Grok と Grok X アカウント）で迷わない
-6. [DESIGN.md](../DESIGN.md) 準拠（生 hex・glow・紫グラデ禁止、`var(--*)`）
+5. [DESIGN.md](../DESIGN.md) 準拠（生 hex・glow・紫グラデ禁止、`var(--*)`）
 
 問題があれば同 PR で直してから次へ進む。
 
@@ -72,5 +71,5 @@ indexion wiki lint --wiki-dir=.indexion/wiki
 次を成果物・コミットに含めない:
 
 - `.env` / API キー
-- `data/grok-oauth/auth.json` や userData 配下の OAuth トークン
+- 旧 `data/grok-oauth/auth.json`（廃止済み。残っていてもコミットしない）
 - `*.db` / `*.key`

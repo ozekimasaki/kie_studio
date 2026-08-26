@@ -24,7 +24,7 @@ Frontend (Vite :5173)
 | ファイル | 役割 |
 |----------|------|
 | `systemPrompt.ts` | 日本語システムプロンプト |
-| `resolveModel.ts` | builtin / `custom-*` / Grok OAuth を LanguageModel に解決 |
+| `resolveModel.ts` | builtin / `custom-*` を LanguageModel に解決 |
 | `tools.ts` | AI SDK `tool()`（ハイフン名） |
 | `actions.ts` | workflows / generate / task / history / credits / optimize |
 | `chat.ts` | `createUIMessageStream` + `streamText`。会話が無ければ upsert |
@@ -43,29 +43,19 @@ Frontend (Vite :5173)
 
 `generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。カード自体はクライアントポーリングせず、`get-task-status` が同じ `taskId` の data を更新する。履歴はサーバー側 upsert で通常ギャラリーにも載り、ギャラリー側のポーリングが進捗を反映する。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。
 
-## Grok（X アカウント OAuth）
+## Grok（API キー）
 
-エージェントで Grok を使う経路はふたつ（併存）:
+エージェントで Grok を使う経路は **組み込み `xai` + `XAI_API_KEY` のみ**（Settings のキー、または env）。X アカウント OAuth / `server/grokOauth/` は廃止した。
 
-1. 組み込み `xai` + `XAI_API_KEY`（Settings のキー、または env）
-2. **X アカウント OAuth**（Settings → LLM →「X アカウントでログイン」）
+モデルピッカーの「xAI Grok」は他の builtin プロバイダと同じく API キーが必要。キーが無いと `POST /api/agent/chat` が 400 `{ error }` を返す。
 
-OAuth は `server/grokOauth/` に同梱（[grok-oauth-proxy](https://github.com/ozekimasaki/grok-oauth-proxy) 由来、MIT）。別ポートは立てず、Studio Hono の `/api/grok-oauth/v1/*` が OpenAI 互換プロキシになる。ログイン済みなら credentials / settings にシステムエンドポイント `grok-oauth`（label: Grok (X アカウント)）が注入され、モデルピッカーから選べる。解決時の `baseURL` は `STUDIO_API_BASE/api/grok-oauth/v1`（同一プロセスへの HTTP）。
-
-| 項目 | 内容 |
-|------|------|
-| トークン | `auth.json`（dev: `data/grok-oauth/`、desktop: userData/`grok-oauth`）。コミット禁止 |
-| ログイン API | `GET/POST /api/settings/grok-oauth*`（device-code、クライアントが poll） |
-| プロキシ | `ALL /api/grok-oauth/v1/*` → `https://api.x.ai/v1` |
-| 注意 | 非公式 OAuth。SuperGrok / Premium+ で API アクセスが必要。403 時は公式キーを使う |
-
-`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。
+`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。最適化は `grok login` または同じ `XAI_API_KEY` を使う。
 
 ## フロント
 
 - `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー
 - `src/lib/agentApi.ts` — `agentChatUrl()`（`/api/agent/chat`）、`fetchAgentHealth`（`/api/agent/health`）、会話 CRUD、メッセージ hydrate
-- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / X OAuth / カスタムエンドポイント / 既定モデル
+- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / カスタムエンドポイント / 既定モデル
 - `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替
 
 ### 会話のライフサイクル（遅延作成）
@@ -85,8 +75,6 @@ draft 中の `AgentChat` は履歴 GET をしない。送信失敗時は入力�
 ## サーバー API
 
 - `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）
-- `/api/settings/grok-oauth*` — X OAuth ログイン状態・device-code・logout
-- `/api/grok-oauth/v1/*` — OAuth Bearer の OpenAI 互換プロキシ
 - `/api/agent/health` — Hono が生きていれば `{ ok: true }`。502 は API プロセス自体が落ちているときだけ
 - `/api/agent/chat` — UI message stream（`conversationId` / `provider` / `model` / `messages`）
 - `/api/agent-conversations` — 会話メタデータ CRUD

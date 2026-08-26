@@ -8,7 +8,6 @@ import {
   isBuiltinLlmProvider,
   type BuiltinLlmProvider,
 } from '../../src/lib/models/llmProviders.ts'
-import { mergeCustomEndpointsWithGrokOauth } from '../grokOauth/systemEndpoint.ts'
 import { getCustomLlmEndpoints, getLlmApiKey } from '../settings/llmKeys.ts'
 import { AgentModelError } from './errors.ts'
 
@@ -52,7 +51,7 @@ export function resolveLanguageModel(provider: string, model: string): LanguageM
   }
 
   const endpointId = provider.slice('custom-'.length)
-  const endpoints = mergeCustomEndpointsWithGrokOauth(getCustomLlmEndpoints())
+  const endpoints = getCustomLlmEndpoints()
   const endpoint =
     endpoints.find((item) => item.id === endpointId) ??
     endpoints.find((item) => customEndpointProviderId(item.id) === provider)

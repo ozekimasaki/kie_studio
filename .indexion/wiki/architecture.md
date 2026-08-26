@@ -16,8 +16,7 @@ Hono (:8787)  Bun.serve 同一プロセス
   ├─ agent/                 streamText + tools（AI SDK）
   ├─ kie/adapters/*
   ├─ db/*                   履歴 + agent_conversations.messages_json
-  ├─ catalog/*
-  └─ grokOauth/
+  └─ catalog/*
 ```
 
 `KIE_API_KEY` と LLM API キーは Hono 側のみ。フロントは相対 `/api` だけを呼ぶ。

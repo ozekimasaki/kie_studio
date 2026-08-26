@@ -35,11 +35,7 @@ function toOption(p: LlmProviderSettings, preferred?: string): ProviderOption {
 }
 
 function endpointToOption(e: CustomEndpointSettings): ProviderOption {
-  const kindLabel = e.system
-    ? 'X アカウント'
-    : e.kind === 'openai-compatible'
-      ? 'OpenAI 互換'
-      : 'Claude 互換'
+  const kindLabel = e.kind === 'openai-compatible' ? 'OpenAI 互換' : 'Claude 互換'
   return {
     provider: customEndpointProviderId(e.id),
     label: e.label,

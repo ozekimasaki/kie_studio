@@ -14,7 +14,7 @@ npm run dev
 - エージェント: 同じ API プロセス（`POST /api/agent/chat`）。別 sidecar は無い
 - DB: `data/studio.db`（自動作成、gitignore）
 
-プロンプト最適化を使う場合は Grok CLI を用意するか `.env` に `XAI_API_KEY` を設定する。
+プロンプト最適化を使う場合は Grok CLI を用意するか `.env` に `XAI_API_KEY` を設定する。エージェントの Grok も同じ `XAI_API_KEY`（Settings でも可）。
 
 ## 環境変数
 
@@ -22,7 +22,7 @@ npm run dev
 |------|------|
 | `KIE_API_KEY` | 必須。kie.ai API キー |
 | `PORT` | API ポート（既定 `8787`） |
-| `XAI_API_KEY` | 任意。Grok CLI 用 |
+| `XAI_API_KEY` | 任意。エージェント Grok（組み込み xai）と Grok CLI |
 | `SYNC_MODELS_ON_START` | `0` で起動時同期を無効化 |
 | `SYNC_MODELS_FORCE` | `1` で強制同期 |
 | `SYNC_CONCURRENCY` | 同期並列数（既定 12、最大 32） |

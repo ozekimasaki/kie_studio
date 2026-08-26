@@ -7,10 +7,6 @@ vi.mock('../settings/llmKeys.ts', () => ({
   getCustomLlmEndpoints: vi.fn(() => []),
 }))
 
-vi.mock('../grokOauth/systemEndpoint.ts', () => ({
-  mergeCustomEndpointsWithGrokOauth: (endpoints: unknown[]) => endpoints,
-}))
-
 const { getLlmApiKey, getCustomLlmEndpoints } = await import('../settings/llmKeys.ts')
 const { resolveLanguageModel } = await import('./resolveModel.ts')
 

@@ -16,7 +16,6 @@ import { sunoRoutes } from './routes/suno.ts'
 import { archiveRoutes } from './routes/archive.ts'
 import { settingsRoutes } from './routes/settings.ts'
 import { llmSettingsRoutes } from './routes/llmSettings.ts'
-import { grokOauthRoutes } from './routes/grokOauth.ts'
 import { agentConversationsRoutes } from './routes/agentConversations.ts'
 import { agentChatRoutes } from './routes/agentChat.ts'
 import { agentInternalRoutes } from './routes/agentInternal.ts'
@@ -91,7 +90,6 @@ export function createApp(): Hono {
   app.route('/api', archiveRoutes)
   app.route('/api', settingsRoutes)
   app.route('/api', llmSettingsRoutes)
-  app.route('/api', grokOauthRoutes)
   app.route('/api', agentConversationsRoutes)
   app.route('/api', agentChatRoutes)
   app.route('/api', agentInternalRoutes)

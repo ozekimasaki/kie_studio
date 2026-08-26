@@ -25,7 +25,7 @@ kie.ai の Market API と専用 workflow で **IMAGE / VIDEO / AUDIO** を扱う
 - Node.js（Vite 8 / React 19 が動作する最近の LTS。目安: 20.19+ または 22.12+）と npm
 - kie.ai の API キー（<https://kie.ai/api-key>）。デスクトップ版はアプリ内の設定画面からも保存可能
 - 任意: プロンプト最適化を使う場合は [Grok CLI](https://docs.x.ai/build/overview)（認証は `grok login` または `XAI_API_KEY`）
-- 任意: エージェントモードの Grok は Settings から **X アカウント OAuth**（SuperGrok / Premium+、API キー不要）または `XAI_API_KEY`
+- 任意: エージェントモードの Grok は Settings または `.env` の `XAI_API_KEY`
 
 ## セットアップ
 
@@ -120,11 +120,6 @@ npm run sync:models -- --force
 | GET | `/api/personas` | Persona 素材棚の一覧 |
 | DELETE | `/api/personas/:id` | Persona を削除 |
 | GET | `/api/grok/status` | Grok CLI 利用可否 |
-| GET | `/api/settings/grok-oauth` | X アカウント OAuth 状態（エージェント Grok） |
-| POST | `/api/settings/grok-oauth/login/start` | device-code OAuth 開始 |
-| POST | `/api/settings/grok-oauth/login/poll` | 承認ポーリング |
-| POST | `/api/settings/grok-oauth/logout` | OAuth トークン削除 |
-| ALL | `/api/grok-oauth/v1/*` | OAuth Bearer の OpenAI 互換プロキシ |
 | GET | `/api/agent/health` | エージェントランタイム（Hono 同一プロセス） |
 | POST | `/api/agent/chat` | AI SDK UI message stream |
 | GET/POST/PATCH/DELETE | `/api/agent-conversations` | エージェント会話メタデータ |
@@ -149,7 +144,7 @@ npm run sync:models -- --force
 | `PORT` | API ポート（既定 `8787`） |
 | `STUDIO_DB_PATH` | 任意。SQLite の保存先を上書き（デスクトップ版は自動設定、dev は `data/studio.db`） |
 | `RELEASE_BASE_URL` | 任意。Electrobun 自動アップデートの静的ホスト URL（空で無効） |
-| `XAI_API_KEY` | 任意。Grok CLI 未ログイン時の認証 |
+| `XAI_API_KEY` | 任意。エージェント Grok（組み込み xai）と、Grok CLI 未ログイン時の認証 |
 | `SYNC_MODELS_ON_START` | `0` で起動時同期オフ（既定オン） |
 | `SYNC_MODELS_FORCE` | `1` で起動時に強制フル同期 |
 | `SYNC_CONCURRENCY` | モデルページ取得の並列数（既定 `12`、最大 32） |
@@ -209,7 +204,6 @@ server/         # Hono API（Bun ランタイム、127.0.0.1:8787）
   settings/     # API キー取得（永続ストア→環境変数）
   db/           # bun:sqlite（履歴・Persona・音源素材・app_settings）
   grok/         # Grok CLI 連携（プロンプト最適化）
-  grokOauth/    # X アカウント OAuth + OpenAI 互換プロキシ（エージェント）
   agent/        # 同一プロセスの AI SDK エージェント（streamText + tools）
   catalog/      # docs OpenAPI と専用 workflow の統合
 electrobun.config.ts    # Electrobun ビルド・配布設定（win/linux のアイコン指定を含む）

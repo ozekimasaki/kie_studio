@@ -26,8 +26,6 @@ export interface CustomEndpointSettings {
   models: string[]
   hasKey: boolean
   apiKeyMasked: string | null
-  /** System-managed (e.g. Grok X OAuth) — not editable/deletable in the custom list. */
-  system?: boolean
 }
 
 export interface LlmSettings {
@@ -36,18 +34,6 @@ export interface LlmSettings {
   defaultModel: { provider: string; model: string } | null
   /** Preferred model id keyed by provider id (builtin or `custom-<id>`). */
   preferredModels: Record<string, string>
-}
-
-/** Shown when the API process lacks Grok OAuth routes (stale server on :8787). */
-export const GROK_OAUTH_MISSING_MESSAGE =
-  'API に Grok OAuth がありません。Studio / npm run dev:server を再起動し、8787 で古いプロセスが残っていないか確認してください（要 1.0.9+）。'
-
-export function messageForGrokOauthError(error: unknown, fallback: string): string {
-  if (error instanceof ApiClientError && error.status === 404) {
-    return GROK_OAUTH_MISSING_MESSAGE
-  }
-  if (error instanceof Error && error.message.trim()) return error.message
-  return fallback
 }
 
 async function parse<T>(res: Response): Promise<T> {
@@ -193,81 +179,6 @@ export async function savePreferredLlmModel(value: {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(value),
-  })
-  await parse(res)
-}
-
-export interface GrokOauthStatus {
-  loggedIn: boolean
-  expiresAt: number | null
-  lastRefresh: string | null
-}
-
-export interface GrokOauthLoginStart {
-  sessionId: string
-  userCode: string
-  verificationUri: string
-  verificationUriComplete: string | null
-  expiresIn: number
-  interval: number
-}
-
-export type GrokOauthLoginPoll =
-  | { status: 'pending'; interval: number }
-  | { status: 'success' }
-  | { status: 'error'; message: string; code: string }
-
-export async function fetchGrokOauthStatus(): Promise<GrokOauthStatus> {
-  const res = await fetch(apiUrl('/api/settings/grok-oauth'))
-  return parse<GrokOauthStatus>(res)
-}
-
-export async function startGrokOauthLogin(): Promise<GrokOauthLoginStart> {
-  const res = await fetch(apiUrl('/api/settings/grok-oauth/login/start'), {
-    method: 'POST',
-  })
-  return parse<GrokOauthLoginStart>(res)
-}
-
-export async function pollGrokOauthLogin(
-  sessionId: string,
-): Promise<GrokOauthLoginPoll> {
-  const res = await fetch(apiUrl('/api/settings/grok-oauth/login/poll'), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ sessionId }),
-  })
-  let body: unknown
-  try {
-    body = await res.json()
-  } catch {
-    throw new ApiClientError(`Request failed (${res.status})`, res.status)
-  }
-  const payload = body as { data?: GrokOauthLoginPoll; error?: string }
-  if (payload.data) return payload.data
-  if (!res.ok) {
-    throw new ApiClientError(
-      typeof payload.error === 'string' && payload.error.trim()
-        ? payload.error
-        : `Request failed (${res.status})`,
-      res.status,
-    )
-  }
-  throw new Error('Unexpected poll response')
-}
-
-export async function cancelGrokOauthLogin(sessionId?: string): Promise<void> {
-  const res = await fetch(apiUrl('/api/settings/grok-oauth/login/cancel'), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(sessionId ? { sessionId } : {}),
-  })
-  await parse(res)
-}
-
-export async function logoutGrokOauth(): Promise<void> {
-  const res = await fetch(apiUrl('/api/settings/grok-oauth/logout'), {
-    method: 'POST',
   })
   await parse(res)
 }
