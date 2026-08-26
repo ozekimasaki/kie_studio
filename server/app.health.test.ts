@@ -26,3 +26,19 @@ describe('GET /api/health', () => {
     expect(typeof json.isDesktop).toBe('boolean')
   })
 })
+
+describe('removed Grok OAuth routes', () => {
+  it('does not expose X-account OAuth login or proxy', async () => {
+    const app = createApp()
+    const paths = [
+      '/api/settings/grok-oauth',
+      '/api/settings/grok-oauth/login/start',
+      '/api/settings/grok-oauth/logout',
+      '/api/grok-oauth/v1/models',
+    ]
+    for (const path of paths) {
+      const res = await app.request(path, { method: path.includes('logout') || path.includes('start') ? 'POST' : 'GET' })
+      expect(res.status, path).toBe(404)
+    }
+  })
+})
