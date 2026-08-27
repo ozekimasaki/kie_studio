@@ -208,10 +208,12 @@ function ElapsedTimer({ createdAt }: { createdAt: number }) {
 
 export function HistoryGallery({
   items,
+  loading = false,
   activeCategory,
   activeTaskId,
   pendingCount = 0,
   retryDisabled,
+  onGoCreate,
   onSelect,
   onClose,
   onRemove,
@@ -226,10 +228,14 @@ export function HistoryGallery({
   onQuickAction,
 }: {
   items: HistoryItem[]
+  /** 初回 hydrate 中。空履歴と区別してスケルトンを表示する */
+  loading?: boolean
   activeCategory: 'image' | 'video' | 'audio'
   activeTaskId?: string | null
   pendingCount?: number
   retryDisabled?: boolean
+  /** モバイル空状態の「作成タブを開く」導線 */
+  onGoCreate?: () => void
   onSelect: (item: HistoryItem) => void
   onClose: () => void
   onRemove: (taskId: string) => void
@@ -387,6 +393,12 @@ export function HistoryGallery({
     setShowCompare(false)
   }
 
+  function resetFilters() {
+    setStateFilter('all')
+    setCategoryFilter('context')
+    setModelFilter('all')
+  }
+
   async function handleImportFile(file: File) {
     onImport(await file.text())
   }
@@ -399,11 +411,13 @@ export function HistoryGallery({
             ギャラリー
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            {items.length === 0
-              ? 'まだ生成がありません'
-              : pendingCount > 0
-                ? `${items.length} 件 · ${pendingCount} 件生成中`
-                : `${items.length} 件（ピン留めは上限まで保持）`}
+            {loading
+              ? '読込中…'
+              : items.length === 0
+                ? 'まだ生成がありません'
+                : pendingCount > 0
+                  ? `${items.length} 件 · ${pendingCount} 件生成中`
+                  : `${items.length} 件（ピン留めは上限まで保持）`}
           </p>
         </div>
         <div className="relative flex flex-wrap items-center gap-1.5">
@@ -547,20 +561,59 @@ export function HistoryGallery({
         </div>
       )}
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div
+          className="grid flex-1 content-start grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4"
+          role="status"
+          aria-label="履歴を読み込んでいます"
+        >
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
+            <div key={n} className="studio-tile" aria-hidden>
+              <div className="studio-skeleton aspect-square rounded-none" />
+              <div className="border-t border-[var(--border)] bg-[var(--surface-raised)] px-2 py-2.5">
+                <div className="studio-skeleton h-2.5 w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
           <div className="max-w-sm">
             <p className="studio-empty-title">まだ何もありません</p>
             <p className="studio-empty-body">
-              左のフォームから生成すると、ここに並びます
+              <span className="hidden lg:inline">
+                左のフォームから生成すると、ここに並びます
+              </span>
+              <span className="lg:hidden">
+                作成タブのフォームから生成すると、ここに並びます
+              </span>
             </p>
+            {onGoCreate && (
+              <button
+                type="button"
+                onClick={onGoCreate}
+                className="studio-btn mx-auto mt-4 lg:hidden"
+              >
+                作成タブを開く
+              </button>
+            )}
           </div>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-1 items-center justify-center px-6 py-16 text-center">
-          <p className="studio-empty-body">
-            絞り込み条件に一致する履歴がありません
-          </p>
+          <div className="max-w-sm">
+            <p className="studio-empty-title">見つかりません</p>
+            <p className="studio-empty-body">
+              絞り込み条件に一致する履歴がありません
+            </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="studio-btn mx-auto mt-4"
+            >
+              絞り込みをリセット
+            </button>
+          </div>
         </div>
       ) : (
         <div ref={scrollParentRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -647,7 +700,7 @@ export function HistoryGallery({
                             {primaryMedia?.previewUrl ? (
                               <img src={primaryMedia.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" />
                             ) : null}
-                            <span className="relative grid size-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--on-accent)] shadow-lg">
+                            <span className="relative grid size-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--on-accent)] shadow-[var(--shadow-md)]">
                               <Play size={20} fill="currentColor" />
                             </span>
                             <span className="relative line-clamp-2 text-xs font-semibold">
@@ -696,10 +749,10 @@ export function HistoryGallery({
                         )}
 
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 studio-tile-scrim p-2">
-                          <div className="truncate text-[11px] font-medium text-white">
+                          <div className="truncate text-[11px] font-medium text-[var(--on-scrim)]">
                             {shortModel(h.model)}
                           </div>
-                          <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-white/80 tabular-nums">
+                          <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-[var(--on-scrim-muted)] tabular-nums">
                             <span>{relativeTime(h.createdAt)}</span>
                             <span className="flex shrink-0 items-center gap-1.5">
                               {typeof h.creditsConsumed === 'number' && (

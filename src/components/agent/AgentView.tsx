@@ -218,7 +218,7 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
 
         {sidebarOpen && (
           <aside
-            className="absolute inset-y-0 left-0 z-[2] flex w-64 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface)] shadow-lg sm:static sm:z-auto sm:w-56 sm:shadow-none"
+            className="absolute inset-y-0 left-0 z-[2] flex w-64 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-context)] sm:static sm:z-auto sm:w-56 sm:shadow-none"
             aria-label="会話一覧"
           >
             {conversationsQuery.isLoading ? (

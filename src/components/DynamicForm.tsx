@@ -1,8 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { LayoutGroup, m, useReducedMotion } from 'motion/react'
 import type { FieldSchema, KlingElement, MentionStyle } from '../lib/models/types.ts'
 import { insertMentionToken } from '../lib/models/mentions.ts'
-import { fadeQuick, springUi } from '../lib/motion.ts'
 import {
   conciseFieldDescription,
   fieldConstraintHint,
@@ -102,7 +100,6 @@ function BooleanToggle({
   error?: string
   onChange: (next: boolean) => void
 }) {
-  const reduce = useReducedMotion()
   const current = on ? 'true' : 'false'
 
   return (
@@ -128,58 +125,53 @@ function BooleanToggle({
           現在 {current}
         </span>
       </div>
-      <LayoutGroup id={`bool-${field.name}`}>
-        <div
-          role="group"
-          aria-labelledby={id}
-          aria-describedby={`${id}-value`}
-          className="studio-segment"
+      {/* フォーム内の高頻度操作のため layout spring は付けず即時切替（DESIGN.md motion matrix） */}
+      <div
+        role="group"
+        aria-labelledby={id}
+        aria-describedby={`${id}-value`}
+        className="studio-segment"
+      >
+        <span id={`${id}-value`} className="sr-only">
+          現在の値は {current}
+        </span>
+        <Pressable
+          disabled={disabled}
+          aria-pressed={!on}
+          aria-label="false"
+          onClick={() => onChange(false)}
+          scaleTo={0.96}
+          className={`studio-segment-item ${
+            !on ? '!text-[var(--on-accent)]' : ''
+          }`}
         >
-          <span id={`${id}-value`} className="sr-only">
-            現在の値は {current}
-          </span>
-          <Pressable
-            disabled={disabled}
-            aria-pressed={!on}
-            aria-label="false"
-            onClick={() => onChange(false)}
-            scaleTo={0.96}
-            className={`studio-segment-item ${
-              !on ? '!text-[var(--on-accent)]' : ''
-            }`}
-          >
-            {!on && (
-              <m.span
-                layoutId={`bool-pill-${field.name}`}
-                className="absolute inset-0 z-0 bg-[var(--text)]"
-                transition={reduce ? fadeQuick : springUi}
-                aria-hidden
-              />
-            )}
-            <span className="relative z-10 font-mono">false</span>
-          </Pressable>
-          <Pressable
-            disabled={disabled}
-            aria-pressed={on}
-            aria-label="true"
-            onClick={() => onChange(true)}
-            scaleTo={0.96}
-            className={`studio-segment-item ${
-              on ? '!text-[var(--on-accent)]' : ''
-            }`}
-          >
-            {on && (
-              <m.span
-                layoutId={`bool-pill-${field.name}`}
-                className="absolute inset-0 z-0 bg-[var(--accent)]"
-                transition={reduce ? fadeQuick : springUi}
-                aria-hidden
-              />
-            )}
-            <span className="relative z-10 font-mono">true</span>
-          </Pressable>
-        </div>
-      </LayoutGroup>
+          {!on && (
+            <span
+              className="absolute inset-0 z-0 bg-[var(--text)]"
+              aria-hidden
+            />
+          )}
+          <span className="relative z-10 font-mono">false</span>
+        </Pressable>
+        <Pressable
+          disabled={disabled}
+          aria-pressed={on}
+          aria-label="true"
+          onClick={() => onChange(true)}
+          scaleTo={0.96}
+          className={`studio-segment-item ${
+            on ? '!text-[var(--on-accent)]' : ''
+          }`}
+        >
+          {on && (
+            <span
+              className="absolute inset-0 z-0 bg-[var(--accent)]"
+              aria-hidden
+            />
+          )}
+          <span className="relative z-10 font-mono">true</span>
+        </Pressable>
+      </div>
       <FieldError message={error} />
     </div>
   )

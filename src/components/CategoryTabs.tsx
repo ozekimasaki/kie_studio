@@ -1,7 +1,7 @@
 import { useRef, type KeyboardEvent } from 'react'
 import { LayoutGroup, m, useReducedMotion } from 'motion/react'
 import type { ModelCategory } from '../lib/models/types.ts'
-import { fadeQuick, springUi } from '../lib/motion.ts'
+import { fadeQuick, springSnappy } from '../lib/motion.ts'
 import { Pressable } from './motion/Pressable.tsx'
 
 const TABS: { id: ModelCategory; label: string; panelId: string }[] = [
@@ -106,7 +106,7 @@ export function CategoryTabs({
                 <m.span
                   layoutId="category-tab-indicator"
                   className="absolute inset-0 z-0 bg-[var(--accent)]"
-                  transition={reduce ? fadeQuick : springUi}
+                  transition={reduce ? fadeQuick : springSnappy}
                   aria-hidden
                 />
               )}

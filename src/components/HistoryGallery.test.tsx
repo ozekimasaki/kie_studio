@@ -15,6 +15,11 @@ beforeAll(() => {
     configurable: true,
     value: 600,
   })
+  // jsdom 未実装の scrollTo をスタブ（絞り込み変更時のスクロールリセット用）
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    value: () => {},
+  })
 })
 
 function imageItem(overrides: Partial<HistoryItem> = {}): HistoryItem {
@@ -69,6 +74,33 @@ describe('HistoryGallery', () => {
     renderGallery([])
     expect(screen.getByText('まだ何もありません')).toBeInTheDocument()
     expect(screen.getByText('まだ生成がありません')).toBeInTheDocument()
+  })
+
+  it('shows skeleton tiles instead of the empty state while loading', () => {
+    renderGallery([], { loading: true })
+    expect(
+      screen.getByRole('status', { name: '履歴を読み込んでいます' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('まだ何もありません')).not.toBeInTheDocument()
+  })
+
+  it('navigates to the create tab from the empty state', () => {
+    const onGoCreate = vi.fn()
+    renderGallery([], { onGoCreate })
+    fireEvent.click(screen.getByRole('button', { name: '作成タブを開く' }))
+    expect(onGoCreate).toHaveBeenCalledTimes(1)
+  })
+
+  it('resets filters from the no-match empty state', () => {
+    renderGallery([imageItem()])
+    fireEvent.change(
+      screen.getByRole('combobox', { name: '状態で絞り込み' }),
+      { target: { value: 'fail' } },
+    )
+    expect(screen.getByText('見つかりません')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '絞り込みをリセット' }))
+    expect(screen.queryByText('見つかりません')).not.toBeInTheDocument()
+    expect(screen.getByAltText('a red fox')).toBeInTheDocument()
   })
 
   it('renders an item and selects it on click', () => {
