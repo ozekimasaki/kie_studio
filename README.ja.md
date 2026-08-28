@@ -145,6 +145,7 @@ npm run sync:models -- --force
 | `STUDIO_DB_PATH` | 任意。SQLite の保存先を上書き（デスクトップ版は自動設定、dev は `data/studio.db`） |
 | `RELEASE_BASE_URL` | 任意。Electrobun 自動アップデートの静的ホスト URL（空で無効） |
 | `XAI_API_KEY` | 任意。エージェント Grok（組み込み xai）と、Grok CLI 未ログイン時の認証 |
+| `STUDIO_GROK_OPTIMIZE_MODEL` | 任意。プロンプト最適化の Grok CLI モデル（`grok models` の一覧にある ID のみ） |
 | `SYNC_MODELS_ON_START` | `0` で起動時同期オフ（既定オン） |
 | `SYNC_MODELS_FORCE` | `1` で起動時に強制フル同期 |
 | `SYNC_CONCURRENCY` | モデルページ取得の並列数（既定 `12`、最大 32） |

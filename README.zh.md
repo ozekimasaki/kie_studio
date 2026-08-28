@@ -145,6 +145,7 @@ npm run sync:models -- --force
 | `STUDIO_DB_PATH` | 可选。覆盖 SQLite 路径（桌面版自动设置；开发用 `data/studio.db`） |
 | `RELEASE_BASE_URL` | 可选。Electrobun 自动更新的静态托管 URL（留空禁用） |
 | `XAI_API_KEY` | 可选。Agent 模式 Grok（内置 xai）以及 Grok CLI 未登录时的认证 |
+| `STUDIO_GROK_OPTIMIZE_MODEL` | 可选。提示词优化用的 Grok CLI 模型（必须出现在 `grok models` 列表中） |
 | `SYNC_MODELS_ON_START` | `0` 禁用启动同步（默认开启） |
 | `SYNC_MODELS_FORCE` | `1` 启动时强制全量同步 |
 | `SYNC_CONCURRENCY` | 模型页面抓取并发数（默认 `12`，最大 32） |
