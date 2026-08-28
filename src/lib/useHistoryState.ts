@@ -267,6 +267,11 @@ export function useHistoryState({
 
   return {
     history: optimisticHistory,
+    /**
+     * false なら初回 hydrate・移行が未完了（空配列と区別して読込中を表示できる）。
+     * 取得失敗時はスケルトンが残り続けないよう true 扱いにする。
+     */
+    historyReady: historyPersistReady || historyQuery.isError,
     setHistory,
     requestHistoryPersist,
     togglePin,

@@ -125,6 +125,7 @@ export default function App() {
 
   const {
     history,
+    historyReady,
     setHistory,
     requestHistoryPersist,
     togglePin,
@@ -461,7 +462,11 @@ export default function App() {
           </div>
 
           {modelsQuery.isLoading ? (
-            <p className="text-sm text-[var(--text-muted)]">モデル読込中…</p>
+            <div
+              className="studio-skeleton h-12 w-full rounded-[var(--radius-md)]"
+              role="status"
+              aria-label="モデルを読み込んでいます"
+            />
           ) : modelsQuery.isError ? (
             <p className="text-sm text-[var(--danger)]" role="alert">
               {(modelsQuery.error as Error).message}
@@ -673,10 +678,16 @@ export default function App() {
                     setFormNotice(null)
                     generate.mutate({ source: 'form' })
                   }}
-                  className="studio-btn-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  className="studio-btn-primary cursor-pointer gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                   scaleTo={0.96}
                   aria-busy={submitting || undefined}
                 >
+                  {submitting && (
+                    <span
+                      className="studio-spinner size-4 shrink-0 rounded-full border-2 border-[var(--on-accent)]/40 border-t-[var(--on-accent)]"
+                      aria-hidden
+                    />
+                  )}
                   {submitting
                     ? '送信中…'
                     : creditEstimate !== null
@@ -699,9 +710,11 @@ export default function App() {
       canvas={
         <HistoryGallery
           items={history}
+          loading={!historyReady}
           activeCategory={category}
           activeTaskId={viewerTaskId}
           pendingCount={pendingCount}
+          onGoCreate={() => setMobileView('create')}
           onSelect={selectHistory}
           onClose={closeViewer}
           onReuse={reuseHistory}

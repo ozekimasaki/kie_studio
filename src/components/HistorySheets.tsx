@@ -456,7 +456,7 @@ export function HistorySheets({
                         />
                       ) : audio ? (
                         <div className="flex min-h-48 flex-col items-center justify-center gap-4 bg-[var(--accent-soft)] p-6 text-center">
-                          {asset.previewUrl && <img src={asset.previewUrl} alt="" className="size-28 rounded-[var(--radius-md)] object-cover shadow-lg" />}
+                          {asset.previewUrl && <img src={asset.previewUrl} alt="" className="size-28 rounded-[var(--radius-md)] object-cover shadow-[var(--shadow-md)]" />}
                           <div>
                             <p className="font-semibold">{asset.title ?? `候補 ${index + 1}`}</p>
                             {asset.duration && <p className="mt-1 text-xs text-[var(--text-muted)]">{Math.round(asset.duration)}秒</p>}

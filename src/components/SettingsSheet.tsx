@@ -307,9 +307,11 @@ export function SettingsSheet({
           </label>
 
           {settingsQuery.isLoading ? (
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              設定を読込中…
-            </p>
+            <div
+              className="studio-skeleton mt-2 h-10 w-full rounded-[var(--radius-md)]"
+              role="status"
+              aria-label="設定を読み込んでいます"
+            />
           ) : (
             <>
               {settings?.hasApiKey ? (
