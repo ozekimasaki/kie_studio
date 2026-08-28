@@ -46,8 +46,9 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: prompt-optimize
+- ingest: server-api
 - pages update: agent-mode
-- pages update: server-api
 - pages update: client-lib
 - pages update: frontend
 - pages update: architecture
@@ -55,5 +56,4 @@ Most-linked pages that serve as knowledge hubs:
 - pages update: overview
 - ingest: core-concepts
 - ingest: catalog-sync
-- ingest: prompt-optimize
 

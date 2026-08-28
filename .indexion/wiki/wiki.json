@@ -143,6 +143,7 @@
       "file": "prompt-optimize.md",
       "sources": [
         "server/grok/optimize-profiles.ts",
+        "server/grok/optimize-model.ts",
         "server/grok/guides/seedance.ts",
         "server/grok/guides/seedance-2-5.ts",
         "server/grok/guides/minimax-h3.ts",

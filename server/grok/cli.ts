@@ -3,6 +3,11 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  parseGrokModelsOutput,
+  pickOptimizeGrokModel,
+  type GrokModelCatalog,
+} from './optimize-model.ts'
+import {
   formatProfileRulesMarkdown,
   getOptimizeProfile,
   type OptimizeFamily,
@@ -10,32 +15,27 @@ import {
 } from './optimize-profiles.ts'
 
 const STATUS_CACHE_MS = 60_000
+const MODEL_CATALOG_CACHE_MS = 10 * 60_000
+const MODELS_TIMEOUT_MS = 30_000
 const OPTIMIZE_TIMEOUT_MS = 120_000
 
 const OPT_START = '<<<OPTIMIZED>>>'
 const OPT_END = '<<<END>>>'
 
-/** Grok Build の追従エイリアス。CLI が上がると中身が現行モデルへ差し替わる。 */
-export const GROK_OPTIMIZE_MODEL_ALIAS = 'grok-build'
-
-export function resolveOptimizeGrokModel(
-  env: NodeJS.ProcessEnv = process.env,
-): string {
-  const override = env.STUDIO_GROK_OPTIMIZE_MODEL?.trim()
-  return override || GROK_OPTIMIZE_MODEL_ALIAS
-}
+export type { GrokModelCatalog }
+export { parseGrokModelsOutput, pickOptimizeGrokModel }
 
 export function buildOptimizeGrokArgs(
   workDir: string,
   headlessPrompt: string,
-  env: NodeJS.ProcessEnv = process.env,
+  model: string,
 ): string[] {
   return [
     '--no-auto-update',
     '--cwd',
     workDir,
     '-m',
-    resolveOptimizeGrokModel(env),
+    model,
     '-p',
     headlessPrompt,
     '--output-format',
@@ -62,7 +62,14 @@ type StatusCache = {
   version?: string
 }
 
+type ModelCatalogCache = {
+  at: number
+  version?: string
+  catalog: GrokModelCatalog
+}
+
 let statusCache: StatusCache | null = null
+let modelCatalogCache: ModelCatalogCache | null = null
 
 function killProcessTree(child: ReturnType<typeof spawn>) {
   if (child.pid == null) return
@@ -134,6 +141,19 @@ function runGrok(
   })
 }
 
+type GrokRunner = typeof runGrok
+let grokRunner: GrokRunner = runGrok
+
+export function setGrokRunnerForTests(runner: GrokRunner | null): void {
+  grokRunner = runner ?? runGrok
+  statusCache = null
+  modelCatalogCache = null
+}
+
+export function clearGrokStatusCacheForTests(): void {
+  statusCache = null
+}
+
 export async function getGrokStatus(options?: {
   force?: boolean
 }): Promise<{ available: boolean; version?: string }> {
@@ -150,7 +170,7 @@ export async function getGrokStatus(options?: {
   }
 
   try {
-    const { stdout, stderr, code } = await runGrok(['--version'], {
+    const { stdout, stderr, code } = await grokRunner(['--version'], {
       timeoutMs: 10_000,
     })
     const text = `${stdout}\n${stderr}`.trim()
@@ -162,6 +182,56 @@ export async function getGrokStatus(options?: {
   } catch {
     statusCache = { at: now, available: false }
     return { available: false }
+  }
+}
+
+async function fetchGrokModelCatalog(): Promise<GrokModelCatalog> {
+  const { stdout, stderr, code } = await grokRunner(
+    ['--no-auto-update', 'models'],
+    { timeoutMs: MODELS_TIMEOUT_MS },
+  )
+  const text = `${stdout}\n${stderr}`
+  const catalog = parseGrokModelsOutput(text)
+  if (catalog.defaultModel || catalog.ids.length > 0) return catalog
+
+  const detail = text.trim() || `exit code ${code}`
+  throw new GrokCliError(
+    `Grok CLI のモデル一覧を取得できませんでした: ${detail.slice(0, 500)}`,
+    'failed',
+  )
+}
+
+export async function getGrokModelCatalog(options?: {
+  force?: boolean
+}): Promise<GrokModelCatalog> {
+  const status = await getGrokStatus()
+  const now = Date.now()
+  if (
+    !options?.force &&
+    modelCatalogCache &&
+    now - modelCatalogCache.at < MODEL_CATALOG_CACHE_MS &&
+    modelCatalogCache.version === status.version
+  ) {
+    return modelCatalogCache.catalog
+  }
+
+  const catalog = await fetchGrokModelCatalog()
+  modelCatalogCache = { at: now, version: status.version, catalog }
+  return catalog
+}
+
+export async function resolveOptimizeGrokModel(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<string> {
+  const override = env.STUDIO_GROK_OPTIMIZE_MODEL?.trim() || undefined
+  const catalog = await getGrokModelCatalog()
+  try {
+    return pickOptimizeGrokModel(catalog, override)
+  } catch (e) {
+    throw new GrokCliError(
+      e instanceof Error ? e.message : '最適化用モデルを解決できませんでした',
+      'failed',
+    )
   }
 }
 
@@ -333,8 +403,9 @@ export async function optimizePromptWithGrok(params: {
       'Do not use tools other than reading those files. Do not explain.',
     ].join(' ')
 
-    const result = await runGrok(
-      buildOptimizeGrokArgs(workDir, headlessPrompt),
+    const model = await resolveOptimizeGrokModel()
+    const result = await grokRunner(
+      buildOptimizeGrokArgs(workDir, headlessPrompt, model),
       { timeoutMs: OPTIMIZE_TIMEOUT_MS, cwd: workDir },
     )
 
