@@ -47,8 +47,11 @@ function mockModelThatCallsGenerate() {
         },
         {
           type: 'finish',
-          finishReason: 'tool-calls',
-          usage: { inputTokens: 8, outputTokens: 4, totalTokens: 12 },
+          finishReason: { unified: 'tool-calls', raw: 'tool-calls' },
+          usage: {
+            inputTokens: { total: 8, noCache: 8, cacheRead: undefined, cacheWrite: undefined },
+            outputTokens: { total: 4, text: 4, reasoning: undefined },
+          },
         },
       ]),
     },
@@ -90,10 +93,24 @@ describe('createStudioStreamOptions + generate-media approval', () => {
     expect(parts.some((part) => part.type === 'tool-result')).toBe(false)
   })
 
-  it('プランでは generate-media を自動却下し、実行しない', async () => {
+  it('プランでは generate-media を実行せず tool-error にする', async () => {
     const parts = await collectStream('plan')
     expect(generateMedia).not.toHaveBeenCalled()
-    const denied = parts.find((part) => part.type === 'tool-output-denied')
-    expect(denied).toBeTruthy()
+    expect(parts.some((part) => part.type === 'tool-error')).toBe(true)
+    expect(parts.some((part) => part.type === 'tool-result')).toBe(false)
+  })
+
+  it('generate-media が active でも denied なら実行しない', async () => {
+    const result = streamText({
+      model: mockModelThatCallsGenerate(),
+      prompt: '夕焼けの画像を作って',
+      ...createStudioStreamOptions({ agentRunMode: 'agent' }),
+      toolApproval: { 'generate-media': 'denied' },
+    })
+    const parts = await convertReadableStreamToArray(result.fullStream)
+    expect(generateMedia).not.toHaveBeenCalled()
+    expect(parts.some((part) => part.type === 'tool-approval-request')).toBe(true)
+    expect(parts.some((part) => part.type === 'tool-approval-response')).toBe(true)
+    expect(parts.some((part) => part.type === 'tool-result')).toBe(false)
   })
 })

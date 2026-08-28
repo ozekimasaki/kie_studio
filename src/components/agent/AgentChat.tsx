@@ -8,7 +8,8 @@ import type { AgentRunMode } from '../../lib/agentRunMode.ts'
 import { AGENT_UNAVAILABLE_MESSAGE, formatAgentSendError } from '../../lib/agentUnavailable.ts'
 import { AgentMediaTaskCard } from './AgentMediaTaskCard.tsx'
 import { AgentRunModeToggle } from './AgentRunModeToggle.tsx'
-import { AgentToolCard, approvalIdOf, isToolPart, toolNameOf } from './AgentToolCard.tsx'
+import { AgentToolCard } from './AgentToolCard.tsx'
+import { approvalIdOf, isToolPart, toolNameOf } from './agentToolParts.ts'
 import { readMediaTaskData, type MediaTaskData } from './mediaTaskData.ts'
 
 function ReasoningBlock({ text, streaming }: { text: string; streaming: boolean }) {

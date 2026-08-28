@@ -18,13 +18,15 @@ React UI。入口は `src/main.tsx` → `src/App.tsx`。IMAGE / VIDEO / AUDIO �
 
 | コンポーネント | 役割 |
 |------|------|
-| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体 |
+| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体。プラン/エージェントはセッション state |
 | `components/agent/AgentChat.tsx` | `useChat`（AI SDK）による送受信。`POST /api/agent/chat`。既存会話の messages GET 失敗時はエラーと再試行 |
+| `components/agent/AgentRunModeToggle.tsx` | コンポーザの `プラン | エージェント` |
+| `components/agent/AgentToolCard.tsx` | ツール呼び出しカード。`generate-media` の「生成を認可 / 却下」 |
 | `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |
 | `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |
 | `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |
 
-エージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。
+生成は認可ボタンが押されるまで始まらない。プランモードでは生成ツールを呼ばない。エージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。
 
 ## AUDIO
 

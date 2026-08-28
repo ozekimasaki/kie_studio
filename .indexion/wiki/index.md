@@ -46,10 +46,10 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
-- pages update: agent-mode
-- pages update: server-api
 - pages update: client-lib
+- pages update: server-api
 - pages update: frontend
+- pages update: agent-mode
 - pages update: architecture
 - pages update: getting-started
 - pages update: overview

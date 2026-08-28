@@ -26,7 +26,7 @@ Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。
 | POST | `/api/download-url` | 一時 download URL |
 | GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |
 | GET | `/api/agent/health` | エージェントランタイム（Hono 生存確認） |
-| POST | `/api/agent/chat` | AI SDK UI message stream |
+| POST | `/api/agent/chat` | AI SDK UI message stream。任意の `agentRunMode`（`plan` \| `agent`、省略時 `agent`）。`generate-media` は tool approval 待ち |
 | GET/POST/PATCH/DELETE | `/api/agent-conversations` | エージェント会話メタデータ |
 | GET | `/api/agent-conversations/:id/messages` | 保存済みチャット本文 |
 | * | `/api/internal/agent/*` | 旧内部 API（`x-studio-agent-token` 必須）。現行チャットは使わない |
@@ -48,7 +48,7 @@ Hono エントリは `server/index.ts`（`createApp()` は `server/app.ts`）。
 
 ## DB
 
-`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。エージェント本文は `agent_conversations.messages_json`（additive）。メディア本体は保存しない。旧 `flue.db` は読まない。
+`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。エージェント本文は `agent_conversations.messages_json`（additive）。`app_settings.agent_tool_approval_secret` は生成認可 HMAC。メディア本体は保存しない。旧 `flue.db` は読まない。
 
 ## エラー
 

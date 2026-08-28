@@ -11,7 +11,8 @@ Frontend (Vite :5173)
         │
         ▼
   Hono (:8787)  同一 Bun.serve
-    server/agent/chat.ts     streamText + tools
+    server/agent/chat.ts     streamText + tools + toolApproval
+    server/agent/runMode.ts  plan | agent
     server/agent/resolveModel.ts
     server/agent/actions.ts  catalog / adapter / DB を直接呼ぶ
     studio.db                agent_conversations.messages_json
@@ -23,7 +24,9 @@ Frontend (Vite :5173)
 
 | ファイル | 役割 |
 |----------|------|
-| `systemPrompt.ts` | 日本語システムプロンプト |
+| `systemPrompt.ts` | エージェント / プランの日本語システムプロンプト |
+| `runMode.ts` | `agentRunMode`（`plan` \| `agent`）、activeTools、toolApproval |
+| `approvalSecret.ts` | tool approval HMAC 秘密鍵（`app_settings`） |
 | `resolveModel.ts` | builtin / `custom-*` を LanguageModel に解決 |
 | `tools.ts` | AI SDK `tool()`（ハイフン名） |
 | `actions.ts` | workflows / generate / task / history / credits / optimize |
@@ -35,13 +38,24 @@ Frontend (Vite :5173)
 | ツール | 役割 |
 |--------|------|
 | `list-workflows` / `get-workflow-schema` | 生成前の候補・入力確認 |
-| `generate-media` / `get-task-status` | 非同期生成 + 状態 |
+| `generate-media` / `get-task-status` | 非同期生成 + 状態（生成は認可後） |
 | `search-history` / `get-task-input` | 履歴検索・入力復元 |
 | `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |
 
 `generate-media` は `taskId` に加え `provider` / `operation` を返す。`get-task-status` はそれを使う。省略時や LLM が誤った provider を渡しても、履歴（`studio.db`）の値を優先する。
 
-`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。カード自体はクライアントポーリングせず、`get-task-status` が同じ `taskId` の data を更新する。履歴はサーバー側 upsert で通常ギャラリーにも載り、ギャラリー側のポーリングが進捗を反映する。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。
+`generate-media` の `execute` は、チャット上の「生成を認可」が来るまで走らない（`streamText.toolApproval` の `user-approval`）。HMAC は `experimental_toolApprovalSecret`（`app_settings.agent_tool_approval_secret`）。認可後に `data-media-task` パートを送り、カードが submitted → succeeded/failed と遷移する。カード自体はクライアントポーリングせず、`get-task-status` が同じ `taskId` の data を更新する。履歴はサーバー側 upsert で通常ギャラリーにも載り、ギャラリー側のポーリングが進捗を反映する。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。
+
+### プランモード
+
+`POST /api/agent/chat` の `agentRunMode`（省略時 `agent`）。
+
+| モード | 生成 |
+|--------|------|
+| `agent` | `generate-media` は呼べるが、UI の認可ボタン待ち |
+| `plan` | `generate-media` を `activeTools` から外す。万一呼ばれても `denied` |
+
+プランは調査・提案のみ。構造化プランカードは持たない。実行したいときはエージェントに切り替え、通常どおり認可する。
 
 ## Grok（API キー）
 
@@ -53,10 +67,13 @@ Frontend (Vite :5173)
 
 ## フロント
 
-- `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー
+- `src/components/agent/` — AgentView、チャット、ツールカード、メディアタスクカード、モデルピッカー、実行モード切替
 - `src/lib/agentApi.ts` — `agentChatUrl()`（`/api/agent/chat`）、`fetchAgentHealth`（`/api/agent/health`）、会話 CRUD、メッセージ hydrate
+- `src/lib/agentRunMode.ts` — `plan` \| `agent`
 - `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / カスタムエンドポイント / 既定モデル
 - `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替
+
+コンポーザ左の `プラン | エージェント` はセッション state（DB には持たない。会話を跨いでも維持）。`useChat` は `sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses` で認可後にストリームを再開する。認可待ちの間はメッセージ送信を止める。
 
 ### 会話のライフサイクル（遅延作成）
 
@@ -76,7 +93,7 @@ draft 中の `AgentChat` は履歴 GET をしない。送信失敗時は入力�
 
 - `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）
 - `/api/agent/health` — Hono が生きていれば `{ ok: true }`。502 は API プロセス自体が落ちているときだけ
-- `/api/agent/chat` — UI message stream（`conversationId` / `provider` / `model` / `messages`）
+- `/api/agent/chat` — UI message stream（`conversationId` / `provider` / `model` / `messages` / 任意の `agentRunMode`）
 - `/api/agent-conversations` — 会話メタデータ CRUD
 - `/api/agent-conversations/:id/messages` — `messages_json`
 - `/api/internal/agent/*` — 旧内部 API（トークン必須）。現行エージェントは使わない
