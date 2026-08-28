@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import {
   formatProfileRulesMarkdown,
   getOptimizeProfile,
+  type OptimizeFamily,
   type OptimizeProfile,
 } from './optimize-profiles.ts'
 
@@ -166,6 +167,25 @@ export async function getGrokStatus(options?: {
 
 export type PromptAssistMode = 'generate' | 'optimize'
 
+function formatOutputMentionRule(
+  family: OptimizeFamily,
+  mode: PromptAssistMode,
+): string {
+  if (family === 'minimax-h3') {
+    return mode === 'generate'
+      ? '- Studio の参照タグはユーザー意図に含まれる場合のみ使い、同じ番号の <Picture N> / <Video N> / <Audio N> を併用する。無い番号は捏造しない。'
+      : '- 入力の Studio タグ（@imageN / @VideoN / @AudioN）は形式と番号を維持し、公式の <Picture N> / <Video N> / <Audio N> を同じ番号で併用する。'
+  }
+  if (family === 'wan') {
+    return mode === 'generate'
+      ? '- Studio の参照タグはユーザー意図に含まれる場合のみ使い、同じ番号の Image n / Video n を併用する。無い番号は捏造しない。'
+      : '- 入力の Studio タグ（@imageN / @VideoN）は形式と番号を維持し、公式の Image n / Video n を同じ番号で併用する。'
+  }
+  return mode === 'generate'
+    ? '- 参照タグはユーザー意図に含まれる場合のみ使い、勝手に番号を捏造しない。'
+    : '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。'
+}
+
 function buildAssistRequest(params: {
   mode: PromptAssistMode
   prompt: string
@@ -226,13 +246,7 @@ function buildAssistRequest(params: {
       ? '- 完成したプロンプト本文のみを出力する。'
       : '- 最適化後のプロンプト本文のみを出力する。',
     '- 説明・前置き・箇条書きの解説は禁止。',
-    isGenerate
-      ? params.profile.family === 'minimax-h3'
-        ? '- Studio の参照タグはユーザー意図に含まれる場合のみ使い、同じ番号の <Picture N> / <Video N> / <Audio N> を併用する。無い番号は捏造しない。'
-        : '- 参照タグはユーザー意図に含まれる場合のみ使い、勝手に番号を捏造しない。'
-      : params.profile.family === 'minimax-h3'
-        ? '- 入力の Studio タグ（@imageN / @VideoN / @AudioN）は形式と番号を維持し、公式の <Picture N> / <Video N> / <Audio N> を同じ番号で併用する。'
-        : '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。',
+    formatOutputMentionRule(params.profile.family, params.mode),
     `- 必ず次のマーカーで囲む: ${OPT_START} と ${OPT_END}`,
     '- マーカーの外側には何も書かない。',
   ]
