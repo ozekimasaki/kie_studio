@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "68",
+  "next_vid": "69",
   "entries": [
     {
       "section": {
@@ -269,7 +269,7 @@
       "section": {
         "id": "frontend#-3",
         "title": "エージェントモード",
-        "content": "\n| コンポーネント | 役割 |\n|------|------|\n| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体 |\n| `components/agent/AgentChat.tsx` | `useChat`（AI SDK）による送受信。`POST /api/agent/chat`。既存会話の messages GET 失敗時はエラーと再試行 |\n| `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |\n| `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |\n| `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |\n\nエージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。\n\n",
+        "content": "\n| コンポーネント | 役割 |\n|------|------|\n| `components/agent/AgentView.tsx` | 会話一覧・新規作成・チャット本体。プラン/エージェントはセッション state |\n| `components/agent/AgentChat.tsx` | `useChat`（AI SDK）による送受信。`POST /api/agent/chat`。既存会話の messages GET 失敗時はエラーと再試行 |\n| `components/agent/AgentRunModeToggle.tsx` | コンポーザの `プラン | エージェント` |\n| `components/agent/AgentToolCard.tsx` | ツール呼び出しカード。`generate-media` の「生成を認可 / 却下」 |\n| `components/agent/AgentMediaTaskCard.tsx` | `data-media-task` のライブ状態カード |\n| `components/agent/AgentModelPicker.tsx` | 会話作成時の LLM 選択 |\n| `components/LlmSettingsSection.tsx` | Settings の LLM キー / エンドポイント |\n\n生成は認可ボタンが押されるまで始まらない。プランモードでは生成ツールを呼ばない。エージェント経由の生成は履歴へ upsert され、既存のポーリングとギャラリーに載る。\n\n",
         "page_id": "frontend",
         "level": 2
       },
@@ -319,7 +319,7 @@
       "section": {
         "id": "client-lib",
         "title": "Client Lib",
-        "content": "\nフロント共有ロジック（`src/lib/`）。\n\n| ファイル | 役割 |\n|------|------|\n| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |\n| `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |\n| `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |\n| `taskRelations.ts` | 編集・Aleph の parent task 決定 |\n| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化、`mergeServerHistory`（CLI 件の Gallery 反映） |\n| `form.ts` | default、dirty、schema 制約検証、先頭 error focus |\n| `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |\n| `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |\n| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |\n| `agentApi.ts` | エージェント会話 CRUD、`/api/agent/chat`、health、メッセージ hydrate |\n| `agentUnavailable.ts` | API 不通時の表示文言。`{ \"error\": \"...\" }` 本文はメッセージだけ取り出す |\n\n",
+        "content": "\nフロント共有ロジック（`src/lib/`）。\n\n| ファイル | 役割 |\n|------|------|\n| `api.ts` | provider 対応 generate/task、Suno、Persona、素材棚、archive クライアント |\n| `submissionQueue.ts` / `useSubmissionQueue.ts` | 20件/10秒、429再送、未送信キャンセル、課金エラー分類 |\n| `workflowValidation.ts` | Suno区間、Runway組合せ、TTS分割、lip-sync pairing |\n| `taskRelations.ts` | 編集・Aleph の parent task 決定 |\n| `history.ts` / `useHistoryPersistence.ts` | 履歴 cap、正規化、SQLite PUT の直列化、`mergeServerHistory`（CLI 件の Gallery 反映） |\n| `form.ts` | default、dirty、schema 制約検証、先頭 error focus |\n| `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |\n| `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |\n| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |\n| `agentApi.ts` | エージェント会話 CRUD、`/api/agent/chat`、health、メッセージ hydrate |\n| `agentRunMode.ts` | エージェント実行モード（`plan` \\| `agent`） |\n| `agentUnavailable.ts` | API 不通時の表示文言。`{ \"error\": \"...\" }` 本文はメッセージだけ取り出す |\n\n",
         "page_id": "client-lib",
         "level": 1
       },
@@ -359,7 +359,7 @@
       "section": {
         "id": "server-api#-2",
         "title": "主要ルート",
-        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成し、履歴へ upsert。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化し、終端は履歴へ mirror |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET | `/api/history` | SQLite 履歴一覧 |\n| PUT | `/api/history` | 履歴 upsert（未知の taskId は消さない。終端を pending で上書きしない） |\n| DELETE | `/api/history/:taskId` | 1 件削除 |\n| POST | `/api/history/clear-unpinned` | 未ピンを削除 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n| GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |\n| GET | `/api/agent/health` | エージェントランタイム（Hono 生存確認） |\n| POST | `/api/agent/chat` | AI SDK UI message stream |\n| GET/POST/PATCH/DELETE | `/api/agent-conversations` | エージェント会話メタデータ |\n| GET | `/api/agent-conversations/:id/messages` | 保存済みチャット本文 |\n| * | `/api/internal/agent/*` | 旧内部 API（`x-studio-agent-token` 必須）。現行チャットは使わない |\n\n",
+        "content": "\n| Method | Path | 説明 |\n|--------|------|------|\n| GET | `/api/models?category=` | Market catalog と専用 workflow を統合 |\n| POST | `/api/upload` | 一意名で Upload API へ転送。音源は素材棚へ登録 |\n| GET/DELETE | `/api/audio-assets[/:id]` | 外部音源素材棚 |\n| POST | `/api/generate` | provider / operation adapter で作成し、履歴へ upsert。Market は既定 |\n| GET | `/api/task` | provider / operation ごとの状態を正規化し、終端は履歴へ mirror |\n| POST | `/api/suno/timestamped-lyrics` | alignedWords / waveformData |\n| POST | `/api/suno/style` | music style 補助 |\n| POST | `/api/suno/persona` | Persona 作成と保存 |\n| GET/DELETE | `/api/personas[/:id]` | Persona 素材棚 |\n| POST | `/api/archive` | 複数 media と lyrics を ZIP streaming |\n| GET | `/api/history` | SQLite 履歴一覧 |\n| PUT | `/api/history` | 履歴 upsert（未知の taskId は消さない。終端を pending で上書きしない） |\n| DELETE | `/api/history/:taskId` | 1 件削除 |\n| POST | `/api/history/clear-unpinned` | 未ピンを削除 |\n| POST | `/api/history/import` | JSON merge |\n| POST | `/api/history/migrate` | 旧 localStorage 移行 |\n| GET | `/api/credits` | 残高 |\n| POST | `/api/download-url` | 一時 download URL |\n| GET/PUT/DELETE | `/api/settings/llm*` | LLM API キー・カスタムエンドポイント・既定モデル |\n| GET | `/api/agent/health` | エージェントランタイム（Hono 生存確認） |\n| POST | `/api/agent/chat` | AI SDK UI message stream。任意の `agentRunMode`（`plan` \\| `agent`、省略時 `agent`）。`generate-media` は tool approval 待ち |\n| GET/POST/PATCH/DELETE | `/api/agent-conversations` | エージェント会話メタデータ |\n| GET | `/api/agent-conversations/:id/messages` | 保存済みチャット本文 |\n| * | `/api/internal/agent/*` | 旧内部 API（`x-studio-agent-token` 必須）。現行チャットは使わない |\n\n",
         "page_id": "server-api",
         "level": 2
       },
@@ -379,7 +379,7 @@
       "section": {
         "id": "server-api#db-4",
         "title": "DB",
-        "content": "\n`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。エージェント本文は `agent_conversations.messages_json`（additive）。メディア本体は保存しない。旧 `flue.db` は読まない。\n\n",
+        "content": "\n`data/studio.db`（デスクトップは `STUDIO_DB_PATH`）に `history_items`、`saved_personas`、`saved_audio_assets`、`agent_conversations`、`app_settings` を持つ。履歴スキーマは provider、operation、parent、media、raw param/result を additive migration で追加する。エージェント本文は `agent_conversations.messages_json`（additive）。`app_settings.agent_tool_approval_secret` は生成認可 HMAC。メディア本体は保存しない。旧 `flue.db` は読まない。\n\n",
         "page_id": "server-api",
         "level": 2
       },
@@ -579,7 +579,7 @@
       "section": {
         "id": "agent-mode#-2",
         "title": "構成",
-        "content": "\n```text\nFrontend (Vite :5173)\n  Studio | エージェント セグメントトグル (FloatingChrome)\n  AgentView / AgentChat → useChat → POST /api/agent/chat\n        │\n        ▼\n  Hono (:8787)  同一 Bun.serve\n    server/agent/chat.ts     streamText + tools\n    server/agent/resolveModel.ts\n    server/agent/actions.ts  catalog / adapter / DB を直接呼ぶ\n    studio.db                agent_conversations.messages_json\n```\n\nデスクトップ（Electrobun）でも同じ Hono がチャットを処理する。`/agents/*` プロキシも `Resources/agent-server` 同梱も無い。Windows の bun エントリは `%TEMP%/electrobun-*.js` の Worker として動くため、起動時に `%LocalAppData%\\ai.kie.studio\\<ch>\\app\\bin` へ `chdir` して Electrobun の `version.json` を読めるようにする（`src/bun/installCwd.ts`）。これはエージェント実装とは独立したホスト修正。\n\n",
+        "content": "\n```text\nFrontend (Vite :5173)\n  Studio | エージェント セグメントトグル (FloatingChrome)\n  AgentView / AgentChat → useChat → POST /api/agent/chat\n        │\n        ▼\n  Hono (:8787)  同一 Bun.serve\n    server/agent/chat.ts     streamText + tools + toolApproval\n    server/agent/runMode.ts  plan | agent\n    server/agent/resolveModel.ts\n    server/agent/actions.ts  catalog / adapter / DB を直接呼ぶ\n    studio.db                agent_conversations.messages_json\n```\n\nデスクトップ（Electrobun）でも同じ Hono がチャットを処理する。`/agents/*` プロキシも `Resources/agent-server` 同梱も無い。Windows の bun エントリは `%TEMP%/electrobun-*.js` の Worker として動くため、起動時に `%LocalAppData%\\ai.kie.studio\\<ch>\\app\\bin` へ `chdir` して Electrobun の `version.json` を読めるようにする（`src/bun/installCwd.ts`）。これはエージェント実装とは独立したホスト修正。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -589,7 +589,7 @@
       "section": {
         "id": "agent-mode#serveragent-3",
         "title": "サーバー（`server/agent/`）",
-        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `systemPrompt.ts` | 日本語システムプロンプト |\n| `resolveModel.ts` | builtin / `custom-*` を LanguageModel に解決 |\n| `tools.ts` | AI SDK `tool()`（ハイフン名） |\n| `actions.ts` | workflows / generate / task / history / credits / optimize |\n| `chat.ts` | `createUIMessageStream` + `streamText`。会話が無ければ upsert |\n| `routes/agentChat.ts` | `GET /api/agent/health`、`GET /api/agent-conversations/:id/messages`、`POST /api/agent/chat` |\n\n",
+        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `systemPrompt.ts` | エージェント / プランの日本語システムプロンプト |\n| `runMode.ts` | `agentRunMode`（`plan` \\| `agent`）、activeTools、toolApproval |\n| `approvalSecret.ts` | tool approval HMAC 秘密鍵（`app_settings`） |\n| `resolveModel.ts` | builtin / `custom-*` を LanguageModel に解決 |\n| `tools.ts` | AI SDK `tool()`（ハイフン名） |\n| `actions.ts` | workflows / generate / task / history / credits / optimize |\n| `chat.ts` | `createUIMessageStream` + `streamText`。会話が無ければ upsert |\n| `routes/agentChat.ts` | `GET /api/agent/health`、`GET /api/agent-conversations/:id/messages`、`POST /api/agent/chat` |\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -599,7 +599,7 @@
       "section": {
         "id": "agent-mode#-4",
         "title": "ツール",
-        "content": "\n| ツール | 役割 |\n|--------|------|\n| `list-workflows` / `get-workflow-schema` | 生成前の候補・入力確認 |\n| `generate-media` / `get-task-status` | 非同期生成 + 状態 |\n| `search-history` / `get-task-input` | 履歴検索・入力復元 |\n| `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |\n\n`generate-media` は `taskId` に加え `provider` / `operation` を返す。`get-task-status` はそれを使う。省略時や LLM が誤った provider を渡しても、履歴（`studio.db`）の値を優先する。\n\n`generate-media` は `data-media-task` パートを送り、チャット内カードが submitted → succeeded/failed と遷移する。カード自体はクライアントポーリングせず、`get-task-status` が同じ `taskId` の data を更新する。履歴はサーバー側 upsert で通常ギャラリーにも載り、ギャラリー側のポーリングが進捗を反映する。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。\n\n",
+        "content": "\n| ツール | 役割 |\n|--------|------|\n| `list-workflows` / `get-workflow-schema` | 生成前の候補・入力確認 |\n| `generate-media` / `get-task-status` | 非同期生成 + 状態（生成は認可後） |\n| `search-history` / `get-task-input` | 履歴検索・入力復元 |\n| `get-credit-balance` / `optimize-prompt` | 残高・プロンプト最適化 |\n\n`generate-media` は `taskId` に加え `provider` / `operation` を返す。`get-task-status` はそれを使う。省略時や LLM が誤った provider を渡しても、履歴（`studio.db`）の値を優先する。\n\n`generate-media` の `execute` は、チャット上の「生成を認可」が来るまで走らない（`streamText.toolApproval` の `user-approval`）。HMAC は `experimental_toolApprovalSecret`（`app_settings.agent_tool_approval_secret`）。認可後に `data-media-task` パートを送り、カードが submitted → succeeded/failed と遷移する。カード自体はクライアントポーリングせず、`get-task-status` が同じ `taskId` の data を更新する。履歴はサーバー側 upsert で通常ギャラリーにも載り、ギャラリー側のポーリングが進捗を反映する。loopback の `/api/internal/agent/*` は使わない（デバッグ用に残置）。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -607,9 +607,9 @@
     },
     {
       "section": {
-        "id": "agent-mode#grokx--oauth-5",
-        "title": "Grok（API キー）",
-        "content": "\nエージェントで Grok を使う経路は **組み込み `xai` + `XAI_API_KEY` のみ**（Settings のキー、または env）。X アカウント OAuth / `server/grokOauth/` は廃止した。\n\nモデルピッカーの「xAI Grok」は他の builtin プロバイダと同じく API キーが必要。キーが無いと `POST /api/agent/chat` が 400 `{ error }` を返す。\n\n`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。最適化は `grok login` または同じ `XAI_API_KEY` を使う。\n\n",
+        "id": "agent-mode#-5",
+        "title": "プランモード",
+        "content": "\n`POST /api/agent/chat` の `agentRunMode`（省略時 `agent`）。\n\n| モード | 生成 |\n|--------|------|\n| `agent` | `generate-media` は呼べるが、UI の認可ボタン待ち |\n| `plan` | `generate-media` を `activeTools` から外す。万一呼ばれても `denied` |\n\nプランは調査・提案のみ。構造化プランカードは持たない。実行したいときはエージェントに切り替え、通常どおり認可する。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -617,9 +617,9 @@
     },
     {
       "section": {
-        "id": "agent-mode#-6",
-        "title": "フロント",
-        "content": "\n- `src/components/agent/` — AgentView、チャット、メディアタスクカード、モデルピッカー\n- `src/lib/agentApi.ts` — `agentChatUrl()`（`/api/agent/chat`）、`fetchAgentHealth`（`/api/agent/health`）、会話 CRUD、メッセージ hydrate\n- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / カスタムエンドポイント / 既定モデル\n- `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替\n\n",
+        "id": "agent-mode#grokapi--6",
+        "title": "Grok（API キー）",
+        "content": "\nエージェントで Grok を使う経路は **組み込み `xai` + `XAI_API_KEY` のみ**（Settings のキー、または env）。X アカウント OAuth / `server/grokOauth/` は廃止した。\n\nモデルピッカーの「xAI Grok」は他の builtin プロバイダと同じく API キーが必要。キーが無いと `POST /api/agent/chat` が 400 `{ error }` を返す。\n\n`server/grok/`（Grok CLI プロンプト最適化）とは別モジュール。最適化は `grok login` または同じ `XAI_API_KEY` を使う。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -628,8 +628,8 @@
     {
       "section": {
         "id": "agent-mode#-7",
-        "title": "会話のライフサイクル（遅延作成）",
-        "content": "\n「会話を開始」時点ではローカル **draft**（`AgentView` state。非永続・リクエスト無し）を作るだけ。\n\n| タイミング | 起きること |\n|------------|-----------|\n| 会話を開始 | draft 生成のみ。`agent_conversations` に触れない |\n| 初回メッセージ送信 | `useChat` の `sendMessage` → `POST /api/agent/chat`（サーバーが会話 upsert + `messages_json` 保存）→ 成功後に `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |\n| 2 通目以降 | 同じ `sendMessage` |\n\ndraft 中の `AgentChat` は履歴 GET をしない。送信失敗時は入力を復元し、永続化コールバックを呼ばない。既存会話を開いた場合は `GET /api/agent-conversations/:id/messages` で hydrate する。読み込み失敗時は空チャットにせずエラーと再試行を出す。LLM キー不足など `POST /api/agent/chat` の 400 `{ error }` はフロントで本文を取り出して表示する。\n\n旧 Flue（`flue.db`）の本文は移行しない。メタデータだけ残った会話は空チャット時に案内を出す。\n\n",
+        "title": "フロント",
+        "content": "\n- `src/components/agent/` — AgentView、チャット、ツールカード、メディアタスクカード、モデルピッカー、実行モード切替\n- `src/lib/agentApi.ts` — `agentChatUrl()`（`/api/agent/chat`）、`fetchAgentHealth`（`/api/agent/health`）、会話 CRUD、メッセージ hydrate\n- `src/lib/agentRunMode.ts` — `plan` \\| `agent`\n- `src/components/LlmSettingsSection.tsx` — Settings の LLM キー / カスタムエンドポイント / 既定モデル\n- `src/components/shell/StudioModeToggle.tsx` — Studio ↔ エージェント切替\n\nコンポーザ左の `プラン | エージェント` はセッション state（DB には持たない。会話を跨いでも維持）。`useChat` は `sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses` で認可後にストリームを再開する。認可待ちの間はメッセージ送信を止める。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -637,9 +637,9 @@
     },
     {
       "section": {
-        "id": "agent-mode#-api-8",
-        "title": "サーバー API",
-        "content": "\n- `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）\n- `/api/agent/health` — Hono が生きていれば `{ ok: true }`。502 は API プロセス自体が落ちているときだけ\n- `/api/agent/chat` — UI message stream（`conversationId` / `provider` / `model` / `messages`）\n- `/api/agent-conversations` — 会話メタデータ CRUD\n- `/api/agent-conversations/:id/messages` — `messages_json`\n- `/api/internal/agent/*` — 旧内部 API（トークン必須）。現行エージェントは使わない\n\n",
+        "id": "agent-mode#-8",
+        "title": "会話のライフサイクル（遅延作成）",
+        "content": "\n「会話を開始」時点ではローカル **draft**（`AgentView` state。非永続・リクエスト無し）を作るだけ。\n\n| タイミング | 起きること |\n|------------|-----------|\n| 会話を開始 | draft 生成のみ。`agent_conversations` に触れない |\n| 初回メッセージ送信 | `useChat` の `sendMessage` → `POST /api/agent/chat`（サーバーが会話 upsert + `messages_json` 保存）→ 成功後に `POST /api/agent-conversations` でメタデータ永続化（タイトルは本文先頭 32 文字） |\n| 2 通目以降 | 同じ `sendMessage` |\n\ndraft 中の `AgentChat` は履歴 GET をしない。送信失敗時は入力を復元し、永続化コールバックを呼ばない。既存会話を開いた場合は `GET /api/agent-conversations/:id/messages` で hydrate する。読み込み失敗時は空チャットにせずエラーと再試行を出す。LLM キー不足など `POST /api/agent/chat` の 400 `{ error }` はフロントで本文を取り出して表示する。\n\n旧 Flue（`flue.db`）の本文は移行しない。メタデータだけ残った会話は空チャット時に案内を出す。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -647,9 +647,9 @@
     },
     {
       "section": {
-        "id": "agent-mode#-9",
-        "title": "エージェント不通時の見え方",
-        "content": "\nチャットは `/api`（:8787）だけを使う。`GET /api/agent/health` が失敗するのは Hono が落ちているときに限る。旧 `GET /agents/health` の 502（Flue embed / sidecar 未到達）は発生しない。\n\nLLM キー不足は `POST /api/agent/chat` が 400 で `{ error }` を返す。送信失敗時は入力を復元する。\n\n",
+        "id": "agent-mode#-api-9",
+        "title": "サーバー API",
+        "content": "\n- `/api/settings/llm*` — LLM キー保管（AES-256-GCM、`app_settings`）\n- `/api/agent/health` — Hono が生きていれば `{ ok: true }`。502 は API プロセス自体が落ちているときだけ\n- `/api/agent/chat` — UI message stream（`conversationId` / `provider` / `model` / `messages` / 任意の `agentRunMode`）\n- `/api/agent-conversations` — 会話メタデータ CRUD\n- `/api/agent-conversations/:id/messages` — `messages_json`\n- `/api/internal/agent/*` — 旧内部 API（トークン必須）。現行エージェントは使わない\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -658,8 +658,8 @@
     {
       "section": {
         "id": "agent-mode#-10",
-        "title": "コマンド",
-        "content": "\n| コマンド | 用途 |\n|----------|------|\n| `npm run dev` | server + web（エージェントは :8787 に含まれる） |\n| `npm run desktop:build:canary` | フロント + Electrobun。別途エージェントビルドは不要 |\n\nリリース前チェックは [docs/PRE_RELEASE.md](../../docs/PRE_RELEASE.md)。\n\n",
+        "title": "エージェント不通時の見え方",
+        "content": "\nチャットは `/api`（:8787）だけを使う。`GET /api/agent/health` が失敗するのは Hono が落ちているときに限る。旧 `GET /agents/health` の 502（Flue embed / sidecar 未到達）は発生しない。\n\nLLM キー不足は `POST /api/agent/chat` が 400 で `{ error }` を返す。送信失敗時は入力を復元する。\n\n",
         "page_id": "agent-mode",
         "level": 2
       },
@@ -667,13 +667,23 @@
     },
     {
       "section": {
-        "id": "agent-mode#see-also-11",
+        "id": "agent-mode#-11",
+        "title": "コマンド",
+        "content": "\n| コマンド | 用途 |\n|----------|------|\n| `npm run dev` | server + web（エージェントは :8787 に含まれる） |\n| `npm run desktop:build:canary` | フロント + Electrobun。別途エージェントビルドは不要 |\n\nリリース前チェックは [docs/PRE_RELEASE.md](../../docs/PRE_RELEASE.md)。\n\n",
+        "page_id": "agent-mode",
+        "level": 2
+      },
+      "vid": "67"
+    },
+    {
+      "section": {
+        "id": "agent-mode#see-also-12",
         "title": "See Also",
         "content": "\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
         "page_id": "agent-mode",
         "level": 2
       },
-      "vid": "67"
+      "vid": "68"
     }
   ]
 }

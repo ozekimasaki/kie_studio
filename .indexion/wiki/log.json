@@ -1471,5 +1471,85 @@
     "summary": "0 issues found across 11 pages",
     "details": {},
     "affected_pages": []
+  },
+  {
+    "timestamp": "1787920156471",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1787920156547",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 9 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1787920177395",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: agent-mode",
+    "details": {},
+    "affected_pages": [
+      "agent-mode"
+    ]
+  },
+  {
+    "timestamp": "1787920177414",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: frontend",
+    "details": {},
+    "affected_pages": [
+      "frontend"
+    ]
+  },
+  {
+    "timestamp": "1787920177434",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: server-api",
+    "details": {},
+    "affected_pages": [
+      "server-api"
+    ]
+  },
+  {
+    "timestamp": "1787920177454",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: client-lib",
+    "details": {},
+    "affected_pages": [
+      "client-lib"
+    ]
+  },
+  {
+    "timestamp": "1787920177534",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "0 issues found across 11 pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1787920177610",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 9 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1787920199850",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 9 hub pages + vectors",
+    "details": {},
+    "affected_pages": []
   }
 ]
