@@ -145,6 +145,7 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | `STUDIO_DB_PATH` | Optional. Override SQLite path (desktop sets automatically; dev uses `data/studio.db`) |
 | `RELEASE_BASE_URL` | Optional. Static host URL for Electrobun auto-update (empty to disable) |
 | `XAI_API_KEY` | Optional. Agent-mode Grok (builtin xai) and Grok CLI when not logged in |
+| `STUDIO_GROK_OPTIMIZE_MODEL` | Optional. Grok CLI model id for prompt optimize (must appear in `grok models`) |
 | `SYNC_MODELS_ON_START` | `0` to disable startup sync (default on) |
 | `SYNC_MODELS_FORCE` | `1` to force full sync on startup |
 | `SYNC_CONCURRENCY` | Concurrency for model page fetching (default `12`, max 32) |
