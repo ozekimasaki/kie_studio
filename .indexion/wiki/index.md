@@ -46,13 +46,13 @@ Most-linked pages that serve as knowledge hubs:
 
 ## Recent Changes
 
+- pages update: getting-started
+- pages update: frontend
+- pages update: client-lib
 - pages update: prompt-optimize
 - ingest: server-api
 - pages update: agent-mode
-- pages update: client-lib
-- pages update: frontend
 - pages update: architecture
-- pages update: getting-started
 - pages update: overview
 - ingest: core-concepts
 - ingest: catalog-sync

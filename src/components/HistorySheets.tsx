@@ -17,6 +17,7 @@ import type {
   TaskState,
 } from '../lib/models/types.ts'
 import { Pressable } from './motion/Pressable.tsx'
+import { RefreshableImage } from './RefreshableImage.tsx'
 import { SharedMedia } from './motion/SharedMedia.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 import { useAudioPlayer } from './audio/audioPlayerContext.ts'
@@ -86,28 +87,22 @@ function ViewerImage({
   src: string
   alt: string
 }) {
-  const [failed, setFailed] = useState(false)
-  if (failed) {
-    return (
-      <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
-        <span className="grid size-12 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
-          <Clock size={22} aria-hidden />
-        </span>
-        <p className="text-sm font-semibold text-[var(--text-muted)]">メディアを取得できません</p>
-        <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
-          メディアの読み込みに失敗しました。同じ入力で再生成できます。
-        </p>
-      </div>
-    )
-  }
   return (
-    <img
+    <RefreshableImage
       src={src}
       alt={alt}
-      decoding="async"
-      referrerPolicy="no-referrer"
       className="mx-auto max-h-[55vh] w-full object-contain"
-      onError={() => setFailed(true)}
+      fallback={
+        <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
+          <span className="grid size-12 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
+            <Clock size={22} aria-hidden />
+          </span>
+          <p className="text-sm font-semibold text-[var(--text-muted)]">メディアを取得できません</p>
+          <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
+            メディアの読み込みに失敗しました。同じ入力で再生成できます。
+          </p>
+        </div>
+      }
     />
   )
 }
@@ -456,7 +451,14 @@ export function HistorySheets({
                         />
                       ) : audio ? (
                         <div className="flex min-h-48 flex-col items-center justify-center gap-4 bg-[var(--accent-soft)] p-6 text-center">
-                          {asset.previewUrl && <img src={asset.previewUrl} alt="" className="size-28 rounded-[var(--radius-md)] object-cover shadow-[var(--shadow-md)]" />}
+                          {asset.previewUrl && (
+                            <RefreshableImage
+                              src={asset.previewUrl}
+                              alt=""
+                              className="size-28 rounded-[var(--radius-md)] object-cover shadow-[var(--shadow-md)]"
+                              fallback={null}
+                            />
+                          )}
                           <div>
                             <p className="font-semibold">{asset.title ?? `候補 ${index + 1}`}</p>
                             {asset.duration && <p className="mt-1 text-xs text-[var(--text-muted)]">{Math.round(asset.duration)}秒</p>}
@@ -766,17 +768,27 @@ export function HistorySheets({
                         />
                       ) : asset?.kind === 'audio' || isAudioUrl(url) ? (
                         <div className="flex aspect-square flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-4 text-center">
-                          {asset?.previewUrl && <img src={asset.previewUrl} alt="" className="size-24 rounded-[var(--radius-md)] object-cover" />}
+                          {asset?.previewUrl && (
+                            <RefreshableImage
+                              src={asset.previewUrl}
+                              alt=""
+                              className="size-24 rounded-[var(--radius-md)] object-cover"
+                              fallback={null}
+                            />
+                          )}
                           <Pressable className="studio-btn-primary grid size-10 place-items-center p-0" onClick={() => audioPlayer.play(asset, mediaFor(item).filter((entry) => entry.kind === 'audio'))} aria-label="再生"><Play size={16} fill="currentColor" /></Pressable>
                         </div>
                       ) : (
-                        <img
+                        <RefreshableImage
                           src={url}
                           alt={item.prompt || shortModel(item.model)}
                           loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
                           className="aspect-square w-full object-contain"
+                          fallback={
+                            <div className="flex aspect-square items-center justify-center text-xs text-[var(--text-muted)]">
+                              メディアを取得できません
+                            </div>
+                          }
                         />
                       )
                     ) : (
