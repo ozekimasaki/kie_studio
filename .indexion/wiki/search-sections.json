@@ -529,7 +529,7 @@
       "section": {
         "id": "prompt-optimize#-2",
         "title": "モジュール",
-        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |\n| `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |\n| `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |\n| `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |\n| `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |\n| `src/components/PromptOptimizePanel.tsx` | UI |\n\n",
+        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |\n| `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |\n| `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |\n| `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |\n| `server/grok/guides/minimax-h3.ts` | MiniMax H3 公式 base/ref ガイドとコミュニティ知見の埋め込みガイド |\n| `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |\n| `src/components/PromptOptimizePanel.tsx` | UI |\n\n",
         "page_id": "prompt-optimize",
         "level": 2
       },
@@ -539,7 +539,7 @@
       "section": {
         "id": "prompt-optimize#-3",
         "title": "挙動",
-        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化は `-m grok-build`（Grok Build 追従エイリアス）を必ず渡す。`STUDIO_GROK_OPTIMIZE_MODEL` で上書き可\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n\n",
+        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化は `-m grok-build`（Grok Build 追従エイリアス）を必ず渡す。`STUDIO_GROK_OPTIMIZE_MODEL` で上書き可\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n- `minimax-h3/*` は `minimax-h3` 専用プロファイルへ解決する（`minimax/hailuo-02` など Hailuo は従来の短い hailuo プロファイルのまま）\n- MiniMax H3 は公式の T2VA / I2VA / FL2VA / L2VA（3フィールド）と reference の6節構造を優先する\n- MiniMax H3 では Studio の `@imageN` / `@VideoN` / `@AudioN` を維持し、同じ番号の `<Picture N>` / `<Video N>` / `<Audio N>` を併用する\n- MiniMax H3 の不要 BGM は否定文ではなく `non_diegetic_music: N/A`\n\n",
         "page_id": "prompt-optimize",
         "level": 2
       },

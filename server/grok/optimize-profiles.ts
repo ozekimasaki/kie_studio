@@ -6,12 +6,17 @@ import {
   SEEDANCE_2_5_GUIDE_CONTENT,
   SEEDANCE_2_5_GUIDE_FILE_NAME,
 } from './guides/seedance-2-5.ts'
+import {
+  MINIMAX_H3_GUIDE_CONTENT,
+  MINIMAX_H3_GUIDE_FILE_NAME,
+} from './guides/minimax-h3.ts'
 
 export type OptimizeFamily =
   | 'seedance-2-5'
   | 'seedance'
   | 'kling'
   | 'wan'
+  | 'minimax-h3'
   | 'hailuo'
   | 'happyhorse'
   | 'grok-imagine'
@@ -53,6 +58,11 @@ const SEEDANCE_GUIDE = {
 const SEEDANCE_2_5_GUIDE = {
   fileName: SEEDANCE_2_5_GUIDE_FILE_NAME,
   content: SEEDANCE_2_5_GUIDE_CONTENT,
+}
+
+const MINIMAX_H3_GUIDE = {
+  fileName: MINIMAX_H3_GUIDE_FILE_NAME,
+  content: MINIMAX_H3_GUIDE_CONTENT,
 }
 
 const PROFILES: Record<OptimizeFamily, OptimizeProfile> = {
@@ -124,6 +134,35 @@ const PROFILES: Record<OptimizeFamily, OptimizeProfile> = {
       'overly complex physics in one clip',
     ],
     targetLength: '40–90 words; keep motion completable in ~5–10s',
+  },
+  'minimax-h3': {
+    family: 'minimax-h3',
+    label: 'MiniMax H3',
+    modality: 'video',
+    guide: MINIMAX_H3_GUIDE,
+    formula:
+      '[T2VA | I2VA | FL2VA | L2VA | ref] + (base 3 fields | ref 6 sections) + shots/camera/dialogue',
+    mention: 'at-media',
+    rules: [
+      '公式タスクを1つに定める。text-to-video は T2VA。image-to-video は first のみ I2VA、first+last は FL2VA、last のみ L2VA。reference-to-video は ref の6節。',
+      'Studio の @imageN / @VideoN / @AudioN は形式と番号を維持し、同じ番号の <Picture N> / <Video N> / <Audio N> を併用する。無い素材番号は捏造しない。',
+      'base は integrated_multimodal_description / overall_soundscape / non_diegetic_music。I2VA・FL2VA・L2VA は先頭に公式の整列文を置く。',
+      'ref は subject_definitions → summary → retention_analysis → detailed_description → 音の2節。ラベルは定義してから使う。',
+      '台詞は <d>[Language] 原文</d>。話者に (S1) を付け、オフスクリーンは says in an off-screen voiceover と唇を閉じる。翻訳や言い換えをしない。',
+      'BGM が不要なら non_diegetic_music: N/A。否定語で音楽や顔の固定を指示しない。',
+      '服と顔は別 Subject にし、<Subject 1> is wearing <Subject 2> と結ぶ。定義にはそのショットで見える属性だけ書く。',
+      '尺・比率・解像度は創作本文へ混ぜない。ユーザーが時刻を書いていないショットへ秒数を発明しない。4〜15秒に収まる密度にする。',
+    ],
+    avoid: [
+      'Hailuo / 汎用ビデオ向けの短い自然文への潰し',
+      'Studio タグの削除や番号の付け替え、公式ラベルとの番号ずれ',
+      "no music / don't change などの否定制御",
+      '複数アセットを1つの Subject へ雑に束ねる',
+      '短い尺への台詞の詰め込み',
+      '身長の small / smaller（子ども化）',
+    ],
+    targetLength:
+      'submit-ready; fit 4–15s and ≤7000 characters; denser than generic video',
   },
   wan: {
     family: 'wan',
@@ -336,6 +375,7 @@ export function resolveOptimizeFamily(modelId?: string): OptimizeFamily {
   if (id.includes('seedance')) return 'seedance'
   if (id.includes('kling')) return 'kling'
   if (id.startsWith('wan/') || id.includes('/wan')) return 'wan'
+  if (/minimax[-_.]?h3/.test(id)) return 'minimax-h3'
   if (id.includes('hailuo')) return 'hailuo'
   if (id.includes('happyhorse')) return 'happyhorse'
   if (id.includes('grok-imagine')) return 'grok-imagine'
@@ -356,15 +396,17 @@ export function getOptimizeProfile(modelId?: string): OptimizeProfile {
 
 export function formatProfileRulesMarkdown(profile: OptimizeProfile): string {
   const mentionLine =
-    profile.mention === 'at-media'
-      ? '参照記法: `@Image N` / `@Video N` / `@Audio N` の入力形式と番号を維持（あれば）'
-      : profile.mention === 'at-image'
-      ? '参照記法: `@image1` 形式を維持（あれば）'
-      : profile.mention === 'bracket-image'
-        ? '参照記法: `[Image 1]` 形式を維持（あれば）'
-        : profile.mention === 'element'
-          ? '参照記法: `@element_name` 形式を維持（あれば）'
-          : '参照記法: 特別なメンション記法なし（入力のタグは壊さない）'
+    profile.family === 'minimax-h3'
+      ? '参照記法: Studio の `@imageN` / `@VideoN` / `@AudioN` を維持し、公式の `<Picture N>` / `<Video N>` / `<Audio N>` を同じ番号で併用（あれば）'
+      : profile.mention === 'at-media'
+        ? '参照記法: `@Image N` / `@Video N` / `@Audio N` の入力形式と番号を維持（あれば）'
+        : profile.mention === 'at-image'
+          ? '参照記法: `@image1` 形式を維持（あれば）'
+          : profile.mention === 'bracket-image'
+            ? '参照記法: `[Image 1]` 形式を維持（あれば）'
+            : profile.mention === 'element'
+              ? '参照記法: `@element_name` 形式を維持（あれば）'
+              : '参照記法: 特別なメンション記法なし（入力のタグは壊さない）'
 
   return [
     `## 最適化プロファイル: ${profile.label} (\`${profile.family}\`)`,
