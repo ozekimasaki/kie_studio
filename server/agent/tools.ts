@@ -59,7 +59,7 @@ export function createStudioTools(hooks: StudioToolHooks = {}) {
     }),
     'generate-media': tool({
       description:
-        '画像/動画/音声の生成タスクを作成する。必須: workflowId と input。実行前にユーザーへモデル・主要パラメータ・クレジット消費の見通しを提示して確認を取ること。戻り値の taskId / provider / operation を get-task-status に渡す(生成は非同期)。',
+        '画像/動画/音声の生成タスクを作成する。必須: workflowId と input。呼び出し後、ユーザーがチャット上の「生成を認可」を押すまで実際の生成は始まらない。戻り値の taskId / provider / operation を get-task-status に渡す(生成は非同期)。',
       inputSchema: z.object({
         workflowId: z.string(),
         input: z.record(z.string(), z.unknown()),

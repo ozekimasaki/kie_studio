@@ -10,6 +10,7 @@ import {
   type AgentConversation,
 } from '../../lib/agentApi.ts'
 import { AGENT_UNAVAILABLE_DEV_HINT, AGENT_UNAVAILABLE_MESSAGE } from '../../lib/agentUnavailable.ts'
+import type { AgentRunMode } from '../../lib/agentRunMode.ts'
 import { AgentChat } from './AgentChat.tsx'
 import { AgentModelPicker, type ModelSelection } from './AgentModelPicker.tsx'
 
@@ -76,6 +77,7 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
   // Local-only conversation draft: created by "会話を開始", persisted on first send.
   const [draft, setDraft] = useState<AgentConversation | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [agentRunMode, setAgentRunMode] = useState<AgentRunMode>('agent')
 
   const conversations = useMemo(() => conversationsQuery.data ?? [], [conversationsQuery.data])
   const selected = conversations.find((c) => c.id === selectedId) ?? null
@@ -270,6 +272,8 @@ export function AgentView({ onOpenSettings }: { onOpenSettings?: () => void }) {
               provider={active.provider}
               model={active.model}
               isDraft={active.id === draft?.id}
+              agentRunMode={agentRunMode}
+              onAgentRunModeChange={setAgentRunMode}
               onFirstSent={handleFirstSent}
             />
           ) : (

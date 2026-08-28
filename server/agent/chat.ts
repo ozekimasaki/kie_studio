@@ -12,10 +12,17 @@ import {
   touchAgentConversation,
   upsertAgentConversation,
 } from '../db/agentConversations.ts'
+import { getToolApprovalSecret } from './approvalSecret.ts'
 import { AgentModelError } from './errors.ts'
 import type { MediaTaskData } from './mediaTask.ts'
 import { resolveLanguageModel } from './resolveModel.ts'
-import { STUDIO_SYSTEM_PROMPT } from './systemPrompt.ts'
+import {
+  activeToolsFor,
+  parseAgentRunMode,
+  toolApprovalFor,
+  type AgentRunMode,
+} from './runMode.ts'
+import { systemPromptFor } from './systemPrompt.ts'
 import { createStudioTools } from './tools.ts'
 
 export type StudioUIMessage = UIMessage<unknown, { 'media-task': MediaTaskData }>
@@ -36,13 +43,28 @@ function conversationTitle(text: string): string {
   return text.length > 32 ? `${text.slice(0, 32)}…` : text
 }
 
+export function createStudioStreamOptions(input: {
+  agentRunMode: AgentRunMode
+  onMediaTask?: (data: MediaTaskData) => void
+}) {
+  return {
+    system: systemPromptFor(input.agentRunMode),
+    tools: createStudioTools({ onMediaTask: input.onMediaTask }),
+    activeTools: [...activeToolsFor(input.agentRunMode)],
+    toolApproval: toolApprovalFor(input.agentRunMode),
+    experimental_toolApprovalSecret: getToolApprovalSecret(),
+  }
+}
+
 export async function streamStudioChat(input: {
   conversationId: string
   provider: string
   model: string
   messages: StudioUIMessage[]
+  agentRunMode?: AgentRunMode
   abortSignal?: AbortSignal
 }): Promise<Response> {
+  const agentRunMode = parseAgentRunMode(input.agentRunMode)
   const languageModel = resolveLanguageModel(input.provider, input.model)
   const existing = getAgentConversation(input.conversationId)
   if (!existing) {
@@ -59,11 +81,13 @@ export async function streamStudioChat(input: {
     execute: async ({ writer }) => {
       const result = streamText({
         model: languageModel,
-        system: STUDIO_SYSTEM_PROMPT,
         messages: await convertToModelMessages(input.messages, {
           convertDataPart: () => undefined,
         }),
-        tools: createStudioTools({
+        abortSignal: input.abortSignal,
+        stopWhen: stepCountIs(MAX_STEPS),
+        ...createStudioStreamOptions({
+          agentRunMode,
           onMediaTask: (data) => {
             writer.write({
               type: 'data-media-task',
@@ -72,8 +96,6 @@ export async function streamStudioChat(input: {
             })
           },
         }),
-        abortSignal: input.abortSignal,
-        stopWhen: stepCountIs(MAX_STEPS),
       })
       writer.merge(result.toUIMessageStream())
     },

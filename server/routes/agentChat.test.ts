@@ -23,6 +23,21 @@ describe('agent chat routes', () => {
     await expect(res.json()).resolves.toEqual({ ok: true })
   })
 
+  it('POST /api/agent/chat rejects an invalid agentRunMode', async () => {
+    const res = await makeApp().request('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        conversationId: 'conv-1',
+        provider: 'xai',
+        model: 'grok-4.5',
+        agentRunMode: 'hack',
+        messages: [{ id: 'm1', role: 'user', parts: [{ type: 'text', text: 'hi' }] }],
+      }),
+    })
+    expect(res.status).toBe(400)
+  })
+
   it('POST /api/agent/chat returns 400 without a usable LLM key', async () => {
     const res = await makeApp().request('/api/agent/chat', {
       method: 'POST',

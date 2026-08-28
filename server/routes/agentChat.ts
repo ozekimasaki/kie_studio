@@ -4,6 +4,7 @@ import { getDb } from '../db/open.ts'
 import { getAgentMessages } from '../db/agentConversations.ts'
 import { streamStudioChat, type StudioUIMessage } from '../agent/chat.ts'
 import { AgentModelError } from '../agent/errors.ts'
+import { AGENT_RUN_MODES, parseAgentRunMode } from '../agent/runMode.ts'
 import { validateJson } from './validation.ts'
 
 export const agentChatRoutes = new Hono()
@@ -15,6 +16,7 @@ const chatBodySchema = z.object({
   provider: z.string().trim().min(1, 'provider is required'),
   model: z.string().trim().min(1, 'model is required'),
   messages: z.array(z.unknown()).min(1, 'messages is required'),
+  agentRunMode: z.enum(AGENT_RUN_MODES).optional(),
 })
 
 agentChatRoutes.get('/agent/health', (c) => c.json({ ok: true }))
@@ -32,6 +34,7 @@ agentChatRoutes.post('/agent/chat', validateJson(chatBodySchema), async (c) => {
       provider: body.provider,
       model: body.model,
       messages: body.messages as StudioUIMessage[],
+      agentRunMode: parseAgentRunMode(body.agentRunMode),
       abortSignal: c.req.raw.signal,
     })
   } catch (error) {
