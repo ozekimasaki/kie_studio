@@ -4,6 +4,7 @@ import {
   formatProfileRulesMarkdown,
   getOptimizeProfile,
   resolveOptimizeFamily,
+  type OptimizeFamily,
 } from './optimize-profiles.ts'
 
 describe('resolveOptimizeFamily', () => {
@@ -12,12 +13,21 @@ describe('resolveOptimizeFamily', () => {
     ['bytedance/seedance-2.5', 'seedance-2-5'],
     ['bytedance/seedance-1-5-pro', 'seedance'],
     ['kling/v2-1-master', 'kling'],
+    ['kling-3.0/motion-control', 'kling'],
+    ['kling/v3-turbo-text-to-video', 'kling'],
     ['wan/v2-2-a14b', 'wan'],
+    ['wan/2-6-text-to-video', 'wan'],
+    ['wan/2-7-image-to-video', 'wan'],
+    ['wan/2-7-image', 'wan-image'],
+    ['wan/2-7-image-pro', 'wan-image'],
     ['minimax-h3/text-to-video', 'minimax-h3'],
     ['minimax-h3/image-to-video', 'minimax-h3'],
     ['minimax-h3/reference-to-video', 'minimax-h3'],
     ['minimax_h3/text-to-video', 'minimax-h3'],
     ['minimax/hailuo-02', 'hailuo'],
+    ['pixverse-v6/text-to-video', 'pixverse'],
+    ['pixverse-v6/transition', 'pixverse'],
+    ['pixverse-v6/extend', 'pixverse'],
     ['happyhorse/video-1', 'happyhorse'],
     ['grok-imagine/fast', 'grok-imagine'],
     ['bytedance/seedream-v4', 'seedream'],
@@ -27,7 +37,7 @@ describe('resolveOptimizeFamily', () => {
     ['google/nano-banana-edit', 'nano-banana'],
     ['openai/gpt-image-1', 'gpt-image'],
     ['qwen/image-edit', 'qwen'],
-  ])('maps %s to %s', (modelId, family) => {
+  ] as const)('maps %s to %s', (modelId, family) => {
     expect(resolveOptimizeFamily(modelId)).toBe(family)
   })
 
@@ -73,12 +83,132 @@ describe('getOptimizeProfile guide embedding', () => {
     expect(profile.guide?.content).toContain('@image1')
     expect(profile.guide?.content).toContain('<Picture 1>')
     expect(getOptimizeProfile('minimax/hailuo-02').family).toBe('hailuo')
-    expect(getOptimizeProfile('minimax/hailuo-02').guide).toBeUndefined()
+    expect(getOptimizeProfile('minimax/hailuo-02').guide?.content).toContain(
+      '[Push in]',
+    )
+    expect(getOptimizeProfile('minimax/hailuo-02').guide?.fileName).not.toMatch(
+      /H3/,
+    )
   })
 
-  it('leaves guide undefined for families without a guide', () => {
-    expect(getOptimizeProfile('kling/v2-1-master').guide).toBeUndefined()
+  it.each([
+    [
+      'kling/v2-1-master',
+      'kling',
+      ['3.0 / v3-turbo', '@image1', 'Shot 1'],
+    ],
+    [
+      'wan/2-6-text-to-video',
+      'wan',
+      ['No dialogue.', 'Image 1', '@image1'],
+    ],
+    [
+      'wan/2-7-image',
+      'wan-image',
+      ['動画 Wan ではない', 'Subject + Setting + Style'],
+    ],
+    [
+      'minimax/hailuo-02',
+      'hailuo',
+      ['[Push in]', '[Tracking shot]', 'H3 ではない'],
+    ],
+    [
+      'pixverse-v6/text-to-video',
+      'pixverse',
+      ['50〜80語', '@image1', 'カメラ動きは1つ'],
+    ],
+    [
+      'happyhorse/text-to-video',
+      'happyhorse',
+      ['[Image 1]', 'character1', '@image'],
+    ],
+    [
+      'grok-imagine/fast',
+      'grok-imagine',
+      ['@image1', '動き1つ', '30〜80語'],
+    ],
+    [
+      'bytedance/seedream-v4',
+      'seedream',
+      ['被写体を先に', 'DOUBLE QUOTES', '@imageN'],
+    ],
+    [
+      'flux/kontext-pro',
+      'flux',
+      ['ネガティブプロンプトは使わない', '#RRGGBB', '30〜80語'],
+    ],
+    [
+      'ideogram/v3',
+      'ideogram',
+      ['150語以内', 'quotes', '否定は使わない'],
+    ],
+    [
+      'google/imagen-4',
+      'imagen',
+      ['写真的な英語', 'Nano Banana', '引用符'],
+    ],
+    [
+      'google/nano-banana-edit',
+      'nano-banana',
+      ['empty street', '@imageN', '監督ブリーフ'],
+    ],
+    [
+      'openai/gpt-image-1',
+      'gpt-image',
+      ['ALL CAPS', 'keep everything else the same', '@imageN'],
+    ],
+    [
+      'qwen/image-edit',
+      'qwen',
+      ['Subject + Setting + Style', '漢字・かな', '引用符'],
+    ],
+  ] as const)(
+    'embeds a distinctive guide for %s (%s)',
+    (modelId, family, needles) => {
+      const profile = getOptimizeProfile(modelId)
+      expect(profile.family).toBe(family)
+      expect(profile.guide?.fileName).toMatch(/\.md$/)
+      expect(profile.guide?.content.length).toBeGreaterThan(200)
+      for (const needle of needles) {
+        expect(profile.guide?.content).toContain(needle)
+      }
+    },
+  )
+
+  it('leaves guide undefined only for generic families', () => {
     expect(getOptimizeProfile(undefined).guide).toBeUndefined()
+    expect(getOptimizeProfile('someone/photo-model-x').guide).toBeUndefined()
+    expect(getOptimizeProfile('someone/video-model-x').guide).toBeUndefined()
+  })
+
+  it('covers every OptimizeFamily with a profile object', () => {
+    const samples: Record<OptimizeFamily, string | undefined> = {
+      'seedance-2-5': 'bytedance/seedance-2-5',
+      seedance: 'bytedance/seedance-1-5-pro',
+      kling: 'kling-3.0/motion-control',
+      wan: 'wan/2-7-image-to-video',
+      'wan-image': 'wan/2-7-image-pro',
+      'minimax-h3': 'minimax-h3/text-to-video',
+      hailuo: 'minimax/hailuo-02',
+      pixverse: 'pixverse-v6/transition',
+      happyhorse: 'happyhorse/text-to-video',
+      'grok-imagine': 'grok-imagine/fast',
+      seedream: 'bytedance/seedream-v4',
+      flux: 'flux/kontext-pro',
+      ideogram: 'ideogram/v3',
+      imagen: 'google/imagen-4',
+      'nano-banana': 'google/nano-banana-edit',
+      'gpt-image': 'openai/gpt-image-1',
+      qwen: 'qwen/image-edit',
+      'generic-video': undefined,
+      'generic-image': 'someone/photo-model-x',
+    }
+    for (const [family, modelId] of Object.entries(samples) as [
+      OptimizeFamily,
+      string | undefined,
+    ][]) {
+      expect(getOptimizeProfile(modelId).family).toBe(family)
+    }
   })
 })
 
@@ -97,6 +227,14 @@ describe('formatProfileRulesMarkdown', () => {
     )
     expect(markdown).toContain('MiniMax H3')
     expect(markdown).toContain('`<Picture N>`')
+    expect(markdown).toContain('`@imageN`')
+  })
+
+  it('describes Wan dual mention mapping', () => {
+    const markdown = formatProfileRulesMarkdown(
+      getOptimizeProfile('wan/2-6-text-to-video'),
+    )
+    expect(markdown).toContain('`Image n`')
     expect(markdown).toContain('`@imageN`')
   })
 })
