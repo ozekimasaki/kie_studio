@@ -227,8 +227,12 @@ function buildAssistRequest(params: {
       : '- 最適化後のプロンプト本文のみを出力する。',
     '- 説明・前置き・箇条書きの解説は禁止。',
     isGenerate
-      ? '- 参照タグはユーザー意図に含まれる場合のみ使い、勝手に番号を捏造しない。'
-      : '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。',
+      ? params.profile.family === 'minimax-h3'
+        ? '- Studio の参照タグはユーザー意図に含まれる場合のみ使い、同じ番号の <Picture N> / <Video N> / <Audio N> を併用する。無い番号は捏造しない。'
+        : '- 参照タグはユーザー意図に含まれる場合のみ使い、勝手に番号を捏造しない。'
+      : params.profile.family === 'minimax-h3'
+        ? '- 入力の Studio タグ（@imageN / @VideoN / @AudioN）は形式と番号を維持し、公式の <Picture N> / <Video N> / <Audio N> を同じ番号で併用する。'
+        : '- 入力にあった参照タグ（@image / [Image N] / @element 等）は形式と番号を維持する。',
     `- 必ず次のマーカーで囲む: ${OPT_START} と ${OPT_END}`,
     '- マーカーの外側には何も書かない。',
   ]

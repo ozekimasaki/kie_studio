@@ -10,6 +10,7 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 | `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |
 | `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |
 | `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |
+| `server/grok/guides/minimax-h3.ts` | MiniMax H3 公式 base/ref ガイドとコミュニティ知見の埋め込みガイド |
 | `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |
 | `src/components/PromptOptimizePanel.tsx` | UI |
 
@@ -23,6 +24,10 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 - `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する
 - Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する
 - Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない
+- `minimax-h3/*` は `minimax-h3` 専用プロファイルへ解決する（`minimax/hailuo-02` など Hailuo は従来の短い hailuo プロファイルのまま）
+- MiniMax H3 は公式の T2VA / I2VA / FL2VA / L2VA（3フィールド）と reference の6節構造を優先する
+- MiniMax H3 では Studio の `@imageN` / `@VideoN` / `@AudioN` を維持し、同じ番号の `<Picture N>` / `<Video N>` / `<Audio N>` を併用する
+- MiniMax H3 の不要 BGM は否定文ではなく `non_diegetic_music: N/A`
 
 ## 認証
 
