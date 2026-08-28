@@ -7,6 +7,7 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 | ファイル | 役割 |
 |----------|------|
 | `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |
+| `server/grok/optimize-model.ts` | `grok models` 出力のパースと最適化用モデル選択 |
 | `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |
 | `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |
 | `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |
@@ -32,7 +33,8 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 
 - Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）
 - ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）
-- 最適化は `-m grok-build`（Grok Build 追従エイリアス）を必ず渡す。`STUDIO_GROK_OPTIMIZE_MODEL` で上書き可
+- 最適化モデルはハードコードしない。実行前に `grok models` を呼び、CLI 既定（一覧に含まれるもの）を `-m` に渡す。CLI バージョンが変わるとキャッシュを捨てて取り直す
+- `STUDIO_GROK_OPTIMIZE_MODEL` で上書き可。一覧に無い ID はエラー（`grok-build` のような旧エイリアスを固定しない）
 - 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出
 - モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す
 - `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する
