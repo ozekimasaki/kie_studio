@@ -24,7 +24,7 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 | `server/grok/guides/ideogram.ts` | Ideogram 自然文・文字引用 |
 | `server/grok/guides/imagen.ts` | Imagen 写真英語（Nano Banana と分離） |
 | `server/grok/guides/nano-banana.ts` | Google Nano Banana 監督ブリーフ |
-| `server/grok/guides/gpt-image.ts` | GPT Image Scene→Subject→Details |
+| `server/grok/guides/gpt-image.ts` | GPT Image 1 / 1.5 / 2 / 2.5（Scene→Subject→Details、公式 image prompting） |
 | `server/grok/guides/qwen.ts` | Qwen Image / CJK 引用 |
 | `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |
 | `src/components/PromptOptimizePanel.tsx` | UI |
@@ -48,6 +48,7 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 - `wan/2-7-image` / `image-pro` は `wan-image`。`wan/2-7-image-to-video` など動画は `wan`
 - Wan 動画は Studio タグを残し、公式の `Image n` / `Video n` を同じ番号で併用する。台詞なしなら `No dialogue.`
 - Kling 2.x は単ショット。3.0 だけマルチショットと話者付き台詞を使ってよい
+- `gpt-image*`（1.5 / 2 / 2.5 Flare / 2.5 Sunburst を含む）は `gpt-image` プロファイル。Flare と Sunburst はモデル選択であり本文へ書かない。quality / size / background / resolution も本文へ混ぜない
 - 構文が薄い family（recraft / topaz / z-image / elevenlabs / omnihuman / infinitalk / volcengine / gemini-omni-video など）は generic のまま
 
 ## 認証

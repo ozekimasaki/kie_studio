@@ -144,10 +144,13 @@ export default function App() {
     if (settingsSheetOpen) setSettingsSheetRequested(true)
   }, [settingsSheetOpen])
 
+  const modelsMountedAtRef = useRef(Date.now())
   const modelsQuery = useQuery({
     queryKey: ['models', category],
     queryFn: () => fetchModels(category),
-    staleTime: 5 * 60_000,
+    staleTime: 15_000,
+    refetchInterval: () =>
+      Date.now() - modelsMountedAtRef.current < 90_000 ? 10_000 : false,
   })
 
   const models = modelsQuery.data?.data.models ?? EMPTY_MODELS

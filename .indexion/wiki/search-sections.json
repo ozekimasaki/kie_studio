@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "68",
+  "next_vid": "85",
   "entries": [
     {
       "section": {
@@ -467,106 +467,6 @@
     },
     {
       "section": {
-        "id": "catalog-sync",
-        "title": "Catalog Sync",
-        "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
-        "page_id": "catalog-sync",
-        "level": 1
-      },
-      "vid": "47"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-2",
-        "title": "入口",
-        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache |\n| `scripts/sync-models.ts` | `npm run sync:models` |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "48"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-3",
-        "title": "抽出",
-        "content": "\n- category は image / video / audio\n- model slug は request example の `model`、説明文の `Must be X`、enum、default の順で採用し、docs の schema 誤記に耐える\n- URL 型は image / video / audio の reference と scalar/array を識別\n- required、enum、min/max、文字数、参照数、容量、duration を抽出\n- OpenAPI に制約がなくても `Required field`、`Max length`、`4-15 seconds` のような説明文を補助的に読む\n- trailing-space key は trim して API key の表記揺れを抑える\n\nMarket の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の schema を正として id、title、useCase 等の UI metadata だけ上書きする。同一 model ID が複数ページから抽出された場合は field 数が多い定義を採用し、衝突を警告する。\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "49"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#-4",
-        "title": "同期ポリシー",
-        "content": "\n起動時は古い場合だけ同期する。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。モデルの `.md` 取得は最大3回リトライしてから通常ページへフォールバックする。\n\n通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。\n\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "50"
-    },
-    {
-      "section": {
-        "id": "catalog-sync#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n",
-        "page_id": "catalog-sync",
-        "level": 2
-      },
-      "vid": "51"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize",
-        "title": "Prompt Optimize",
-        "content": "\nGrok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptimizePanel`）。\n\n",
-        "page_id": "prompt-optimize",
-        "level": 1
-      },
-      "vid": "52"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#-2",
-        "title": "モジュール",
-        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |\n| `server/grok/optimize-model.ts` | `grok models` 出力のパースと最適化用モデル選択 |\n| `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |\n| `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |\n| `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |\n| `server/grok/guides/minimax-h3.ts` | MiniMax H3 公式 base/ref ガイドとコミュニティ知見の埋め込みガイド |\n| `server/grok/guides/kling.ts` | Kling 2.x 単ショット / 3.0 マルチショット |\n| `server/grok/guides/wan.ts` | 阿里雲 Wan 動画（Entity+Scene+Motion、`Image n`） |\n| `server/grok/guides/wan-image.ts` | Wan 2.7 静止画（動画 Wan と分離） |\n| `server/grok/guides/hailuo.ts` | Hailuo 公式 15 カメラコマンド（H3 とは別） |\n| `server/grok/guides/pixverse.ts` | PixVerse V6（50–80語・3文） |\n| `server/grok/guides/happyhorse.ts` | HappyHorse `[Image N]` / `characterN` |\n| `server/grok/guides/grok-imagine.ts` | Grok Imagine 短い監督文 |\n| `server/grok/guides/seedream.ts` | Seedream 被写体先頭・引用テキスト |\n| `server/grok/guides/flux.ts` | FLUX.2（ネガティブ禁止・hex） |\n| `server/grok/guides/ideogram.ts` | Ideogram 自然文・文字引用 |\n| `server/grok/guides/imagen.ts` | Imagen 写真英語（Nano Banana と分離） |\n| `server/grok/guides/nano-banana.ts` | Google Nano Banana 監督ブリーフ |\n| `server/grok/guides/gpt-image.ts` | GPT Image Scene→Subject→Details |\n| `server/grok/guides/qwen.ts` | Qwen Image / CJK 引用 |\n| `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |\n| `src/components/PromptOptimizePanel.tsx` | UI |\n\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "53"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#-3",
-        "title": "挙動",
-        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化モデルはハードコードしない。実行前に `grok models` を呼び、CLI 既定（一覧に含まれるもの）を `-m` に渡す。CLI バージョンが変わるとキャッシュを捨てて取り直す\n- `STUDIO_GROK_OPTIMIZE_MODEL` で上書き可。一覧に無い ID はエラー（`grok-build` のような旧エイリアスを固定しない）\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n- `minimax-h3/*` は `minimax-h3` 専用プロファイルへ解決する（`minimax/hailuo-02` など Hailuo は hailuo プロファイル＋公式 `[Push in]` カメラコマンド。H3 の3フィールドへ書き換えない）\n- MiniMax H3 は公式の T2VA / I2VA / FL2VA / L2VA（3フィールド）と reference の6節構造を優先する\n- MiniMax H3 では Studio の `@imageN` / `@VideoN` / `@AudioN` を維持し、同じ番号の `<Picture N>` / `<Video N>` / `<Audio N>` を併用する\n- MiniMax H3 の不要 BGM は否定文ではなく `non_diegetic_music: N/A`\n- `pixverse-v6/*` は `pixverse`（50–80語、カメラ1つ、肯定制約）\n- `wan/2-7-image` / `image-pro` は `wan-image`。`wan/2-7-image-to-video` など動画は `wan`\n- Wan 動画は Studio タグを残し、公式の `Image n` / `Video n` を同じ番号で併用する。台詞なしなら `No dialogue.`\n- Kling 2.x は単ショット。3.0 だけマルチショットと話者付き台詞を使ってよい\n- 構文が薄い family（recraft / topaz / z-image / elevenlabs / omnihuman / infinitalk / volcengine / gemini-omni-video など）は generic のまま\n\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "54"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#-4",
-        "title": "認証",
-        "content": "\n`grok login` 済み、または `.env` の `XAI_API_KEY`。\n\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "55"
-    },
-    {
-      "section": {
-        "id": "prompt-optimize#see-also-5",
-        "title": "See Also",
-        "content": "\n- [Getting Started](wiki://getting-started)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
-        "page_id": "prompt-optimize",
-        "level": 2
-      },
-      "vid": "56"
-    },
-    {
-      "section": {
         "id": "agent-mode",
         "title": "Agent Mode",
         "content": "\nHono 同一プロセスの Studio エージェント。Vercel AI SDK（`streamText` + `@ai-sdk/react` `useChat`）で LLM と会話しながら IMAGE / VIDEO / AUDIO を生成する。Flue sidecar / embed は使わない。\n\n",
@@ -674,6 +574,116 @@
         "level": 2
       },
       "vid": "67"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize",
+        "title": "Prompt Optimize",
+        "content": "\nGrok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptimizePanel`）。\n\n",
+        "page_id": "prompt-optimize",
+        "level": 1
+      },
+      "vid": "74"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#-2",
+        "title": "モジュール",
+        "content": "\n| ファイル | 役割 |\n|----------|------|\n| `server/grok/cli.ts` | Grok CLI 起動・タイムアウト・出力パース |\n| `server/grok/optimize-model.ts` | `grok models` 出力のパースと最適化用モデル選択 |\n| `server/grok/optimize-profiles.ts` | モデル別最適化ルール / 埋め込みガイド選択 |\n| `server/grok/guides/seedance.ts` | Seedance 2.0 系の埋め込みガイド |\n| `server/grok/guides/seedance-2-5.ts` | BytePlus / Dreamina 公式ガイドと `sd25-pe` skill に基づく Seedance 2.5 専用ガイド |\n| `server/grok/guides/minimax-h3.ts` | MiniMax H3 公式 base/ref ガイドとコミュニティ知見の埋め込みガイド |\n| `server/grok/guides/kling.ts` | Kling 2.x 単ショット / 3.0 マルチショット |\n| `server/grok/guides/wan.ts` | 阿里雲 Wan 動画（Entity+Scene+Motion、`Image n`） |\n| `server/grok/guides/wan-image.ts` | Wan 2.7 静止画（動画 Wan と分離） |\n| `server/grok/guides/hailuo.ts` | Hailuo 公式 15 カメラコマンド（H3 とは別） |\n| `server/grok/guides/pixverse.ts` | PixVerse V6（50–80語・3文） |\n| `server/grok/guides/happyhorse.ts` | HappyHorse `[Image N]` / `characterN` |\n| `server/grok/guides/grok-imagine.ts` | Grok Imagine 短い監督文 |\n| `server/grok/guides/seedream.ts` | Seedream 被写体先頭・引用テキスト |\n| `server/grok/guides/flux.ts` | FLUX.2（ネガティブ禁止・hex） |\n| `server/grok/guides/ideogram.ts` | Ideogram 自然文・文字引用 |\n| `server/grok/guides/imagen.ts` | Imagen 写真英語（Nano Banana と分離） |\n| `server/grok/guides/nano-banana.ts` | Google Nano Banana 監督ブリーフ |\n| `server/grok/guides/gpt-image.ts` | GPT Image 1 / 1.5 / 2 / 2.5（Scene→Subject→Details、公式 image prompting） |\n| `server/grok/guides/qwen.ts` | Qwen Image / CJK 引用 |\n| `server/routes/optimize-prompt.ts` | HTTP（status / profile / optimize） |\n| `src/components/PromptOptimizePanel.tsx` | UI |\n\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "75"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#-3",
+        "title": "挙動",
+        "content": "\n- Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）\n- ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）\n- 最適化モデルはハードコードしない。実行前に `grok models` を呼び、CLI 既定（一覧に含まれるもの）を `-m` に渡す。CLI バージョンが変わるとキャッシュを捨てて取り直す\n- `STUDIO_GROK_OPTIMIZE_MODEL` で上書き可。一覧に無い ID はエラー（`grok-build` のような旧エイリアスを固定しない）\n- 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出\n- モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す\n- `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する\n- Seedance 2.5 では画像・動画・音声の素材役割、整数秒タイムライン、storyboard / keyframe / blockout、編集・延長のタスク別構造を優先する\n- Seedance 2.5 の尺・比率・解像度などの生成パラメータは創作プロンプトへ混ぜない\n- `minimax-h3/*` は `minimax-h3` 専用プロファイルへ解決する（`minimax/hailuo-02` など Hailuo は hailuo プロファイル＋公式 `[Push in]` カメラコマンド。H3 の3フィールドへ書き換えない）\n- MiniMax H3 は公式の T2VA / I2VA / FL2VA / L2VA（3フィールド）と reference の6節構造を優先する\n- MiniMax H3 では Studio の `@imageN` / `@VideoN` / `@AudioN` を維持し、同じ番号の `<Picture N>` / `<Video N>` / `<Audio N>` を併用する\n- MiniMax H3 の不要 BGM は否定文ではなく `non_diegetic_music: N/A`\n- `pixverse-v6/*` は `pixverse`（50–80語、カメラ1つ、肯定制約）\n- `wan/2-7-image` / `image-pro` は `wan-image`。`wan/2-7-image-to-video` など動画は `wan`\n- Wan 動画は Studio タグを残し、公式の `Image n` / `Video n` を同じ番号で併用する。台詞なしなら `No dialogue.`\n- Kling 2.x は単ショット。3.0 だけマルチショットと話者付き台詞を使ってよい\n- `gpt-image*`（1.5 / 2 / 2.5 Flare / 2.5 Sunburst を含む）は `gpt-image` プロファイル。Flare と Sunburst はモデル選択であり本文へ書かない。quality / size / background / resolution も本文へ混ぜない\n- 構文が薄い family（recraft / topaz / z-image / elevenlabs / omnihuman / infinitalk / volcengine / gemini-omni-video など）は generic のまま\n\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "76"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#-4",
+        "title": "認証",
+        "content": "\n`grok login` 済み、または `.env` の `XAI_API_KEY`。\n\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "77"
+    },
+    {
+      "section": {
+        "id": "prompt-optimize#see-also-5",
+        "title": "See Also",
+        "content": "\n- [Getting Started](wiki://getting-started)\n- [Frontend](wiki://frontend)\n- [Server API](wiki://server-api)\n",
+        "page_id": "prompt-optimize",
+        "level": 2
+      },
+      "vid": "78"
+    },
+    {
+      "section": {
+        "id": "catalog-sync",
+        "title": "Catalog Sync",
+        "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
+        "page_id": "catalog-sync",
+        "level": 1
+      },
+      "vid": "79"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-2",
+        "title": "入口",
+        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache、desktop 再 seed 判定 |\n| `scripts/sync-models.ts` | `npm run sync:models` |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n| `src/bun/index.ts` | デスクトップ userData へバンドル catalog を seed / 再 seed |\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "80"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-3",
+        "title": "抽出",
+        "content": "\n- category は image / video / audio\n- model slug は request example の `model`、説明文の `Must be X`、enum、default の順で採用し、docs の schema 誤記に耐える\n- URL 型は image / video / audio の reference と scalar/array を識別\n- required、enum、min/max、文字数、参照数、容量、duration を抽出\n- OpenAPI に制約がなくても `Required field`、`Max length`、`4-15 seconds` のような説明文を補助的に読む\n- trailing-space key は trim して API key の表記揺れを抑える\n\nMarket の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の schema を正として id、title、useCase 等の UI metadata だけ上書きする。同一 model ID が複数ページから抽出された場合は field 数が多い定義を採用し、衝突を警告する。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "81"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#-4",
+        "title": "同期ポリシー",
+        "content": "\n起動時は古い場合だけ同期する。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。モデルの `.md` 取得は最大3回リトライしてから通常ページへフォールバックする。\n\n通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。\n\n起動同期は非ブロッキング。フロントの models クエリはマウント後約90秒だけ短い間隔で再取得し、同期完了後の新モデル（例: GPT Image 2.5 Flare / Sunburst）を拾う。Settings の「モデルを更新」は force sync のあと `['models']` を invalidate する。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "82"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#desktop-seed-5",
+        "title": "Desktop seed",
+        "content": "\nパッケージ済みアプリは `STUDIO_CATALOG_PATH`（userData の `catalog.json`）を使う。バンドルの `src/data/catalog.json` を次のとき書き出す。\n\n- userData にファイルが無い、または JSON が壊れている\n- バンドルの `syncedAt` が userData より新しい（アプリ更新で同梱 catalog が進んだとき）\n\nuserData 側がネットワーク同期などで新しい場合は上書きしない。\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "83"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#see-also-6",
+        "title": "See Also",
+        "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n- [Agent Mode](wiki://agent-mode)\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "84"
     }
   ]
 }

@@ -6,11 +6,12 @@ docs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json`
 
 | 入口 | 説明 |
 |------|------|
-| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache |
+| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache、desktop 再 seed 判定 |
 | `scripts/sync-models.ts` | `npm run sync:models` |
 | `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |
 | `server/catalog/dedicated.ts` | provider 専用 workflow fallback |
 | `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |
+| `src/bun/index.ts` | デスクトップ userData へバンドル catalog を seed / 再 seed |
 
 ## 抽出
 
@@ -29,9 +30,23 @@ Market の専用 UI model（ElevenLabs / lip-sync）は、同期 catalog の sch
 
 通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。
 
+起動同期は非ブロッキング。フロントの models クエリはマウント後約90秒だけ短い間隔で再取得し、同期完了後の新モデル（例: GPT Image 2.5 Flare / Sunburst）を拾う。Settings の「モデルを更新」は force sync のあと `['models']` を invalidate する。
+
+## Desktop seed
+
+パッケージ済みアプリは `STUDIO_CATALOG_PATH`（userData の `catalog.json`）を使う。バンドルの `src/data/catalog.json` を次のとき書き出す。
+
+- userData にファイルが無い、または JSON が壊れている
+- バンドルの `syncedAt` が userData より新しい（アプリ更新で同梱 catalog が進んだとき）
+
+userData 側がネットワーク同期などで新しい場合は上書きしない。
+
 ## See Also
 
 - [Getting Started](wiki://getting-started)
 - [Core Concepts](wiki://core-concepts)
+- [Architecture](wiki://architecture)
+- [Frontend](wiki://frontend)
 - [Client Lib](wiki://client-lib)
 - [Server API](wiki://server-api)
+- [Agent Mode](wiki://agent-mode)

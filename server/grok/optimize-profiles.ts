@@ -514,10 +514,14 @@ const PROFILES: Record<OptimizeFamily, OptimizeProfile> = {
     rules: [
       '背景 → 被写体 → 詳細 → 制約の順。キーワード羅列より文として通す。',
       '画面内文字は引用符または ALL CAPS。書体・配置を書く。',
-      '編集は change only X + keep everything else the same。',
-      '@imageN があれば維持し、複数入力は役割を揃える。quality / size は本文へ混ぜない。',
+      '編集は change only X + keep everything else the same。1回に1変更。',
+      '@imageN があれば維持し、複数入力は役割を揃える。quality / size / background / resolution は本文へ混ぜない。',
     ],
-    avoid: ['comma-separated tag spam', 'quality/size parameters in the body'],
+    avoid: [
+      'comma-separated tag spam',
+      'quality/size/background parameters in the body',
+      'naming Flare or Sunburst in the prompt',
+    ],
     targetLength: '40–100 words',
   },
   qwen: {
