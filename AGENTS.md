@@ -132,6 +132,7 @@ cli/                   # kiestudio CLI（Studio API クライアント。結果�
 | `server/grok/` | Grok CLI（プロンプト最適化） |
 | `server/catalog/` + `scripts/` | カタログ同期 |
 | `cli/` | `kiestudio` CLI。公開 `/api` のクライアント。生成は履歴へ記録され Gallery で管理する |
+| `.github/workflows/` | CI、同梱 catalog の定期 PR、デスクトップ release |
 | `docs/PRE_RELEASE.md` | Pre-release チェックリスト |
 | `.indexion/wiki/` | indexion 知識ベース |
 
@@ -243,6 +244,7 @@ npx tsc -b               # 型チェックのみ（build にも含まれる）
 npm run build            # tsc -b + vite build
 npm run preview          # ビルド成果物をプレビュー
 npm run sync:models      # カタログ同期
+npm run sync:models -- --ignore-age
 npm run sync:models -- --force
 npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 ```
@@ -251,7 +253,7 @@ npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 
 ## 触るときの注意
 
-- カタログ同期は起動時に古いときだけ走る。毎回フル同期しない設計を壊さない
+- カタログ同期は dev 起動時に古いときだけ走る（毎回フル同期しない）。パッケージ済みデスクトップは起動のたびに llms.txt を確認し、起動中は 6 時間おきに再確認する。同梱 `src/data/catalog.json` は `.github/workflows/catalog-sync.yml`（毎日 PR）と `release.yml`（タグビルド前に1回、失敗しても既存スナップショットで続行）が自動更新する
 - Seedance 等のリファレンスキー名・メンションタグは末尾スペースや表記ゆれに敏感
 - 履歴は bun:sqlite（既定 `data/studio.db`、デスクトップは `STUDIO_DB_PATH` で userData 配下）。ピン上限・インポート正規化・入力復元の安全策を維持する
 - provider / operation 差分は `server/kie/adapters/` で正規化し、共通 task/history 契約を維持する
@@ -271,7 +273,7 @@ npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 - **arm64**: win-arm64 は x64 版が OS エミュレーションで動作するため個別ビルド不要。linux-arm64 はクロスビルド不可のため一旦見送り。Electrobun 自体の Linux 出力は tar.gz のみ（`.deb`/AppImage 非対応）だが、`scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）が tar.gz ではなく `build/<ch>-linux-x64/` の実行ツリーから `dpkg-deb` で `.deb` を自前生成する（Windows の Inno Setup と同じく後段ラップ）。`.deb` は Linux/WSL 上でのみビルド可能。インストール先は `/opt/kie-studio/<ch>/`、`.desktop`/アイコンは `/usr/share/` 配下。
 - **release/ 集積**: Electrobun はビルドごとに `artifacts/` を削除・再生成し他プラットフォーム成果物が消えるため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする（ファイル名のプラットフォーム接頭辞で衝突せず両方蓄積）。
 - **WSL での Linux ビルド**: WSL に node が無くてもよい（native Linux Bun のみで完結）。win/linux ビルドはこの点で統一されている——`desktop:*:linux:*` スクリプトは `bun` で vite/electrobun の bin を直接実行する（bin の node shebang を回避）。`bun run desktop:package:linux:canary` → `bun run desktop:installer:deb canary` で `.deb` まで生成できる。`icons`（sharp）は Linux ではスキップ——`assets/icon.png` はコミット済みで `electrobun.config.ts` の `linux.icon` がそれを使う。`better-sqlite3` は test 専用（server は `bun:sqlite`）なので build には不要。カタログ同期は win/linux 共通で `STUDIO_CATALOG_PATH`（userData の writable path）に bundle スナップショットを seed して動く（`src/bun/index.ts`）。バンドルの `syncedAt` が userData より新しければ再 seed する。
-- **リリース CI（`.github/workflows/release.yml`）**: `v*` tag の push で mac/win/linux を並列ビルドし GitHub Releases へ公開する（`v*-canary`/`-beta`/`-rc` は canary prerelease、それ以外は stable）。Linux ジョブは electrobun build 後に `scripts/build-linux-deb.mjs` を実行し、生成した `.deb` を `artifacts/` へコピーして配布物に含める（`dpkg-deb` は Ubuntu ランナーに同梱）。`app.version`（`electrobun.config.ts`）は `package.json` の version と揃える。新しい canary は version を上げて `v<version>-canary` tag を push する。
+- **リリース CI（`.github/workflows/release.yml`）**: `v*` tag の push で、先に docs.kie.ai から同梱 catalog を1回同期してから mac/win/linux を並列ビルドし GitHub Releases へ公開する（`v*-canary`/`-beta`/`-rc` は canary prerelease、それ以外は stable）。Linux ジョブは electrobun build 後に `scripts/build-linux-deb.mjs` を実行し、生成した `.deb` を `artifacts/` へコピーして配布物に含める（`dpkg-deb` は Ubuntu ランナーに同梱）。`app.version`（`electrobun.config.ts`）は `package.json` の version と揃える。新しい canary は version を上げて `v<version>-canary` tag を push する。
 
 ### リリース失敗時の最小回復手順
 

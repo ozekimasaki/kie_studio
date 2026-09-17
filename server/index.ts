@@ -1,5 +1,5 @@
 import { createApp } from './app.ts'
-import { syncCatalog } from './catalog/sync.ts'
+import { startRuntimeCatalogSync } from './catalog/runtime-sync.ts'
 import { getDb, getDbPath } from './db/open.ts'
 import { startBackfill } from './media/backfill.ts'
 
@@ -28,27 +28,7 @@ try {
   console.error('[history] failed to open SQLite', err)
 }
 
-// Startup catalog sync (non-blocking). Skips if catalog is < 12h old.
-// Set SYNC_MODELS_ON_START=0 to disable, or SYNC_MODELS_FORCE=1 to always refresh.
-const syncEnabled = process.env.SYNC_MODELS_ON_START !== '0'
-if (syncEnabled) {
-  const force = process.env.SYNC_MODELS_FORCE === '1'
-  void syncCatalog({ force, quiet: false })
-    .then((result) => {
-      if (result.skipped) {
-        console.log(`[catalog] ${result.reason}`)
-      } else {
-        console.log(
-          `[catalog] startup sync done (${result.catalog?.models.length ?? 0} models)`,
-        )
-      }
-    })
-    .catch((err) => {
-      console.warn('[catalog] startup sync failed (using existing catalog):', err)
-    })
-} else {
-  console.log('[catalog] startup sync disabled (SYNC_MODELS_ON_START=0)')
-}
+startRuntimeCatalogSync('dev')
 
 // Backfill: download media for existing history items that lack localPath.
 startBackfill()

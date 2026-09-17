@@ -1,0 +1,77 @@
+name: catalog-sync
+
+# Keep the bundled src/data/catalog.json current with docs.kie.ai.
+# Opens / updates a PR instead of pushing main directly.
+on:
+  schedule:
+    # 00:00 JST
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Bypass llms.txt hash skip and 70% shrink protection
+        type: boolean
+        default: false
+
+concurrency:
+  group: catalog-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: sync bundled catalog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Optional PAT so the catalog PR still triggers CI (GITHUB_TOKEN PRs do not).
+          token: ${{ secrets.CATALOG_SYNC_TOKEN || github.token }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Sync catalog from docs.kie.ai
+        run: |
+          if [[ "${{ github.event.inputs.force }}" == "true" ]]; then
+            bun run sync:models -- --force
+          else
+            bun run sync:models -- --ignore-age
+          fi
+
+      - name: Open or update catalog PR
+        env:
+          GH_TOKEN: ${{ secrets.CATALOG_SYNC_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git add src/data/catalog.json
+          if git diff --cached --quiet; then
+            echo "Bundled catalog is already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B chore/catalog-sync
+          git commit -m "chore(catalog): docs.kie.ai からモデル一覧を同期"
+          git push --force origin chore/catalog-sync
+
+          pr_number=$(gh pr list --head chore/catalog-sync --state open --json number --jq '.[0].number // empty')
+          if [[ -n "$pr_number" ]]; then
+            echo "Updated existing catalog-sync PR #$pr_number."
+          else
+            gh pr create \
+              --base main \
+              --head chore/catalog-sync \
+              --title "chore(catalog): 同梱モデルカタログを更新" \
+              --body "docs.kie.ai から \`src/data/catalog.json\` を再生成した定期同期です。70% 縮小保護は \`--force\` でない限り維持しています。"
+          fi

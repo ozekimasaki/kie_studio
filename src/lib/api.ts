@@ -204,6 +204,7 @@ export async function fetchHealth() {
     hasKey: boolean
     isDesktop: boolean
     version: string
+    catalogSyncedAt: string | null
   }>(res)
 }
 

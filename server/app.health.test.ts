@@ -19,11 +19,15 @@ describe('GET /api/health', () => {
       version: string
       hasKey: boolean
       isDesktop: boolean
+      catalogSyncedAt: string | null
     }
     expect(json.ok).toBe(true)
     expect(json.version).toBe(pkg.version)
     expect(typeof json.hasKey).toBe('boolean')
     expect(typeof json.isDesktop).toBe('boolean')
+    expect(
+      json.catalogSyncedAt === null || typeof json.catalogSyncedAt === 'string',
+    ).toBe(true)
   })
 })
 

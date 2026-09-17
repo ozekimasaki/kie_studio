@@ -120,7 +120,8 @@ export default function App() {
   const healthQuery = useQuery({
     queryKey: ['health'],
     queryFn: fetchHealth,
-    staleTime: 60_000,
+    staleTime: 10_000,
+    refetchInterval: 15_000,
   })
 
   const {
@@ -152,6 +153,19 @@ export default function App() {
     refetchInterval: () =>
       Date.now() - modelsMountedAtRef.current < 90_000 ? 10_000 : false,
   })
+
+  const catalogSyncedAtSeenRef = useRef<string | null>(null)
+  useEffect(() => {
+    const synced = healthQuery.data?.catalogSyncedAt
+    if (!synced) return
+    if (catalogSyncedAtSeenRef.current === null) {
+      catalogSyncedAtSeenRef.current = synced
+      return
+    }
+    if (catalogSyncedAtSeenRef.current === synced) return
+    catalogSyncedAtSeenRef.current = synced
+    void queryClient.invalidateQueries({ queryKey: ['models'] })
+  }, [healthQuery.data?.catalogSyncedAt, queryClient])
 
   const models = modelsQuery.data?.data.models ?? EMPTY_MODELS
   const syncedAt = modelsQuery.data?.data.syncedAt

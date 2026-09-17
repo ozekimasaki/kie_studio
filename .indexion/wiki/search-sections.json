@@ -3,7 +3,7 @@
     "kind": "tfidf",
     "dim": 256
   },
-  "next_vid": "85",
+  "next_vid": "113",
   "entries": [
     {
       "section": {
@@ -44,76 +44,6 @@
         "level": 2
       },
       "vid": "4"
-    },
-    {
-      "section": {
-        "id": "getting-started",
-        "title": "Getting Started",
-        "content": "\n",
-        "page_id": "getting-started",
-        "level": 1
-      },
-      "vid": "5"
-    },
-    {
-      "section": {
-        "id": "getting-started#-2",
-        "title": "セットアップ",
-        "content": "\n```bash\ncp .env.example .env\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "6"
-    },
-    {
-      "section": {
-        "id": "getting-started#env--kieapikey--3",
-        "title": ".env に KIE_API_KEY を設定",
-        "content": "npm install\nnpm run dev\n```\n\n- Web: http://localhost:5173\n- API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）\n- エージェント: 同じ API プロセス（`POST /api/agent/chat`）。別 sidecar は無い\n- DB: `data/studio.db`（自動作成、gitignore）\n\nプロンプト最適化を使う場合は Grok CLI を用意するか `.env` に `XAI_API_KEY` を設定する。エージェントの Grok も同じ `XAI_API_KEY`（Settings でも可）。\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "7"
-    },
-    {
-      "section": {
-        "id": "getting-started#-4",
-        "title": "環境変数",
-        "content": "\n| 変数 | 説明 |\n|------|------|\n| `KIE_API_KEY` | 必須。kie.ai API キー |\n| `PORT` | API ポート（既定 `8787`） |\n| `XAI_API_KEY` | 任意。エージェント Grok（組み込み xai）と Grok CLI |\n| `SYNC_MODELS_ON_START` | `0` で起動時同期を無効化 |\n| `SYNC_MODELS_FORCE` | `1` で強制同期 |\n| `SYNC_CONCURRENCY` | 同期並列数（既定 12、最大 32） |\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "8"
-    },
-    {
-      "section": {
-        "id": "getting-started#-5",
-        "title": "よく使うコマンド",
-        "content": "\n```bash\nnpm run dev\nnpm test\nnpm run lint\nnpm run build\nnpm run sync:models\nnpm run sync:models -- --force\nnpm run kiestudio -- --help\n```\n\n起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "9"
-    },
-    {
-      "section": {
-        "id": "getting-started#cli-6",
-        "title": "CLI",
-        "content": "\n`kiestudio` は起動中の Studio API のクライアント。生成結果は同じ SQLite 履歴に載り、Gallery で管理する。\n\n```bash\nkiestudio up\nkiestudio models --category image\nkiestudio generate -m flux-kontext-pro -p \"a red bicycle\" --wait\nkiestudio history\n```\n\nAPI 未起動時は `kiestudio up` または `npm run dev`。エージェント向け手順は `.cursor/skills/kiestudio-cli/SKILL.md`。\n\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "10"
-    },
-    {
-      "section": {
-        "id": "getting-started#see-also-7",
-        "title": "See Also",
-        "content": "\n- [Overview](wiki://overview)\n- [Architecture](wiki://architecture)\n- [Catalog Sync](wiki://catalog-sync)\n",
-        "page_id": "getting-started",
-        "level": 2
-      },
-      "vid": "11"
     },
     {
       "section": {
@@ -627,23 +557,93 @@
     },
     {
       "section": {
+        "id": "getting-started",
+        "title": "Getting Started",
+        "content": "\n",
+        "page_id": "getting-started",
+        "level": 1
+      },
+      "vid": "92"
+    },
+    {
+      "section": {
+        "id": "getting-started#-2",
+        "title": "セットアップ",
+        "content": "\n```bash\ncp .env.example .env\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "93"
+    },
+    {
+      "section": {
+        "id": "getting-started#env--kieapikey--3",
+        "title": ".env に KIE_API_KEY を設定",
+        "content": "npm install\nnpm run dev\n```\n\n- Web: http://localhost:5173\n- API: http://127.0.0.1:8787（Vite が `/api` をプロキシ）\n- エージェント: 同じ API プロセス（`POST /api/agent/chat`）。別 sidecar は無い\n- DB: `data/studio.db`（自動作成、gitignore）\n\nプロンプト最適化を使う場合は Grok CLI を用意するか `.env` に `XAI_API_KEY` を設定する。エージェントの Grok も同じ `XAI_API_KEY`（Settings でも可）。\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "94"
+    },
+    {
+      "section": {
+        "id": "getting-started#-4",
+        "title": "環境変数",
+        "content": "\n| 変数 | 説明 |\n|------|------|\n| `KIE_API_KEY` | 必須。kie.ai API キー |\n| `PORT` | API ポート（既定 `8787`） |\n| `XAI_API_KEY` | 任意。エージェント Grok（組み込み xai）と Grok CLI |\n| `SYNC_MODELS_ON_START` | `0` で起動時同期を無効化 |\n| `SYNC_MODELS_FORCE` | `1` で強制同期 |\n| `SYNC_CONCURRENCY` | 同期並列数（既定 12、最大 32） |\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "95"
+    },
+    {
+      "section": {
+        "id": "getting-started#-5",
+        "title": "よく使うコマンド",
+        "content": "\n```bash\nnpm run dev\nnpm test\nnpm run lint\nnpm run build\nnpm run sync:models\nnpm run sync:models -- --ignore-age\nnpm run sync:models -- --force\nnpm run kiestudio -- --help\n```\n\n起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。同梱 `src/data/catalog.json` は毎日の catalog-sync workflow と release タグ CI が自動更新する。\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "96"
+    },
+    {
+      "section": {
+        "id": "getting-started#cli-6",
+        "title": "CLI",
+        "content": "\n`kiestudio` は起動中の Studio API のクライアント。生成結果は同じ SQLite 履歴に載り、Gallery で管理する。\n\n```bash\nkiestudio up\nkiestudio models --category image\nkiestudio generate -m flux-kontext-pro -p \"a red bicycle\" --wait\nkiestudio history\n```\n\nAPI 未起動時は `kiestudio up` または `npm run dev`。エージェント向け手順は `.cursor/skills/kiestudio-cli/SKILL.md`。\n\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "97"
+    },
+    {
+      "section": {
+        "id": "getting-started#see-also-7",
+        "title": "See Also",
+        "content": "\n- [Overview](wiki://overview)\n- [Architecture](wiki://architecture)\n- [Catalog Sync](wiki://catalog-sync)\n",
+        "page_id": "getting-started",
+        "level": 2
+      },
+      "vid": "98"
+    },
+    {
+      "section": {
         "id": "catalog-sync",
         "title": "Catalog Sync",
         "content": "\ndocs.kie.ai の Market IMAGE / VIDEO / AUDIO OpenAPI を `src/data/catalog.json` へ同期する。Suno / Veo / Runway の専用 workflow は `server/catalog/dedicated.ts` で追加する。\n\n",
         "page_id": "catalog-sync",
         "level": 1
       },
-      "vid": "79"
+      "vid": "106"
     },
     {
       "section": {
         "id": "catalog-sync#-2",
         "title": "入口",
-        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache、desktop 再 seed 判定 |\n| `scripts/sync-models.ts` | `npm run sync:models` |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n| `src/bun/index.ts` | デスクトップ userData へバンドル catalog を seed / 再 seed |\n\n",
+        "content": "\n| 入口 | 説明 |\n|------|------|\n| `server/catalog/sync.ts` | llms.txt、page fetch、catalog write、mtime cache、desktop 再 seed 判定 |\n| `scripts/sync-models.ts` | `npm run sync:models`（`--ignore-age` / `--force`） |\n| `src/lib/models/from-openapi.ts` | OpenAPI / 説明文 → `FieldSchema` |\n| `server/catalog/dedicated.ts` | provider 専用 workflow fallback |\n| `server/routes/models.ts` | catalog と workflow を hydrate / dedupe |\n| `src/bun/index.ts` | デスクトップ userData へバンドル catalog を seed / 再 seed。起動時 ignore-age 同期 |\n| `server/catalog/runtime-sync.ts` | dev / desktop の起動同期と desktop の 6h 再確認 |\n| `.github/workflows/catalog-sync.yml` | 毎日同梱 catalog を同期して PR |\n| `.github/workflows/release.yml` | タグビルド前に catalog を1回同期して各 OS へ配る |\n\n",
         "page_id": "catalog-sync",
         "level": 2
       },
-      "vid": "80"
+      "vid": "107"
     },
     {
       "section": {
@@ -653,37 +653,47 @@
         "page_id": "catalog-sync",
         "level": 2
       },
-      "vid": "81"
+      "vid": "108"
     },
     {
       "section": {
         "id": "catalog-sync#-4",
         "title": "同期ポリシー",
-        "content": "\n起動時は古い場合だけ同期する。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。モデルの `.md` 取得は最大3回リトライしてから通常ページへフォールバックする。\n\n通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。\n\n起動同期は非ブロッキング。フロントの models クエリはマウント後約90秒だけ短い間隔で再取得し、同期完了後の新モデル（例: GPT Image 2.5 Flare / Sunburst）を拾う。Settings の「モデルを更新」は force sync のあと `['models']` を invalidate する。\n\n",
+        "content": "\ndev 起動時は古い場合だけ同期する。パッケージ済みデスクトップは起動のたびに llms.txt を確認する（`--ignore-age` 相当）。`SYNC_MODELS_ON_START=0` で無効、`SYNC_MODELS_FORCE=1` または `npm run sync:models -- --force` で強制。`--ignore-age` は 12h 新鮮さ判定だけをスキップし、llms.txt hash と 70% 縮小保護は残す。モデルの `.md` 取得は最大3回リトライしてから通常ページへフォールバックする。\n\n通常同期の抽出結果が既存 catalog の70%未満なら、部分的な取得失敗とみなして既存 catalog を維持する。明示的な force sync はこの保護を迂回して再生成する。失敗時は既存 catalog を使う。\n\n起動同期は非ブロッキング。`GET /api/health` の `catalogSyncedAt` が変わるとフロントが models クエリを invalidate する。マウント後約90秒の再取得は保険。Settings の「モデルを更新」は force sync のあと `['models']` を invalidate する。\n\n",
         "page_id": "catalog-sync",
         "level": 2
       },
-      "vid": "82"
+      "vid": "109"
     },
     {
       "section": {
-        "id": "catalog-sync#desktop-seed-5",
+        "id": "catalog-sync#-catalog--5",
+        "title": "同梱 catalog の自動更新",
+        "content": "\n`src/data/catalog.json` はリポジトリにコミットするデスクトップの seed である。\n\n- 毎日 00:00 JST に `catalog-sync.yml` が `--ignore-age` で同期し、差分があれば `chore/catalog-sync` ブランチへ force-push して PR を開く / 更新する。workflow_dispatch で `--force` も選べる。PR の CI を動かしたい場合は repo secret `CATALOG_SYNC_TOKEN`（workflow 起動可能な PAT）を置く\n- `v*` タグの `release.yml` は mac/win/linux の前に1ジョブで同期し、同じ `catalog.json` を artifact として各ビルドへ渡す。docs 障害時は committed snapshot のまま続行する\n- インストール済みアプリは userData の `catalog.json` を起動時に docs.kie.ai と突き合わせ、起動中は 6 時間おきに再確認する。バンドル seed より新しいネットワーク結果は残す\n\n",
+        "page_id": "catalog-sync",
+        "level": 2
+      },
+      "vid": "110"
+    },
+    {
+      "section": {
+        "id": "catalog-sync#desktop-seed-6",
         "title": "Desktop seed",
         "content": "\nパッケージ済みアプリは `STUDIO_CATALOG_PATH`（userData の `catalog.json`）を使う。バンドルの `src/data/catalog.json` を次のとき書き出す。\n\n- userData にファイルが無い、または JSON が壊れている\n- バンドルの `syncedAt` が userData より新しい（アプリ更新で同梱 catalog が進んだとき）\n\nuserData 側がネットワーク同期などで新しい場合は上書きしない。\n\n",
         "page_id": "catalog-sync",
         "level": 2
       },
-      "vid": "83"
+      "vid": "111"
     },
     {
       "section": {
-        "id": "catalog-sync#see-also-6",
+        "id": "catalog-sync#see-also-7",
         "title": "See Also",
         "content": "\n- [Getting Started](wiki://getting-started)\n- [Core Concepts](wiki://core-concepts)\n- [Architecture](wiki://architecture)\n- [Frontend](wiki://frontend)\n- [Client Lib](wiki://client-lib)\n- [Server API](wiki://server-api)\n- [Agent Mode](wiki://agent-mode)\n",
         "page_id": "catalog-sync",
         "level": 2
       },
-      "vid": "84"
+      "vid": "112"
     }
   ]
 }

@@ -256,6 +256,16 @@ export interface SyncOptions {
   quiet?: boolean
 }
 
+/** CLI flags for `npm run sync:models`. */
+export function parseSyncCliArgs(argv: string[]): Pick<SyncOptions, 'force' | 'maxAgeMs'> {
+  const force = argv.includes('--force')
+  const ignoreAge = argv.includes('--ignore-age')
+  return {
+    force,
+    maxAgeMs: force || ignoreAge ? 0 : undefined,
+  }
+}
+
 export interface SyncResult {
   skipped: boolean
   reason?: string

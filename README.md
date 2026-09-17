@@ -75,11 +75,14 @@ On `npm run dev` startup, the catalog auto-syncs from docs if stale (default: ol
 - Skipped if fresh (no full sync on every `tsx watch` restart)
 - Force sync: `SYNC_MODELS_FORCE=1 npm run dev` or `npm run sync:models -- --force`
 - Disable startup sync: `SYNC_MODELS_ON_START=0`
+- The bundled snapshot (`src/data/catalog.json`) is refreshed daily by `.github/workflows/catalog-sync.yml` (PR) and again at release time by `.github/workflows/release.yml` so desktop builds ship current Market models.
+- Installed desktop apps also recheck docs.kie.ai on every launch (and every 6 hours while running) and write the result to userData `catalog.json`.
 
 Manual sync:
 
 ```bash
 npm run sync:models
+npm run sync:models -- --ignore-age
 npm run sync:models -- --force
 ```
 
@@ -168,7 +171,7 @@ Regenerates `src/data/catalog.json` from [llms.txt](https://docs.kie.ai/llms.txt
 | `npm run lint` | oxlint |
 | `npm test` | Run Vitest once |
 | `npm run test:watch` | Run Vitest in watch mode |
-| `npm run sync:models` | Manual catalog sync |
+| `npm run sync:models` | Manual catalog sync (`--ignore-age` skips the 12h window; `--force` also bypasses hash/shrink protection) |
 | `npm run kiestudio` | KIE STUDIO CLI (`bun cli/index.ts`) |
 
 For type-check only: `npx tsc -b` (included in `npm run build`).

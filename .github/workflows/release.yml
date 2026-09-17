@@ -10,8 +10,37 @@ permissions:
   contents: write
 
 jobs:
+  catalog:
+    name: refresh bundled catalog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      # Bake a current docs.kie.ai snapshot into the desktop bundle. Fail-open
+      # so a docs outage still ships the committed catalog.json.
+      - name: Sync catalog from docs.kie.ai
+        continue-on-error: true
+        run: bun run sync:models -- --ignore-age
+
+      - name: Upload bundled catalog
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundled-catalog
+          path: src/data/catalog.json
+          if-no-files-found: error
+
   build:
     name: build (${{ matrix.os }})
+    needs: catalog
     strategy:
       # Each OS builds independently; one failing platform must not cancel the
       # others (Electrobun cannot cross-compile).
@@ -22,6 +51,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Restore bundled catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: bundled-catalog
+          path: src/data
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

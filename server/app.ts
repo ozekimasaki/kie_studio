@@ -24,6 +24,7 @@ import { mediaRoutes } from './routes/media.ts'
 import { backfillRoutes } from './media/backfill.ts'
 import { KieApiError } from './kie/client.ts'
 import { hasUsableApiKey } from './settings/apiKey.ts'
+import { readCatalog } from './catalog/sync.ts'
 
 function readAppVersion(): string {
   try {
@@ -69,14 +70,16 @@ export function createApp(): Hono {
     }),
   )
 
-  app.get('/api/health', (c) =>
-    c.json({
+  app.get('/api/health', async (c) => {
+    const catalog = await readCatalog()
+    return c.json({
       ok: true,
       hasKey: hasUsableApiKey(),
       isDesktop: isUpdateHandlerRegistered(),
       version: APP_VERSION,
-    }),
-  )
+      catalogSyncedAt: catalog?.syncedAt ?? null,
+    })
+  })
 
   app.route('/api', uploadRoutes)
   app.route('/api', generateRoutes)

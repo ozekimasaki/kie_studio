@@ -3,7 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
-import { shouldReseedCatalog, syncCatalog } from '../../server/catalog/sync.ts'
+import { shouldReseedCatalog } from '../../server/catalog/sync.ts'
+import { startRuntimeCatalogSync } from '../../server/catalog/runtime-sync.ts'
 import type { Catalog } from '../../src/lib/models/types.ts'
 import { ensureInstallWorkingDirectory } from './installCwd.ts'
 
@@ -83,13 +84,9 @@ try {
   console.error('[history] failed to open SQLite', err)
 }
 
-// Startup catalog sync (non-blocking). Skips if catalog is < 12h old.
-if (process.env.SYNC_MODELS_ON_START !== '0') {
-  const force = process.env.SYNC_MODELS_FORCE === '1'
-  void syncCatalog({ force, quiet: false }).catch((err) => {
-    console.warn('[catalog] startup sync failed (using existing catalog):', err)
-  })
-}
+// Packaged desktop always rechecks llms.txt (ignore-age) and repeats every 6h
+// so installed builds pick up new Market models without an app update.
+startRuntimeCatalogSync('desktop')
 
 // Backfill: download media for existing history items that lack localPath.
 startBackfill()
