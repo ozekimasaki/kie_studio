@@ -1,15 +1,18 @@
 /**
  * CLI: npm run sync:models
+ *
+ * --force       skip freshness, llms.txt hash, and 70% shrink protection
+ * --ignore-age  skip the 12h freshness window only (CI / release)
  */
-import { syncCatalog } from '../server/catalog/sync.ts'
+import { parseSyncCliArgs, syncCatalog } from '../server/catalog/sync.ts'
 
-const force = process.argv.includes('--force')
+const { force, maxAgeMs } = parseSyncCliArgs(process.argv.slice(2))
 
-syncCatalog({ force, quiet: false })
+syncCatalog({ force, maxAgeMs, quiet: false })
   .then((result) => {
     if (result.skipped) {
       console.log(`Skipped: ${result.reason}`)
-      console.log('Use --force to sync anyway.')
+      if (!force) console.log('Use --force to sync anyway.')
       return
     }
     console.log('Done.')

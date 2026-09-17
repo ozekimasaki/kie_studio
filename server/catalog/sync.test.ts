@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchTextWithRetry, shouldKeepExistingCatalog, shouldReseedCatalog } from './sync.ts'
+import { fetchTextWithRetry, parseSyncCliArgs, shouldKeepExistingCatalog, shouldReseedCatalog } from './sync.ts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -80,5 +80,26 @@ describe('desktop catalog reseed', () => {
     expect(
       shouldReseedCatalog({ syncedAt: null }, { syncedAt: '2026-08-11T16:43:07.009Z' }),
     ).toBe(false)
+  })
+})
+
+describe('parseSyncCliArgs', () => {
+  it('keeps the default 12h freshness window', () => {
+    expect(parseSyncCliArgs([])).toEqual({ force: false, maxAgeMs: undefined })
+  })
+
+  it('treats --ignore-age as a CI refresh that still honors shrink protection', () => {
+    expect(parseSyncCliArgs(['--ignore-age'])).toEqual({
+      force: false,
+      maxAgeMs: 0,
+    })
+  })
+
+  it('treats --force as a full bypass including age', () => {
+    expect(parseSyncCliArgs(['--force'])).toEqual({ force: true, maxAgeMs: 0 })
+    expect(parseSyncCliArgs(['--ignore-age', '--force'])).toEqual({
+      force: true,
+      maxAgeMs: 0,
+    })
   })
 })

@@ -75,11 +75,14 @@ npm run desktop:build:stable   # Stable 构建
 - 目录新鲜则跳过（`tsx watch` 重启不会每次全量同步）
 - 强制同步：`SYNC_MODELS_FORCE=1 npm run dev` 或 `npm run sync:models -- --force`
 - 禁用启动同步：`SYNC_MODELS_ON_START=0`
+- 随包快照（`src/data/catalog.json`）由 `.github/workflows/catalog-sync.yml` 每日开 PR 更新，并在 `.github/workflows/release.yml` 打标签构建前再同步一次，写入桌面包。
+- 已安装的桌面端每次启动都会再次核对 docs.kie.ai（运行中每 6 小时一次），结果写入 userData 的 `catalog.json`。
 
 手动同步：
 
 ```bash
 npm run sync:models
+npm run sync:models -- --ignore-age
 npm run sync:models -- --force
 ```
 
@@ -168,7 +171,7 @@ npm run sync:models -- --force
 | `npm run lint` | oxlint |
 | `npm test` | 运行一次 Vitest |
 | `npm run test:watch` | Vitest watch 模式 |
-| `npm run sync:models` | 手动目录同步 |
+| `npm run sync:models` | 手动目录同步（`--ignore-age` 仅跳过 12h 窗口；`--force` 同时绕过 hash / 缩减保护） |
 | `npm run kiestudio` | KIE STUDIO CLI（`bun cli/index.ts`） |
 
 仅类型检查：`npx tsc -b`（包含在 `npm run build` 中）。

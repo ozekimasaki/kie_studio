@@ -129,11 +129,14 @@
       "file": "catalog-sync.md",
       "sources": [
         "server/catalog/sync.ts",
+        "server/catalog/runtime-sync.ts",
         "scripts/sync-models.ts",
         "src/lib/models/from-openapi.ts",
         "src/data/catalog.json",
         "src/bun/index.ts",
-        "src/App.tsx"
+        "src/App.tsx",
+        ".github/workflows/catalog-sync.yml",
+        ".github/workflows/release.yml"
       ],
       "children": [],
       "provenance": "synthesized",
