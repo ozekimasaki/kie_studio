@@ -1,0 +1,75 @@
+name: low-risk-automerge
+
+# 低リスク PR の無人マージ予約（機械判定）。
+# Reviewer（Cursor Automation）や人が approve した PR のうち、
+#   1. 本文 1 行目が `scope: low-risk` と宣言され
+#   2. 変更ファイルがすべて許可リスト（catalog.json / docs / テスト / README）に収まり
+#   3. reviewDecision が APPROVED
+# のものだけ `low-risk` / `auto-merge` ラベルを付けて auto-merge（squash）を予約する。
+# 実際のマージは branch protection（required check + 承認）が揃った時点で GitHub が行う。
+# 判定はパスの機械チェックで、LLM の分類には依存しない。
+on:
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [labeled, edited]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: low-risk-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: low-risk gate
+    if: github.event_name == 'pull_request' || github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate and reserve auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          pr=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json body,isDraft,reviewDecision,files,labels,headRefName,isCrossRepository)
+
+          if [[ "$(jq -r .isDraft <<<"$pr")" == "true" ]]; then
+            echo "draft PR: skip"; exit 0
+          fi
+          if [[ "$(jq -r .isCrossRepository <<<"$pr")" == "true" ]]; then
+            echo "fork PR: skip"; exit 0
+          fi
+
+          first_line=$(jq -r '.body // ""' <<<"$pr" | head -n1 | tr -d '\r' | sed 's/[[:space:]]*$//')
+          if [[ "$first_line" != "scope: low-risk" ]]; then
+            echo "not declared low-risk (first line: '$first_line'): skip"; exit 0
+          fi
+
+          # 許可リスト外のファイルが 1 つでもあれば低リスク扱いしない
+          outside=$(jq -r '.files[].path' <<<"$pr" \
+            | grep -vE '^(src/data/catalog\.json|docs/.+|README\.md|.+\.test\.(ts|tsx))$' || true)
+          if [[ -n "$outside" ]]; then
+            echo "::notice::許可リスト外の変更があるため低リスク扱いしません:"
+            echo "$outside"
+            if jq -e '.labels[] | select(.name == "low-risk")' <<<"$pr" > /dev/null; then
+              gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label low-risk --remove-label auto-merge || true
+            fi
+            exit 0
+          fi
+
+          decision=$(jq -r '.reviewDecision // ""' <<<"$pr")
+          if [[ "$decision" != "APPROVED" ]]; then
+            echo "review decision is '$decision': label only, wait for approval"
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --add-label low-risk
+            exit 0
+          fi
+
+          gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --add-label low-risk --add-label auto-merge
+          if gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --auto --squash; then
+            echo "auto-merge reserved for PR #$PR"
+          else
+            echo "::warning::auto-merge を予約できませんでした（既に予約済みか、要件未達）"
+          fi

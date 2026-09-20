@@ -160,6 +160,13 @@ function prepareWorktree(issueNumber) {
     log(`worktree ${dir} already exists; reusing`);
   } else {
     mkdirSync(WORKTREES, { recursive: true });
+    run("git", ["-C", ROOT, "worktree", "prune"]);
+    // 前回の中断で残ったローカルブランチ（リモートには無い）を掃除してから切り直す
+    const stale = run("git", ["-C", ROOT, "branch", "--list", branch]).stdout.trim();
+    if (stale) {
+      log(`stale local branch ${branch} found; deleting`);
+      must("git", ["-C", ROOT, "branch", "-D", branch]);
+    }
     must("git", ["-C", ROOT, "worktree", "add", "--quiet", "-b", branch, dir, "origin/main"]);
   }
   log(`npm ci in ${dir}`);
@@ -185,7 +192,13 @@ function runPi(issue, dir) {
     mkdirSync(LOG_DIR, { recursive: true });
     const [pi, piArgs] = piCommand("-p", "--model", MODEL, "--append-system-prompt", CHARTER, buildPrompt(issue));
     log(`spawn pi (${pi} ${piArgs[0]}) for #${issue.number} in ${dir}, timeout ${MAX_MINUTES}m, log ${logFile}`);
-    const child = spawn(pi, piArgs, { cwd: dir, windowsHide: true, env: { ...process.env, CI: "1" } });
+    // stdin は閉じて渡す。pipe のままだと pi -p が stdin の EOF を待って起動直後に止まる（2026-09-20 実測）
+    const child = spawn(pi, piArgs, {
+      cwd: dir,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, CI: "1" },
+    });
     let output = "";
     const sink = (chunk) => {
       const text = chunk.toString();

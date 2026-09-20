@@ -13,6 +13,8 @@ description: kie_studio の Issue を 1 件、隔離 worktree で TDD 実装し�
 - 作業ディレクトリは Issue 専用の worktree（`origin/main` から切ったブランチ `feat/issue-<番号>`）。無人実行では dispatcher が用意済み。対話中なら `git worktree add .worktrees/issue-<番号> -b feat/issue-<番号> origin/main` で作ってから `cd` する
 - `AGENTS.md` のルール（indexion wiki の読み方、検証コマンド、命名、`switch` の `never` チェック、インライン import 禁止）に従う
 - 権限ポリシー（pi-permission-system）で force push / main 直 push / 再帰削除 / `.env` / `gh pr merge` / 自分の PR の承認 / タグ push は **deny**。止められたら迂回せず、理由を Issue にコメントして終了する
+- bash ツールには **単純な 1 コマンド**（`npm test`、`git status --short`、`gh pr create ...`）だけを渡す。PowerShell の `if (...) { }` や `$(...)` の入れ子、`bash -c`、`sudo`/`xargs` 経由は権限ゲートが解析できず、無人実行では拒否される。ファイルの読み書きは bash ではなく `read` / `write` / `edit` ツールを使う
+- PR 本文などの一時ファイルは worktree 内の `.git/agent/`（追跡されない）に書く。作業ツリー直下に置いてコミットに混ぜない
 
 ## 手順
 
@@ -21,7 +23,7 @@ description: kie_studio の Issue を 1 件、隔離 worktree で TDD 実装し�
 3. **失敗するテストを先に書く**（Vitest、`*.test.ts`）。次に最小の実装で通す。既存テストを消したり `skip` にして通さない
 4. **検証**: `npm run lint && npm test && npx tsc -b` を実行し、3 つすべて成功させる。失敗したら直す。直せないなら PR は開かず、Issue に状況（何を試し、どこで詰まったか）をコメントして終了する
 5. **コミット**: 日本語 conventional commits（例: `fix(history): ピン上限の境界値を修正`）。`--no-verify` は使わない。関係ない変更を混ぜない
-6. **PR を開く**: `git push -u origin feat/issue-<番号>` → `gh pr create --base main --head feat/issue-<番号> --label needs-review --title "<type>(<scope>): <概要>" --body-file <本文ファイル>`
+6. **PR を開く**: `git status --short` で意図しないファイル（一時ファイル・生成物）が無いことを確認 → `git push -u origin feat/issue-<番号>` → `gh pr create --base main --head feat/issue-<番号> --label needs-review --title "<type>(<scope>): <概要>" --body-file .git/agent/pr-body.md`
    本文には次を書く:
    - 1 行目: 変更が `src/data/catalog.json` / `docs/**` / テスト追加のみなら `scope: low-risk`、それ以外は `scope: feature`
    - `Closes #<番号>`

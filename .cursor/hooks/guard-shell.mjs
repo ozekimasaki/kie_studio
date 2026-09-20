@@ -33,8 +33,14 @@ const RULES = [
   },
   {
     id: "git-destructive",
-    re: /\bgit\s+(reset\s+--hard|clean\s+-[a-zA-Z]*[fdx]|branch\s+-D\b|push\b[^|;&]*--delete|checkout\s+--\s+\.\s*$|restore\s+\.\s*$)/i,
+    re: /\bgit\s+(reset\s+--hard|clean\s+-[a-zA-Z]*[fdx]|push\b[^|;&]*--delete|checkout\s+--\s+\.\s*$|restore\s+\.\s*$)/i,
     reason: "作業ツリーや履歴を破棄する git 操作は禁止。",
+  },
+  {
+    // -D（強制削除）だけ止める。-d は未マージなら git 自身が拒否するので許す（大文字小文字を区別）
+    id: "git-branch-force-delete",
+    re: /\bgit\s+branch\s+(-D|--delete\s+--force|--force\s+--delete)\b/,
+    reason: "ブランチの強制削除は禁止。マージ済みなら -d を使う。",
   },
   {
     id: "git-no-verify",
