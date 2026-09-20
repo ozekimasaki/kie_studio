@@ -176,7 +176,15 @@ jobs:
             -d "$payload")
           sid=$(jq -r '.id // empty' <<<"$resp")
           if [[ "$sid" != sess_* ]]; then
-            echo "::error::セッション作成に失敗"
+            err_type=$(jq -r '.error.type // ""' <<<"$resp")
+            err_msg=$(jq -r '.error.message // ""' <<<"$resp")
+            if [[ "$err_type" == "billing_error" || "$err_type" == "rate_limit_error" ]]; then
+              # 課金・レート起因は Tester が利用できないだけで、コードの良否とは無関係。警告を出してスキップする
+              echo "::warning::Qoder Tester を起動できません（${err_type}: ${err_msg}）。受け入れテストはスキップされました。Qoder のクレジット/プランを確認してください"
+              echo "id=" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::セッション作成に失敗（${err_type}）"
             jq 'del(.resources[]?.authorization_token)' <<<"$resp" || echo "$resp"
             exit 1
           fi
