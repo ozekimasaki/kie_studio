@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  capItems,
   isTerminalState,
+  MAX_PINNED,
   mergeServerHistory,
   normalizeHistoryItems,
 } from './history.ts'
@@ -44,6 +46,59 @@ function item(
     ...extra,
   }
 }
+
+describe('capItems', () => {
+  it('keeps exactly the pin budget pinned', () => {
+    const capped = capItems(
+      Array.from({ length: MAX_PINNED }, (_, index) =>
+        item(`pinned-${index}`, { pinned: true }),
+      ),
+    )
+
+    expect(capped).toHaveLength(MAX_PINNED)
+    expect(capped.every((entry) => entry.pinned)).toBe(true)
+  })
+
+  it('unpinns only the item over the pin budget', () => {
+    const capped = capItems(
+      Array.from({ length: MAX_PINNED + 1 }, (_, index) =>
+        item(`pinned-${index}`, { pinned: true }),
+      ),
+    )
+
+    expect(capped).toHaveLength(MAX_PINNED + 1)
+    expect(capped.slice(0, MAX_PINNED).every((entry) => entry.pinned)).toBe(true)
+    expect(capped.at(-1)?.pinned).toBe(false)
+  })
+})
+
+describe('normalizeHistoryItems boundaries', () => {
+  it('returns an empty list for an empty input', () => {
+    expect(normalizeHistoryItems([], 'local')).toEqual([])
+  })
+
+  it('keeps duplicate task IDs as separate normalized entries', () => {
+    const normalized = normalizeHistoryItems([
+      item('duplicate', { state: 'success', createdAt: 2_000 }),
+      item('duplicate', { state: 'fail', createdAt: 1_000 }),
+    ], 'local')
+
+    expect(normalized).toHaveLength(2)
+    expect(normalized.map((entry) => entry.taskId)).toEqual(['duplicate', 'duplicate'])
+  })
+
+  it('drops invalid elements while retaining valid history items', () => {
+    const normalized = normalizeHistoryItems([
+      null,
+      [],
+      { taskId: 'missing-model' },
+      { taskId: 'valid', model: 'test/model', category: 'image', state: 'success' },
+    ], 'local')
+
+    expect(normalized).toHaveLength(1)
+    expect(normalized[0]?.taskId).toBe('valid')
+  })
+})
 
 describe('isTerminalState', () => {
   it('treats success/fail/partial/expired as terminal', () => {
