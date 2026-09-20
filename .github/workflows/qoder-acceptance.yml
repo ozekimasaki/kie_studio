@@ -49,6 +49,8 @@ jobs:
           echo "head=$(jq -r .headRefName <<<"$json")" >> "$GITHUB_OUTPUT"
           echo "sha=$(jq -r .headRefOid <<<"$json")" >> "$GITHUB_OUTPUT"
           echo "url=$(jq -r .url <<<"$json")" >> "$GITHUB_OUTPUT"
+          # 判定コメントは「このジョブ開始後に投稿されたもの」だけを見る（前回の判定を拾わない）
+          echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           issue=$(jq -r .body <<<"$json" | grep -oiE '(closes|fixes|resolves) #[0-9]+' | head -n1 | grep -oE '[0-9]+' || true)
           echo "issue=${issue}" >> "$GITHUB_OUTPUT"
 
@@ -76,10 +78,10 @@ jobs:
           QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
         run: |
           set -euo pipefail
-          marker="# kie-studio-node22 v2"
+          marker="# kie-studio-node22 v3"
           setup_file=$(mktemp)
           cat > "$setup_file" <<'EOF'
-          # kie-studio-node22 v2
+          # kie-studio-node22 v3
           set -euo pipefail
           if [ -x /opt/node22/bin/node ]; then
             echo "node22 already installed: $(/opt/node22/bin/node -v)"
@@ -89,7 +91,9 @@ jobs:
               aarch64|arm64) arch=arm64 ;;
               *) echo "unsupported arch: $(uname -m)"; exit 1 ;;
             esac
-            file=$(curl -fsSL https://nodejs.org/dist/latest-v22.x/ | grep -oE "node-v22\.[0-9]+\.[0-9]+-linux-${arch}\.tar\.xz" | head -n1)
+            # パイプ途中で head が閉じると pipefail で落ちるため、一度変数に受けてから絞る
+            index=$(curl -fsSL https://nodejs.org/dist/latest-v22.x/)
+            file=$(grep -oE "node-v22\.[0-9]+\.[0-9]+-linux-${arch}\.tar\.xz" <<<"$index" | sort -uV | tail -n1)
             [ -n "$file" ] || { echo "could not resolve node 22 tarball"; exit 1; }
             curl -fsSL "https://nodejs.org/dist/latest-v22.x/${file}" -o /tmp/node22.tar.xz
             mkdir -p /opt/node22
@@ -238,14 +242,37 @@ jobs:
           echo "::error::セッションが時間内に終わりませんでした"
           exit 1
 
+      # Tester が何をしたかをジョブログに残す（失敗時の切り分け用。判定には使わない）
+      - name: Dump session events (diagnostics)
+        if: always() && steps.session.outputs.id != ''
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          SID: ${{ steps.session.outputs.id }}
+        run: |
+          set -uo pipefail
+          events=$(curl -sS "https://api.qoder.com/api/v1/cloud/sessions/$SID/events?limit=200" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN")
+          echo "session: $SID"
+          jq -r '
+            (if type == "array" then . else (.data // .events // []) end)
+            | .[]
+            | select(.type | test("agent.message|session.error|session.status|agent.tool_use|agent.tool_result|session.thread_status"))
+            | "\(.processed_at // "") \(.type) "
+              + ((.content // []) | map(.text // "") | join(" ") | .[0:300])
+              + (if .name then " tool=\(.name) input=\((.input // {}) | tostring | .[0:240])" else "" end)
+              + (if .error then " error=\(.error | tostring | .[0:400])" else "" end)
+              + (if .stop_reason then " stop=\(.stop_reason | tostring)" else "" end)
+          ' <<<"$events" | tail -n 120 || { echo "could not parse events:"; echo "$events" | head -c 2000; }
+
       - name: Read verdict
         if: steps.session.outputs.id != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          SINCE: ${{ steps.pr.outputs.started }}
         run: |
           set -euo pipefail
           verdict=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments?per_page=100" \
-            --jq '[.[] | select(.body | test("^## qoder-acceptance: (PASS|FAIL|ERROR)"))] | last | .body // empty' \
+            --jq --arg since "$SINCE" '[.[] | select(.created_at >= $since) | select(.body | test("^## qoder-acceptance: (PASS|FAIL|ERROR)"))] | last | .body // empty' \
             | head -n1 | grep -oE 'PASS|FAIL|ERROR' || true)
           case "$verdict" in
             PASS) echo "qoder-acceptance: PASS" ;;
