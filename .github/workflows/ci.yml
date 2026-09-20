@@ -8,6 +8,9 @@ on:
     branches:
       - main
   pull_request:
+  # catalog-sync が GITHUB_TOKEN で開く PR は pull_request イベントを発火しないため、
+  # 同ワークフローから `gh workflow run ci.yml --ref <branch>` で明示的に起動する。
+  workflow_dispatch:
 
 # Cancel superseded runs on the same ref to save CI minutes.
 concurrency:

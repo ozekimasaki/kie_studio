@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Shell|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${QODER_PROJECT_DIR}/.cursor/hooks/guard-shell.mjs\" --qoder",
+            "timeout": 10,
+            "statusMessage": "guard-shell: 危険コマンドを検査中"
+          }
+        ]
+      }
+    ]
+  }
+}

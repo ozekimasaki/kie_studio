@@ -20,6 +20,8 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  # `gh workflow run ci.yml` で PR ブランチの CI を起動するため
+  actions: write
 
 jobs:
   sync:
@@ -69,9 +71,28 @@ jobs:
           if [[ -n "$pr_number" ]]; then
             echo "Updated existing catalog-sync PR #$pr_number."
           else
+            body_file=$(mktemp)
+            cat > "$body_file" <<'EOF'
+          scope: low-risk
+
+          docs.kie.ai から `src/data/catalog.json` を再生成した定期同期です。70% 縮小保護は `--force` でない限り維持しています。
+
+          変更は `src/data/catalog.json` のみ。CI（lint / test / types / build）と Reviewer の承認が揃えば auto-merge されます。
+          EOF
             gh pr create \
               --base main \
               --head chore/catalog-sync \
               --title "chore(catalog): 同梱モデルカタログを更新" \
-              --body "docs.kie.ai から \`src/data/catalog.json\` を再生成した定期同期です。70% 縮小保護は \`--force\` でない限り維持しています。"
+              --body-file "$body_file"
+            pr_number=$(gh pr list --head chore/catalog-sync --state open --json number --jq '.[0].number // empty')
           fi
+
+          # 低リスク PR の無人マージ経路:
+          # 1. ラベルで Reviewer（Cursor Automation）に低リスク判定の根拠を渡す
+          # 2. auto-merge を予約する（branch protection の required check + 承認1 が揃った時点で GitHub がマージ）
+          # 3. GITHUB_TOKEN が開いた PR では pull_request イベントが発火しないため、CI を明示的に起動する
+          gh pr edit "$pr_number" --add-label "low-risk" --add-label "auto-merge"
+          if ! gh pr merge "$pr_number" --auto --squash; then
+            echo "::warning::auto-merge を予約できませんでした（allow_auto_merge と branch protection を確認）。PR #$pr_number は手動マージ待ちです。"
+          fi
+          gh workflow run ci.yml --ref chore/catalog-sync
