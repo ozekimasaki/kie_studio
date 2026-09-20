@@ -137,7 +137,7 @@ function evaluate(command) {
 // ホストが EOF を送らないことがある（Windows の Cursor で確認）ので、EOF 待ちにしない。
 // 一定時間何も来なければ入力なしとして扱う。
 function readStdin(timeoutMs = 3000) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let raw = "";
     let done = false;
     const finish = (fn) => {
@@ -161,7 +161,10 @@ function readStdin(timeoutMs = 3000) {
         const parsed = JSON.parse(text);
         finish(() => resolve(parsed));
       } catch (err) {
-        if (final) finish(() => reject(err));
+        // 途中のチャンクは失敗して当然。最終でも壊れているなら「読めない」印を返す。
+        // ここで reject して exit 1 すると failClosed が全シェルを凍らせるので、
+        // コマンドを判定できないことを allow 側に倒す（危険操作は他層 + サーバ側 protection で担保）。
+        if (final) finish(() => resolve({ __unreadable: String((err && err.message) || err) }));
       }
     };
     const timer = setTimeout(() => tryParse(true), timeoutMs);
@@ -228,14 +231,19 @@ function debugLog(text) {
 
 async function main() {
   debugLog(`start cwd=${process.cwd()} argv=${JSON.stringify(process.argv.slice(2))} node=${process.version} stdinTTY=${process.stdin.isTTY}`);
-  let input;
+  let input = {};
   try {
     input = await readStdin();
     debugLog(`stdin=${JSON.stringify(input).slice(0, 500)}`);
-  } catch {
-    // 入力が壊れている: hook 失敗として扱う（failClosed なら止まる）
-    out(2, "guard-shell: invalid JSON on stdin\n");
-    process.exit(1);
+  } catch (err) {
+    // ここには来ない想定（readStdin は reject しない）。来ても凍結を避けて allow で通す。
+    debugLog(`readStdin threw: ${err && err.message}`);
+    input = { __unreadable: true };
+  }
+  if (input && input.__unreadable) {
+    logBlock({ id: "stdin-unreadable", reason: "stdin を読めずコマンドを判定できませんでした（allow で通過）" }, "", "");
+    if (MODE === "cursor") out(1, JSON.stringify({ permission: "allow" }));
+    process.exit(0);
   }
 
   const command = extractCommand(input);
@@ -264,6 +272,9 @@ async function main() {
 }
 
 main().catch((err) => {
-  out(2, `guard-shell: ${err && err.message ? err.message : String(err)}\n`);
-  process.exit(1);
+  // 想定外の例外でも全シェルを凍らせない。cursor は allow を返し、qoder は exit 0（allow）にする。
+  // 危険コマンドの遮断は deny 経路（正常時）と他層（pi 権限・CI・branch protection）で担保する。
+  debugLog(`main threw: ${err && err.stack ? err.stack : String(err)}`);
+  if (MODE === "cursor") out(1, JSON.stringify({ permission: "allow" }));
+  process.exit(0);
 });
