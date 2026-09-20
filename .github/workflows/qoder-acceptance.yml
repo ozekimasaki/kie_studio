@@ -65,6 +65,39 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # コンテナ既定の Node は 20 系で、Vite 8 / undici（Node 22.18+）を動かせない。
+      # Environment の npm パッケージに node@22 を入れて起動時に差し替える（既にあれば何もしない）。
+      - name: Ensure the environment ships Node 22
+        if: steps.pr.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
+        run: |
+          set -euo pipefail
+          env_json=$(curl -sS "https://api.qoder.com/api/v1/cloud/environments/$QODER_ENVIRONMENT_ID" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN")
+          if jq -e '.config.packages.npm // [] | map(select(startswith("node@22"))) | length > 0' <<<"$env_json" > /dev/null; then
+            echo "environment already has node@22"
+            exit 0
+          fi
+          payload=$(jq '{
+              name: .name,
+              description: (.description // ""),
+              config: {
+                type: "cloud",
+                packages: {
+                  apt: (.config.packages.apt // []),
+                  pip: (.config.packages.pip // []),
+                  npm: ((.config.packages.npm // []) + ["node@22"])
+                },
+                setup_script: (.config.setup_script // "")
+              }
+            } | if .config.setup_script == "" then del(.config.setup_script) else . end' <<<"$env_json")
+          curl -sS -f -X POST "https://api.qoder.com/api/v1/cloud/environments/$QODER_ENVIRONMENT_ID" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload" | jq '{id, name, npm: .config.packages.npm}'
+
       - name: Create Qoder session with the PR head mounted
         id: session
         if: steps.pr.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
@@ -127,13 +160,18 @@ jobs:
           リポジトリは ${MOUNT_PATH} にマウント済みで、gh は GH_TOKEN で認証済みです。コードの変更・push・approve・merge は禁止です。
 
           手順:
-          1. cd ${MOUNT_PATH} && npm ci
-          2. npm run lint / npm test / npx tsc -b を順に実行し、成否と失敗時の要点（ファイル・行・メッセージ）を記録する
-          3. gh pr view ${PR} --json title,body,files で PR を読み、本文に紐づく Issue（#${ISSUE:-なし}）があれば gh issue view で受け入れ条件を読む。git fetch origin main && git diff origin/main...HEAD で差分を確認し、受け入れ条件を 1 つずつ照合する。必要なら該当テストファイルの単体実行や境界値の追加確認を最大 2 つまで行う
-          4. 判定: 3 コマンドすべて成功、受け入れ条件をすべて満たす、テストを削除・skip して通していない、の 3 点が揃えば PASS。1 つでも欠けたら FAIL
-          5. PR コメントを 1 件だけ投稿する: gh pr comment ${PR} --body-file <file>。本文の 1 行目は必ず「## qoder-acceptance: PASS」または「## qoder-acceptance: FAIL」。続けて、実行コマンドと結果、受け入れ条件のチェックリスト、FAIL なら再現手順と期待値/実際値を書く
-          6. FAIL のときはさらに: gh pr edit ${PR} --add-label acceptance-failed を実行し、gh issue create --title "bug: <要約> (PR #${PR})" --label bug,autonomous --body-file <file> で bug Issue を作る（再現手順・期待値/実際値・PR #${PR} と Issue #${ISSUE:-なし} へのリンク）
-          7. 最後に判定を 1 行で出力して終了する
+          1. 環境確認: cd ${MOUNT_PATH} && node -v && npm -v。Node が 22 未満なら、PATH 上に別の node（例: npm のグローバル bin にある node@22）が無いか which -a node で探して使う。それでも 22 未満なら後述の ERROR 判定にする
+          2. 依存: npm ci --include=optional（optional を省くと oxlint / rolldown の native binding が入らず lint・test が起動できない）
+          3. npm run lint / npm test / npx tsc -b を順に実行し、成否と失敗時の要点（ファイル・行・メッセージ）を記録する。native binding 不足や Node バージョン不足など「コードではなく環境」が原因で起動できない場合は、その旨を記録して ERROR 判定にする
+          4. 受け入れ条件の出どころ: 紐づく Issue は PR 本文の「Closes #N」で示されたもの（今回: #${ISSUE:-なし}）だけ。無ければ PR 本文の「目的」「変更」の記述を受け入れ条件として扱う。本文中で言及されているだけの他の Issue や PR の条件は使わない。scope 宣言（scope: low-risk 等）の有無は判定に含めない
+          5. gh pr view ${PR} --json title,body,files で PR を読み、git fetch origin main && git diff origin/main...HEAD で差分を確認し、受け入れ条件を 1 つずつ照合する。必要なら該当テストファイルの単体実行や境界値の追加確認を最大 2 つまで行う
+          6. 判定は 3 値:
+             - PASS: 3 コマンドすべて成功、受け入れ条件をすべて満たす、テストを削除・skip して通していない、の 3 点が揃う
+             - FAIL: コードに起因して上記のいずれかが欠ける
+             - ERROR: 環境起因で検証を完了できなかった（コードの良否は判定できない）
+          7. PR コメントを 1 件だけ投稿する: gh pr comment ${PR} --body-file <file>。本文の 1 行目は必ず「## qoder-acceptance: PASS」「## qoder-acceptance: FAIL」「## qoder-acceptance: ERROR」のいずれか。続けて、実行コマンドと結果、受け入れ条件のチェックリスト、FAIL なら再現手順と期待値/実際値、ERROR なら環境の状態（node -v、失敗したコマンドとメッセージ）を書く
+          8. FAIL のときだけ: gh pr edit ${PR} --add-label acceptance-failed を実行し、gh issue create --title "bug: <要約> (PR #${PR})" --label bug,autonomous --body-file <file> で bug Issue を作る（再現手順・期待値/実際値・PR #${PR} と Issue #${ISSUE:-なし} へのリンク）。ERROR では label も Issue も作らない
+          9. 最後に判定を 1 行で出力して終了する
           EOF
           payload=$(jq -n --rawfile text "$task_file" '{ events: [ { type: "user.message", content: [ { type: "text", text: $text } ] } ] }')
           curl -sS -f -X POST "https://api.qoder.com/api/v1/cloud/sessions/$SID/events" \
