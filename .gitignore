@@ -59,6 +59,9 @@ bun.lock
 !.qoder/settings.json
 skills-lock.json
 
+# Agent harness: per-issue worktrees created by scripts/agent/dispatch-issues.mjs
+.worktrees/
+
 # indexion: keep wiki, ignore generated local cache
 .indexion/cache/
 .indexion/digest/

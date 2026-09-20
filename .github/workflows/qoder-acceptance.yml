@@ -1,0 +1,182 @@
+name: qoder-acceptance
+
+# 実装役（pi Developer）が開いた PR を、Qoder Cloud Agent が独立した Tester として受け入れテストする。
+# - PR head をコンテナにマウントし、lint / test / tsc と受け入れ条件の照合を実行
+# - 結果は PR コメント（1 行目 `## qoder-acceptance: PASS|FAIL`）に書き戻し、FAIL なら bug Issue を作る
+# - 判定はこのジョブの成否（check run `qoder-acceptance`）として PR に出る。Cursor Reviewer と人が参照する
+# 未設定（secrets / vars 無し）のときは何もせず成功で抜ける。
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: qoder-acceptance-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    name: qoder-acceptance
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'needs-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PR: ${{ github.event.pull_request.number || inputs.pr }}
+      MOUNT_PATH: /data/workspace/kie_studio
+    steps:
+      - name: Resolve PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          json=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json number,headRefName,headRefOid,body,url,isCrossRepository)
+          if [[ "$(jq -r .isCrossRepository <<<"$json")" == "true" ]]; then
+            echo "::notice::fork からの PR は対象外"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "head=$(jq -r .headRefName <<<"$json")" >> "$GITHUB_OUTPUT"
+          echo "sha=$(jq -r .headRefOid <<<"$json")" >> "$GITHUB_OUTPUT"
+          echo "url=$(jq -r .url <<<"$json")" >> "$GITHUB_OUTPUT"
+          issue=$(jq -r .body <<<"$json" | grep -oiE '(closes|fixes|resolves) #[0-9]+' | head -n1 | grep -oE '[0-9]+' || true)
+          echo "issue=${issue}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip when Qoder is not configured
+        id: guard
+        if: steps.pr.outputs.skip != 'true'
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          QODER_AGENT_ID: ${{ vars.QODER_AGENT_ID }}
+          QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
+        run: |
+          if [[ -z "$QODER_ACCESS_TOKEN" || -z "$QODER_AGENT_ID" || -z "$QODER_ENVIRONMENT_ID" ]]; then
+            echo "::notice::QODER_ACCESS_TOKEN（secret）/ QODER_AGENT_ID / QODER_ENVIRONMENT_ID（vars）が未設定のためスキップ"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Qoder session with the PR head mounted
+        id: session
+        if: steps.pr.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          QODER_AGENT_ID: ${{ vars.QODER_AGENT_ID }}
+          QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
+          # ジョブ限定・リポジトリ限定の短命トークン。コンテナ内では GH_TOKEN として gh が使う
+          REPO_TOKEN: ${{ github.token }}
+          HEAD: ${{ steps.pr.outputs.head }}
+        run: |
+          set -euo pipefail
+          payload=$(jq -n \
+            --arg agent "$QODER_AGENT_ID" \
+            --arg env "$QODER_ENVIRONMENT_ID" \
+            --arg url "https://github.com/$GITHUB_REPOSITORY" \
+            --arg mount "$MOUNT_PATH" \
+            --arg branch "$HEAD" \
+            --arg token "$REPO_TOKEN" \
+            --arg title "qoder-acceptance: PR #$PR" \
+            --arg pr "$PR" \
+            '{
+              agent: { id: $agent, type: "agent" },
+              environment_id: $env,
+              title: $title,
+              metadata: { purpose: "acceptance", pr: $pr, repo: $url },
+              resources: [{
+                type: "github_repository",
+                url: $url,
+                mount_path: $mount,
+                authorization_token: $token,
+                checkout: { type: "branch", name: $branch }
+              }]
+            }')
+          resp=$(curl -sS -X POST "https://api.qoder.com/api/v1/cloud/sessions" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          sid=$(jq -r '.id // empty' <<<"$resp")
+          if [[ "$sid" != sess_* ]]; then
+            echo "::error::セッション作成に失敗"
+            jq 'del(.resources[]?.authorization_token)' <<<"$resp" || echo "$resp"
+            exit 1
+          fi
+          echo "id=$sid" >> "$GITHUB_OUTPUT"
+
+      - name: Send the acceptance task
+        if: steps.session.outputs.id != ''
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          SID: ${{ steps.session.outputs.id }}
+          HEAD: ${{ steps.pr.outputs.head }}
+          SHA: ${{ steps.pr.outputs.sha }}
+          ISSUE: ${{ steps.pr.outputs.issue }}
+        run: |
+          set -euo pipefail
+          task_file=$(mktemp)
+          cat > "$task_file" <<EOF
+          あなたは ${GITHUB_REPOSITORY} の PR #${PR}（branch ${HEAD}, head ${SHA}）を検証する**独立した受け入れテスト役**です。
+          リポジトリは ${MOUNT_PATH} にマウント済みで、gh は GH_TOKEN で認証済みです。コードの変更・push・approve・merge は禁止です。
+
+          手順:
+          1. cd ${MOUNT_PATH} && npm ci
+          2. npm run lint / npm test / npx tsc -b を順に実行し、成否と失敗時の要点（ファイル・行・メッセージ）を記録する
+          3. gh pr view ${PR} --json title,body,files で PR を読み、本文に紐づく Issue（#${ISSUE:-なし}）があれば gh issue view で受け入れ条件を読む。git fetch origin main && git diff origin/main...HEAD で差分を確認し、受け入れ条件を 1 つずつ照合する。必要なら該当テストファイルの単体実行や境界値の追加確認を最大 2 つまで行う
+          4. 判定: 3 コマンドすべて成功、受け入れ条件をすべて満たす、テストを削除・skip して通していない、の 3 点が揃えば PASS。1 つでも欠けたら FAIL
+          5. PR コメントを 1 件だけ投稿する: gh pr comment ${PR} --body-file <file>。本文の 1 行目は必ず「## qoder-acceptance: PASS」または「## qoder-acceptance: FAIL」。続けて、実行コマンドと結果、受け入れ条件のチェックリスト、FAIL なら再現手順と期待値/実際値を書く
+          6. FAIL のときはさらに: gh pr edit ${PR} --add-label acceptance-failed を実行し、gh issue create --title "bug: <要約> (PR #${PR})" --label bug,autonomous --body-file <file> で bug Issue を作る（再現手順・期待値/実際値・PR #${PR} と Issue #${ISSUE:-なし} へのリンク）
+          7. 最後に判定を 1 行で出力して終了する
+          EOF
+          payload=$(jq -n --rawfile text "$task_file" '{ events: [ { type: "user.message", content: [ { type: "text", text: $text } ] } ] }')
+          curl -sS -f -X POST "https://api.qoder.com/api/v1/cloud/sessions/$SID/events" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload" > /dev/null
+          echo "task sent to $SID"
+
+      - name: Wait for the session to finish
+        if: steps.session.outputs.id != ''
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          SID: ${{ steps.session.outputs.id }}
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 35 * 60 ))
+          # 起動直後は idle のままなので、いったん running を観測してから idle を待つ
+          seen_running=false
+          while (( $(date +%s) < deadline )); do
+            status=$(curl -sS "https://api.qoder.com/api/v1/cloud/sessions/$SID" \
+              -H "Authorization: Bearer $QODER_ACCESS_TOKEN" | jq -r '.status // "unknown"')
+            echo "$(date -u +%H:%M:%S) status=$status"
+            case "$status" in
+              running|rescheduling) seen_running=true ;;
+              idle) if $seen_running; then exit 0; fi ;;
+              terminated) exit 0 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::セッションが時間内に終わりませんでした"
+          exit 1
+
+      - name: Read verdict
+        if: steps.session.outputs.id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          verdict=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments?per_page=100" \
+            --jq '[.[] | select(.body | test("^## qoder-acceptance: (PASS|FAIL)"))] | last | .body // empty' \
+            | head -n1 | grep -oE 'PASS|FAIL' || true)
+          case "$verdict" in
+            PASS) echo "qoder-acceptance: PASS" ;;
+            FAIL) echo "::error::qoder-acceptance: FAIL（PR コメントと bug Issue を参照）"; exit 1 ;;
+            *) echo "::error::Tester が判定コメントを残しませんでした"; exit 1 ;;
+          esac

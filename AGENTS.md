@@ -161,7 +161,9 @@ cli/                   # kiestudio CLI（Studio API クライアント。結果�
 - ブロック履歴: `~/.cursor/hooks/blocked.log`、`~/.qoder/hooks/blocked.log`、pi は `~/.pi/agent/extensions/pi-permission-system/logs/`
 - `guard-shell.mjs` はコマンド**文字列**を見る。引用文の中に危険な文字列があるだけでも止まる（過剰側に倒している）。危険な文字列を含む入力はファイルに置いて渡す
 - 無人マージの範囲は **低リスクのみ**（`src/data/catalog.json` の定期同期、`docs/**`、テスト追加）。`catalog-sync.yml` が PR に `low-risk` / `auto-merge` を付けて `gh pr merge --auto --squash` を予約し、`gh workflow run ci.yml` で CI を起動する（GITHUB_TOKEN が開いた PR は `pull_request` を発火しないため）
-- 役割: pi Developer（`~/.pi/agent/agents/developer.md`）= 実装して PR を開く。Cursor Automation = レビュー・承認。Qoder = 受け入れテスト。機能変更の最終マージは人
+- 役割: pi Developer（手順は `.pi/skills/kie-developer/SKILL.md`、権限は `~/.pi/agent/agents/developer.md`）= 実装して PR を開く。Cursor Automation = レビュー・承認。Qoder Cloud Agent（`.github/workflows/qoder-acceptance.yml`）= 受け入れテスト。機能変更の最終マージは人
+- 無人実行の入口は `scripts/agent/dispatch-issues.mjs`（タスクスケジューラ `kie-studio-agent-dispatcher` が 15 分ごとに `~/.kie-agent/run-dispatcher.cmd` 経由で起動。pi-reactor は Windows で Unix ソケットを開けず使えない）。`autonomous` ラベルの Issue を 1 tick に 1 件、`.worktrees/issue-<N>` に `origin/main` から worktree を切って `pi -p` で実装役を起動する。記録は `~/.kie-agent/runs.jsonl` と `~/.kie-agent/logs/`
+- ラベル遷移: `autonomous` →（着手）`in-progress` →（PR 作成）`needs-review` → Qoder が `qoder-acceptance` check と PR コメントで PASS/FAIL、FAIL なら `acceptance-failed` + `bug`/`autonomous` Issue で差し戻し。受け入れ条件が曖昧なら `needs-clarification` で人待ち
 - 2026-09-20 実測: Windows の Cursor は hook の stdin に EOF を送らないため `readFileSync(0)` がタイムアウトし、`failClosed` で全コマンドが止まった。stdin は「JSON が揃った時点」で読み終える実装にしている。`process.stdout.write` もパイプでは非同期になり出力が消えるので `writeSync` を使う
 
 ## Pre-release
