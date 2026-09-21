@@ -42,6 +42,13 @@ function hydrateDedicatedModel(
     if (dedicated.id === 'market/elevenlabs-dialogue' && field.name === 'stability') {
       return { ...field, min: 0, max: 1, step: 0.5, default: 0.5 }
     }
+    if (dedicated.id === 'market/elevenlabs-dialogue' && field.name === 'language_code') {
+      const options = (field.enum ?? []).filter((value) => value !== '')
+      if (options.length === 0) {
+        return { ...field, type: 'string', required: false, default: '' }
+      }
+      return { ...field, required: false, default: '', enum: ['', ...options] }
+    }
     if (dedicated.id === 'market/volcengine-lip-sync' && field.name === 'video_url') {
       return { ...field, accept: 'video/*', maxItems: 1, scalar: true }
     }
