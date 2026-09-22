@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowRight, Check, Clock, Download, Music, Pin, Play, RotateCcw, WandSparkles } from 'lucide-react'
 import {
@@ -10,6 +10,7 @@ import {
   localMediaUrl,
 } from '../lib/api.ts'
 import { isAudioUrl, isVideoUrl, mediaKindFromUrl } from '../lib/media.ts'
+import { useRefreshableMediaSrc } from '../lib/useRefreshableMediaSrc.ts'
 import type {
   HistoryItem,
   MediaAsset,
@@ -17,7 +18,7 @@ import type {
   TaskState,
 } from '../lib/models/types.ts'
 import { Pressable } from './motion/Pressable.tsx'
-import { RefreshableImage } from './RefreshableImage.tsx'
+import { RefreshableImage, RefreshableVideo } from './RefreshableImage.tsx'
 import { SharedMedia } from './motion/SharedMedia.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 import { useAudioPlayer } from './audio/audioPlayerContext.ts'
@@ -77,6 +78,46 @@ function fullPrompt(item: HistoryItem): string | undefined {
 
 function canReuse(item: HistoryItem): boolean {
   return Boolean(item.input && item.modelId)
+}
+
+function assetRemoteSrc(asset: MediaAsset): string | undefined {
+  if (asset.localPath) return localMediaUrl(asset.localPath)
+  return asset.url ?? asset.streamUrl
+}
+
+function HistoryAudioPlayButton({
+  asset,
+  playlist,
+  className,
+  children,
+  ariaLabel,
+}: {
+  asset: MediaAsset
+  playlist: MediaAsset[]
+  className: string
+  children: ReactNode
+  ariaLabel?: string
+}) {
+  const audioPlayer = useAudioPlayer()
+  const original = assetRemoteSrc(asset)
+  const { displaySrc, failed } = useRefreshableMediaSrc(original)
+  return (
+    <Pressable
+      className={className}
+      disabled={!displaySrc || failed}
+      aria-label={ariaLabel}
+      onClick={() => {
+        if (!displaySrc) return
+        const playable = { ...asset, url: displaySrc, streamUrl: displaySrc }
+        audioPlayer.play(
+          playable,
+          playlist.map((item) => (item === asset ? playable : item)),
+        )
+      }}
+    >
+      {children}
+    </Pressable>
+  )
 }
 
 /** 詳細ビューアー用の画像。読み込み失敗時にフォールバックを表示する。 */
@@ -382,7 +423,14 @@ export function HistorySheets({
                     return (
                       <div key={label} className="min-w-0">
                         <span className="studio-label">{label}</span>
-                        {url ? <video src={url} controls preload="metadata" className="mt-2 aspect-video w-full rounded-[var(--radius-sm)] bg-black object-contain" /> : null}
+                        {url ? (
+                          <RefreshableVideo
+                            src={url}
+                            controls
+                            preload="metadata"
+                            className="mt-2 aspect-video w-full rounded-[var(--radius-sm)] bg-black object-contain"
+                          />
+                        ) : null}
                       </div>
                     )
                   })}
@@ -443,7 +491,7 @@ export function HistorySheets({
                       className="studio-tile overflow-hidden"
                     >
                       {video ? (
-                        <video
+                        <RefreshableVideo
                           src={url}
                           controls
                           preload="metadata"
@@ -463,12 +511,13 @@ export function HistorySheets({
                             <p className="font-semibold">{asset.title ?? `候補 ${index + 1}`}</p>
                             {asset.duration && <p className="mt-1 text-xs text-[var(--text-muted)]">{Math.round(asset.duration)}秒</p>}
                           </div>
-                          <Pressable
+                          <HistoryAudioPlayButton
+                            asset={asset}
+                            playlist={activeMedia.filter((entry) => entry.kind === 'audio')}
                             className="studio-btn-primary inline-flex w-auto items-center gap-2 px-5"
-                            onClick={() => audioPlayer.play(asset, activeMedia.filter((entry) => entry.kind === 'audio'))}
                           >
                             <Play size={16} fill="currentColor" /> 再生
-                          </Pressable>
+                          </HistoryAudioPlayButton>
                         </div>
                       ) : (
                         <ViewerImage
@@ -759,7 +808,7 @@ export function HistorySheets({
                   <div className="overflow-hidden rounded-[var(--radius-sm)] bg-[var(--bg)]">
                     {url ? (
                       asset?.kind === 'video' || isVideoUrl(url) ? (
-                        <video
+                        <RefreshableVideo
                           src={url}
                           controls
                           muted
@@ -776,7 +825,14 @@ export function HistorySheets({
                               fallback={null}
                             />
                           )}
-                          <Pressable className="studio-btn-primary grid size-10 place-items-center p-0" onClick={() => audioPlayer.play(asset, mediaFor(item).filter((entry) => entry.kind === 'audio'))} aria-label="再生"><Play size={16} fill="currentColor" /></Pressable>
+                          <HistoryAudioPlayButton
+                            asset={asset}
+                            playlist={mediaFor(item).filter((entry) => entry.kind === 'audio')}
+                            className="studio-btn-primary grid size-10 place-items-center p-0"
+                            ariaLabel="再生"
+                          >
+                            <Play size={16} fill="currentColor" />
+                          </HistoryAudioPlayButton>
                         </div>
                       ) : (
                         <RefreshableImage

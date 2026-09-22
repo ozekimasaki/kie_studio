@@ -6,6 +6,10 @@ import {
   isRefreshableRemoteUrl,
 } from './mediaExpiry.ts'
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError'
+}
+
 export function useRefreshableMediaSrc(src: string | undefined): {
   displaySrc: string | undefined
   failed: boolean
@@ -16,55 +20,65 @@ export function useRefreshableMediaSrc(src: string | undefined): {
   )
   const [failed, setFailed] = useState(false)
   const retried = useRef(false)
+  const srcRef = useRef(src)
+  const abortRef = useRef<AbortController | null>(null)
+  srcRef.current = src
+
+  const refresh = useCallback((requested: string) => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    retried.current = true
+    void fetchDownloadUrl(requested, { signal: controller.signal })
+      .then((res) => {
+        if (srcRef.current !== requested) return
+        const next = res.data.downloadUrl
+        if (next) {
+          setDisplaySrc(next)
+          setFailed(false)
+        } else {
+          setFailed(true)
+        }
+      })
+      .catch((error) => {
+        if (isAbortError(error) || srcRef.current !== requested) return
+        setFailed(true)
+      })
+  }, [])
 
   useEffect(() => {
     retried.current = false
     setFailed(false)
     if (!src) {
       setDisplaySrc(undefined)
-      return
+      return () => abortRef.current?.abort()
     }
     if (!isExpiredSignedUrl(src)) {
       setDisplaySrc(src)
-      return
+      return () => abortRef.current?.abort()
     }
     setDisplaySrc(undefined)
     if (!isRefreshableRemoteUrl(src)) {
       setFailed(true)
-      return
+      return () => abortRef.current?.abort()
     }
-
-    let cancelled = false
-    retried.current = true
-    void fetchDownloadUrl(src)
-      .then((res) => {
-        if (cancelled) return
-        const next = res.data.downloadUrl
-        if (next) setDisplaySrc(next)
-        else setFailed(true)
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [src])
+    refresh(src)
+    return () => abortRef.current?.abort()
+  }, [refresh, src])
 
   const onError = useCallback(() => {
-    if (!src || retried.current || isLocalMediaSrc(src) || !isRefreshableRemoteUrl(src)) {
+    const requested = srcRef.current
+    if (
+      !requested ||
+      retried.current ||
+      isLocalMediaSrc(requested) ||
+      !isRefreshableRemoteUrl(requested)
+    ) {
       setFailed(true)
       return
     }
-    retried.current = true
-    void fetchDownloadUrl(src)
-      .then((res) => {
-        const next = res.data.downloadUrl
-        if (next) setDisplaySrc(next)
-        else setFailed(true)
-      })
-      .catch(() => setFailed(true))
-  }, [src])
+    refresh(requested)
+  }, [refresh])
 
   return { displaySrc, failed, onError }
 }

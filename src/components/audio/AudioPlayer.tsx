@@ -16,7 +16,8 @@ import {
   X,
 } from 'lucide-react'
 import { Pressable } from '../motion/Pressable.tsx'
-import { apiUrl } from '../../lib/api.ts'
+import { apiUrl, fetchDownloadUrl } from '../../lib/api.ts'
+import { isExpiredSignedUrl, isLocalMediaSrc } from '../../lib/mediaExpiry.ts'
 import {
   AudioPlayerContext,
   type AudioPlayerValue,
@@ -26,6 +27,11 @@ import {
 function sourceOf(track: AudioTrack): string | undefined {
   if (track.localPath) return apiUrl(`/${track.localPath}`)
   return track.streamUrl ?? track.url
+}
+
+function needsSignedUrlRefresh(track: AudioTrack, source: string): boolean {
+  if (track.localPath || isLocalMediaSrc(source)) return false
+  return isExpiredSignedUrl(source)
 }
 
 function formatTime(value: number): string {
@@ -56,20 +62,46 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolume] = useState(1)
   const [muted, setMuted] = useState(false)
 
-  const play = useCallback((track: AudioTrack, group: AudioTrack[] = [track]) => {
+  const playGen = useRef(0)
+  const pendingSeek = useRef<number | null>(null)
+
+  const applyPlay = useCallback((track: AudioTrack, group: AudioTrack[], source: string) => {
     const audio = audioRef.current
-    const source = sourceOf(track)
-    if (!audio || !source) return
+    if (!audio) return
     const currentSource = active ? sourceOf(active) : undefined
     setTracks(group.filter((item) => Boolean(sourceOf(item))))
     setActive(track)
     if (currentSource !== source) {
       audio.src = source
-      audio.currentTime = 0
-      setCurrentTime(0)
+      audio.currentTime = pendingSeek.current ?? 0
+      setCurrentTime(audio.currentTime)
+      pendingSeek.current = null
     }
     void audio.play().catch(() => setPlaying(false))
   }, [active])
+
+  const play = useCallback((track: AudioTrack, group: AudioTrack[] = [track]) => {
+    const source = sourceOf(track)
+    if (!source) return
+    if (!needsSignedUrlRefresh(track, source)) {
+      applyPlay(track, group, source)
+      return
+    }
+    const gen = ++playGen.current
+    void fetchDownloadUrl(source)
+      .then((res) => {
+        if (gen !== playGen.current) return
+        const next = res.data.downloadUrl
+        if (!next) return
+        const playable = { ...track, url: next, streamUrl: next }
+        applyPlay(
+          playable,
+          group.map((item) => (item === track ? playable : item)),
+          next,
+        )
+      })
+      .catch(() => {})
+  }, [applyPlay])
 
   const toggle = useCallback(() => {
     const audio = audioRef.current
@@ -81,6 +113,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const seek = useCallback((seconds: number) => {
     const audio = audioRef.current
     if (!audio) return
+    if (!audio.src) {
+      pendingSeek.current = seconds
+      return
+    }
     audio.currentTime = Math.max(0, Math.min(seconds, audio.duration || seconds))
     setCurrentTime(audio.currentTime)
   }, [])
