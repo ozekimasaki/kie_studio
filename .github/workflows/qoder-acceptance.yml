@@ -1,0 +1,290 @@
+name: qoder-acceptance
+
+# 実装役（pi Developer）が開いた PR を、Qoder Cloud Agent が独立した Tester として受け入れテストする。
+# - PR head をコンテナにマウントし、lint / test / tsc と受け入れ条件の照合を実行
+# - 結果は PR コメント（1 行目 `## qoder-acceptance: PASS|FAIL`）に書き戻し、FAIL なら bug Issue を作る
+# - 判定はこのジョブの成否（check run `qoder-acceptance`）として PR に出る。Cursor Reviewer と人が参照する
+# 未設定（secrets / vars 無し）のときは何もせず成功で抜ける。
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: qoder-acceptance-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    name: qoder-acceptance
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'needs-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PR: ${{ github.event.pull_request.number || inputs.pr }}
+      MOUNT_PATH: /data/workspace/kie_studio
+    steps:
+      - name: Resolve PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          json=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json number,headRefName,headRefOid,body,url,isCrossRepository)
+          if [[ "$(jq -r .isCrossRepository <<<"$json")" == "true" ]]; then
+            echo "::notice::fork からの PR は対象外"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "head=$(jq -r .headRefName <<<"$json")" >> "$GITHUB_OUTPUT"
+          echo "sha=$(jq -r .headRefOid <<<"$json")" >> "$GITHUB_OUTPUT"
+          echo "url=$(jq -r .url <<<"$json")" >> "$GITHUB_OUTPUT"
+          # 判定コメントは「このジョブ開始後に投稿されたもの」だけを見る（前回の判定を拾わない）
+          echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          issue=$(jq -r .body <<<"$json" | grep -oiE '(closes|fixes|resolves) #[0-9]+' | head -n1 | grep -oE '[0-9]+' || true)
+          echo "issue=${issue}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip when Qoder is not configured
+        id: guard
+        if: steps.pr.outputs.skip != 'true'
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          QODER_AGENT_ID: ${{ vars.QODER_AGENT_ID }}
+          QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
+        run: |
+          if [[ -z "$QODER_ACCESS_TOKEN" || -z "$QODER_AGENT_ID" || -z "$QODER_ENVIRONMENT_ID" ]]; then
+            echo "::notice::QODER_ACCESS_TOKEN（secret）/ QODER_AGENT_ID / QODER_ENVIRONMENT_ID（vars）が未設定のためスキップ"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # コンテナ既定の Node は 20 系で、Vite 8 / undici（Node 22.18+）を動かせない。
+      # Environment の setup_script で公式 tarball を /opt/node22 に展開し、既定の node を差し替える。
+      # （npm の node@22 パッケージでは既定の node を置き換えられなかった: 2026-09-20 実測）
+      # 同じ版のスクリプトが入っていれば何もしない。
+      - name: Ensure the environment ships Node 22
+        if: steps.pr.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
+        run: |
+          set -euo pipefail
+          marker="# kie-studio-node22 v3"
+          setup_file=$(mktemp)
+          cat > "$setup_file" <<'EOF'
+          # kie-studio-node22 v3
+          set -euo pipefail
+          if [ -x /opt/node22/bin/node ]; then
+            echo "node22 already installed: $(/opt/node22/bin/node -v)"
+          else
+            case "$(uname -m)" in
+              x86_64) arch=x64 ;;
+              aarch64|arm64) arch=arm64 ;;
+              *) echo "unsupported arch: $(uname -m)"; exit 1 ;;
+            esac
+            # パイプ途中で head が閉じると pipefail で落ちるため、一度変数に受けてから絞る
+            index=$(curl -fsSL https://nodejs.org/dist/latest-v22.x/)
+            file=$(grep -oE "node-v22\.[0-9]+\.[0-9]+-linux-${arch}\.tar\.xz" <<<"$index" | sort -uV | tail -n1)
+            [ -n "$file" ] || { echo "could not resolve node 22 tarball"; exit 1; }
+            curl -fsSL "https://nodejs.org/dist/latest-v22.x/${file}" -o /tmp/node22.tar.xz
+            mkdir -p /opt/node22
+            tar -xJf /tmp/node22.tar.xz -C /opt/node22 --strip-components=1
+            rm -f /tmp/node22.tar.xz
+            echo "installed $(/opt/node22/bin/node -v)"
+          fi
+          # 既定の node / npm / npx を差し替える（権限が無ければ PATH 経由で使う）
+          current=$(command -v node || true)
+          if [ -n "$current" ] && [ -w "$(dirname "$current")" ]; then
+            for bin in node npm npx corepack; do
+              [ -e "/opt/node22/bin/$bin" ] && ln -sf "/opt/node22/bin/$bin" "$(dirname "$current")/$bin" || true
+            done
+          fi
+          echo 'export PATH=/opt/node22/bin:$PATH' > /etc/profile.d/node22.sh 2>/dev/null || true
+          echo 'export PATH=/opt/node22/bin:$PATH' >> "$HOME/.bashrc" 2>/dev/null || true
+          echo "node now: $(node -v 2>/dev/null || echo unknown)"
+          EOF
+          env_json=$(curl -sS "https://api.qoder.com/api/v1/cloud/environments/$QODER_ENVIRONMENT_ID" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN")
+          if jq -e --arg m "$marker" '(.config.setup_script // "") | startswith($m)' <<<"$env_json" > /dev/null; then
+            echo "environment already has the node22 setup script"
+            exit 0
+          fi
+          payload=$(jq --rawfile script "$setup_file" '{
+              name: .name,
+              description: (.description // ""),
+              config: {
+                type: "cloud",
+                packages: {
+                  apt: (.config.packages.apt // []),
+                  pip: (.config.packages.pip // []),
+                  npm: ((.config.packages.npm // []) | map(select(startswith("node@") | not)))
+                },
+                setup_script: $script
+              }
+            }' <<<"$env_json")
+          curl -sS -f -X POST "https://api.qoder.com/api/v1/cloud/environments/$QODER_ENVIRONMENT_ID" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload" | jq '{id, name, npm: .config.packages.npm, setup_script_head: (.config.setup_script | split("\n") | .[0])}'
+
+      - name: Create Qoder session with the PR head mounted
+        id: session
+        if: steps.pr.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          QODER_AGENT_ID: ${{ vars.QODER_AGENT_ID }}
+          QODER_ENVIRONMENT_ID: ${{ vars.QODER_ENVIRONMENT_ID }}
+          # ジョブ限定・リポジトリ限定の短命トークン。コンテナ内では GH_TOKEN として gh が使う
+          REPO_TOKEN: ${{ github.token }}
+          HEAD: ${{ steps.pr.outputs.head }}
+        run: |
+          set -euo pipefail
+          payload=$(jq -n \
+            --arg agent "$QODER_AGENT_ID" \
+            --arg env "$QODER_ENVIRONMENT_ID" \
+            --arg url "https://github.com/$GITHUB_REPOSITORY" \
+            --arg mount "$MOUNT_PATH" \
+            --arg branch "$HEAD" \
+            --arg token "$REPO_TOKEN" \
+            --arg title "qoder-acceptance: PR #$PR" \
+            --arg pr "$PR" \
+            '{
+              agent: { id: $agent, type: "agent" },
+              environment_id: $env,
+              title: $title,
+              metadata: { purpose: "acceptance", pr: $pr, repo: $url },
+              resources: [{
+                type: "github_repository",
+                url: $url,
+                mount_path: $mount,
+                authorization_token: $token,
+                checkout: { type: "branch", name: $branch }
+              }]
+            }')
+          resp=$(curl -sS -X POST "https://api.qoder.com/api/v1/cloud/sessions" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          sid=$(jq -r '.id // empty' <<<"$resp")
+          if [[ "$sid" != sess_* ]]; then
+            err_type=$(jq -r '.error.type // ""' <<<"$resp")
+            err_msg=$(jq -r '.error.message // ""' <<<"$resp")
+            if [[ "$err_type" == "billing_error" || "$err_type" == "rate_limit_error" ]]; then
+              # 課金・レート起因は Tester が利用できないだけで、コードの良否とは無関係。警告を出してスキップする
+              echo "::warning::Qoder Tester を起動できません（${err_type}: ${err_msg}）。受け入れテストはスキップされました。Qoder のクレジット/プランを確認してください"
+              echo "id=" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::セッション作成に失敗（${err_type}）"
+            jq 'del(.resources[]?.authorization_token)' <<<"$resp" || echo "$resp"
+            exit 1
+          fi
+          echo "id=$sid" >> "$GITHUB_OUTPUT"
+
+      - name: Send the acceptance task
+        if: steps.session.outputs.id != ''
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          SID: ${{ steps.session.outputs.id }}
+          HEAD: ${{ steps.pr.outputs.head }}
+          SHA: ${{ steps.pr.outputs.sha }}
+          ISSUE: ${{ steps.pr.outputs.issue }}
+        run: |
+          set -euo pipefail
+          task_file=$(mktemp)
+          cat > "$task_file" <<EOF
+          あなたは ${GITHUB_REPOSITORY} の PR #${PR}（branch ${HEAD}, head ${SHA}）を検証する**独立した受け入れテスト役**です。
+          リポジトリは ${MOUNT_PATH} にマウント済みで、gh は GH_TOKEN で認証済みです。コードの変更・push・approve・merge は禁止です。
+
+          手順:
+          1. 環境確認: cd ${MOUNT_PATH} && node -v && npm -v。Node が 22 未満なら /opt/node22/bin/node -v を確認し、存在すれば以降のすべてのコマンドを PATH=/opt/node22/bin:$PATH を先頭に付けて実行する（Bash ツールは毎回新しいシェルなので、各コマンドで付ける。例: PATH=/opt/node22/bin:$PATH npm test）。それでも 22 未満なら後述の ERROR 判定にする
+          2. 依存: npm ci --include=optional（optional を省くと oxlint / rolldown の native binding が入らず lint・test が起動できない）
+          3. npm run lint / npm test / npx tsc -b を順に実行し、成否と失敗時の要点（ファイル・行・メッセージ）を記録する。native binding 不足や Node バージョン不足など「コードではなく環境」が原因で起動できない場合は、その旨を記録して ERROR 判定にする
+          4. 受け入れ条件の出どころ: 紐づく Issue は PR 本文の「Closes #N」で示されたもの（今回: #${ISSUE:-なし}）だけ。無ければ PR 本文の「目的」「変更」の記述を受け入れ条件として扱う。本文中で言及されているだけの他の Issue や PR の条件は使わない。scope 宣言（scope: low-risk 等）の有無は判定に含めない
+          5. gh pr view ${PR} --json title,body,files で PR を読み、git fetch origin main && git diff origin/main...HEAD で差分を確認し、受け入れ条件を 1 つずつ照合する。必要なら該当テストファイルの単体実行や境界値の追加確認を最大 2 つまで行う
+          6. 判定は 3 値:
+             - PASS: 3 コマンドすべて成功、受け入れ条件をすべて満たす、テストを削除・skip して通していない、の 3 点が揃う
+             - FAIL: コードに起因して上記のいずれかが欠ける
+             - ERROR: 環境起因で検証を完了できなかった（コードの良否は判定できない）
+          7. PR コメントを 1 件だけ投稿する: gh pr comment ${PR} --body-file <file>。本文の 1 行目は必ず「## qoder-acceptance: PASS」「## qoder-acceptance: FAIL」「## qoder-acceptance: ERROR」のいずれか。続けて、実行コマンドと結果、受け入れ条件のチェックリスト、FAIL なら再現手順と期待値/実際値、ERROR なら環境の状態（node -v、失敗したコマンドとメッセージ）を書く
+          8. FAIL のときだけ: gh pr edit ${PR} --add-label acceptance-failed を実行し、gh issue create --title "bug: <要約> (PR #${PR})" --label bug,autonomous --body-file <file> で bug Issue を作る（再現手順・期待値/実際値・PR #${PR} と Issue #${ISSUE:-なし} へのリンク）。ERROR では label も Issue も作らない
+          9. 最後に判定を 1 行で出力して終了する
+          EOF
+          payload=$(jq -n --rawfile text "$task_file" '{ events: [ { type: "user.message", content: [ { type: "text", text: $text } ] } ] }')
+          curl -sS -f -X POST "https://api.qoder.com/api/v1/cloud/sessions/$SID/events" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload" > /dev/null
+          echo "task sent to $SID"
+
+      - name: Wait for the session to finish
+        if: steps.session.outputs.id != ''
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          SID: ${{ steps.session.outputs.id }}
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 35 * 60 ))
+          # 起動直後は idle のままなので、いったん running を観測してから idle を待つ
+          seen_running=false
+          while (( $(date +%s) < deadline )); do
+            status=$(curl -sS "https://api.qoder.com/api/v1/cloud/sessions/$SID" \
+              -H "Authorization: Bearer $QODER_ACCESS_TOKEN" | jq -r '.status // "unknown"')
+            echo "$(date -u +%H:%M:%S) status=$status"
+            case "$status" in
+              running|rescheduling) seen_running=true ;;
+              idle) if $seen_running; then exit 0; fi ;;
+              terminated) exit 0 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::セッションが時間内に終わりませんでした"
+          exit 1
+
+      # Tester が何をしたかをジョブログに残す（失敗時の切り分け用。判定には使わない）
+      - name: Dump session events (diagnostics)
+        if: always() && steps.session.outputs.id != ''
+        env:
+          QODER_ACCESS_TOKEN: ${{ secrets.QODER_ACCESS_TOKEN }}
+          SID: ${{ steps.session.outputs.id }}
+        run: |
+          set -uo pipefail
+          events=$(curl -sS "https://api.qoder.com/api/v1/cloud/sessions/$SID/events?limit=200" \
+            -H "Authorization: Bearer $QODER_ACCESS_TOKEN")
+          echo "session: $SID"
+          jq -r '
+            (if type == "array" then . else (.data // .events // []) end)
+            | .[]
+            | select(.type | test("agent.message|session.error|session.status|agent.tool_use|agent.tool_result|session.thread_status"))
+            | "\(.processed_at // "") \(.type) "
+              + ((.content // []) | map(.text // "") | join(" ") | .[0:300])
+              + (if .name then " tool=\(.name) input=\((.input // {}) | tostring | .[0:240])" else "" end)
+              + (if .error then " error=\(.error | tostring | .[0:400])" else "" end)
+              + (if .stop_reason then " stop=\(.stop_reason | tostring)" else "" end)
+          ' <<<"$events" | tail -n 120 || { echo "could not parse events:"; echo "$events" | head -c 2000; }
+
+      - name: Read verdict
+        if: steps.session.outputs.id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SINCE: ${{ steps.pr.outputs.started }}
+        run: |
+          set -euo pipefail
+          verdict=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments?per_page=100" \
+            --jq --arg since "$SINCE" '[.[] | select(.created_at >= $since) | select(.body | test("^## qoder-acceptance: (PASS|FAIL|ERROR)"))] | last | .body // empty' \
+            | head -n1 | grep -oE 'PASS|FAIL|ERROR' || true)
+          case "$verdict" in
+            PASS) echo "qoder-acceptance: PASS" ;;
+            FAIL) echo "::error::qoder-acceptance: FAIL（PR コメントと bug Issue を参照）"; exit 1 ;;
+            ERROR) echo "::error::qoder-acceptance: ERROR（環境起因で検証できず。PR コメントの環境情報を参照）"; exit 1 ;;
+            *) echo "::error::Tester が判定コメントを残しませんでした"; exit 1 ;;
+          esac

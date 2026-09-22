@@ -1,8 +1,11 @@
 import Electrobun, { BrowserWindow, Utils } from 'electrobun/bun'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import seedCatalog from '../../src/data/catalog.json' with { type: 'json' }
+import { shouldReseedCatalog } from '../../server/catalog/sync.ts'
+import { startRuntimeCatalogSync } from '../../server/catalog/runtime-sync.ts'
+import type { Catalog } from '../../src/lib/models/types.ts'
 import { ensureInstallWorkingDirectory } from './installCwd.ts'
 
 // Electrobun main process entry (build.bun.entrypoint). Boots the shared Hono
@@ -25,12 +28,12 @@ process.env.STUDIO_AGENT_TOKEN = randomUUID()
 
 // The catalog also lives in writable userData: the bundled source path is
 // read-only on packaged builds (notably Linux, where startup sync could not
-// persist its result and /api/models returned 503). Seed it once from the
-// catalog snapshot bundled with the app so models are available immediately,
-// even before — or without — a successful network sync.
+// persist its result and /api/models returned 503). Seed from the snapshot
+// bundled with the app when missing, unreadable, or older than the bundle so
+// app updates pick up new models even before a successful network sync.
 const catalogPath = join(userData, 'catalog.json')
 process.env.STUDIO_CATALOG_PATH = catalogPath
-if (!existsSync(catalogPath)) {
+if (shouldReseedCatalog(seedCatalog, readExistingUserCatalog(catalogPath))) {
   try {
     writeFileSync(catalogPath, `${JSON.stringify(seedCatalog, null, 2)}\n`, 'utf8')
   } catch (err) {
@@ -38,10 +41,18 @@ if (!existsSync(catalogPath)) {
   }
 }
 
+function readExistingUserCatalog(path: string): Catalog | null {
+  if (!existsSync(path)) return null
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as Catalog
+  } catch {
+    return null
+  }
+}
+
 // Import server modules only after STUDIO_DB_PATH is in place.
 const { createApp } = await import('../../server/app.ts')
 const { getDb, getDbPath } = await import('../../server/db/open.ts')
-const { syncCatalog } = await import('../../server/catalog/sync.ts')
 const { startBackfill } = await import('../../server/media/backfill.ts')
 const { registerUpdateHandler } = await import('../../server/routes/update.ts')
 
@@ -73,13 +84,9 @@ try {
   console.error('[history] failed to open SQLite', err)
 }
 
-// Startup catalog sync (non-blocking). Skips if catalog is < 12h old.
-if (process.env.SYNC_MODELS_ON_START !== '0') {
-  const force = process.env.SYNC_MODELS_FORCE === '1'
-  void syncCatalog({ force, quiet: false }).catch((err) => {
-    console.warn('[catalog] startup sync failed (using existing catalog):', err)
-  })
-}
+// Packaged desktop always rechecks llms.txt (ignore-age) and repeats every 6h
+// so installed builds pick up new Market models without an app update.
+startRuntimeCatalogSync('desktop')
 
 // Backfill: download media for existing history items that lack localPath.
 startBackfill()

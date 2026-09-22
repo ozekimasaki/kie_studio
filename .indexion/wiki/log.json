@@ -1507,7 +1507,17 @@
     "affected_pages": []
   },
   {
-    "timestamp": "1787939645466",
+    "timestamp": "1789632269996",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "1789632270330",
     "operation": "pages update",
     "actor": "agent:cursor",
     "summary": "Updated page: prompt-optimize",
@@ -1517,27 +1527,65 @@
     ]
   },
   {
-    "timestamp": "1787939645488",
-    "operation": "pages update",
-    "actor": "agent:cursor",
-    "summary": "Updated page: client-lib",
+    "timestamp": "1789632323558",
+    "operation": "ingest",
+    "actor": "indexion",
+    "summary": "9 pages need attention",
     "details": {},
     "affected_pages": [
-      "client-lib"
+      "overview",
+      "getting-started",
+      "core-concepts",
+      "architecture",
+      "frontend",
+      "server-api",
+      "catalog-sync",
+      "prompt-optimize",
+      "agent-mode"
     ]
   },
   {
-    "timestamp": "1787939645508",
-    "operation": "pages update",
-    "actor": "agent:cursor",
-    "summary": "Updated page: frontend",
+    "timestamp": "1789632324415",
+    "operation": "lint",
+    "actor": "indexion",
+    "summary": "3 issues found across 11 pages",
     "details": {},
     "affected_pages": [
-      "frontend"
+      "architecture",
+      "frontend",
+      "catalog-sync"
     ]
   },
   {
-    "timestamp": "1787939645529",
+    "timestamp": "1789632324953",
+    "operation": "index build",
+    "actor": "indexion",
+    "summary": "Built index: 3 categories, 9 hub pages",
+    "details": {},
+    "affected_pages": []
+  },
+  {
+    "timestamp": "1789632376302",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "1789633574474",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: catalog-sync",
+    "details": {},
+    "affected_pages": [
+      "catalog-sync"
+    ]
+  },
+  {
+    "timestamp": "1789633574613",
     "operation": "pages update",
     "actor": "agent:cursor",
     "summary": "Updated page: getting-started",
@@ -1547,19 +1595,23 @@
     ]
   },
   {
-    "timestamp": "1787939645608",
-    "operation": "lint",
-    "actor": "indexion",
-    "summary": "0 issues found across 11 pages",
+    "timestamp": "1789633604531",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: catalog-sync",
     "details": {},
-    "affected_pages": []
+    "affected_pages": [
+      "catalog-sync"
+    ]
   },
   {
-    "timestamp": "1787939645686",
-    "operation": "index build",
-    "actor": "indexion",
-    "summary": "Built index: 3 categories, 9 hub pages",
+    "timestamp": "1789634128491",
+    "operation": "pages update",
+    "actor": "agent:cursor",
+    "summary": "Updated page: catalog-sync",
     "details": {},
-    "affected_pages": []
+    "affected_pages": [
+      "catalog-sync"
+    ]
   }
 ]

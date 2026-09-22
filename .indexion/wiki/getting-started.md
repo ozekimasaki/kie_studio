@@ -36,11 +36,12 @@ npm test
 npm run lint
 npm run build
 npm run sync:models
+npm run sync:models -- --ignore-age
 npm run sync:models -- --force
 npm run kiestudio -- --help
 ```
 
-起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。
+起動時同期は既存カタログが古い場合だけ実行し、失敗時も既存カタログで起動を続ける。同梱 `src/data/catalog.json` は毎日の catalog-sync workflow と release タグ CI が自動更新する。
 
 ## CLI
 

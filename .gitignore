@@ -49,9 +49,18 @@ bun.lock
 .cursor/*
 !.cursor/skills/
 !.cursor/skills/**
+# Agent harness: hooks are shared with the repo (Cloud Agents read .cursor/hooks.json)
+!.cursor/hooks.json
+!.cursor/hooks/
+!.cursor/hooks/**
 .kiro/
-.qoder/
+.qoder/*
+# Agent harness: Qoder project hooks are shared; settings.local.json stays ignored
+!.qoder/settings.json
 skills-lock.json
+
+# Agent harness: per-issue worktrees created by scripts/agent/dispatch-issues.mjs
+.worktrees/
 
 # indexion: keep wiki, ignore generated local cache
 .indexion/cache/

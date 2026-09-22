@@ -1,0 +1,85 @@
+{
+  "permission": {
+    "*": "allow",
+    "task": "deny",
+    "subagent": "deny",
+    "subagent*": "deny",
+    "external_directory": {
+      "*": { "action": "deny", "reason": "リポジトリ外のファイルは読み書きしない。" }
+    },
+    "mcp": { "*": "ask" },
+    "path": {
+      "*": "allow",
+      "*.env": { "action": "deny", "reason": ".env は秘密ファイル。キーは設定画面か人が扱う。" },
+      "*.env.*": { "action": "deny", "reason": ".env.* は秘密ファイル。" },
+      "*.env.example": "allow"
+    },
+    "path_write": {
+      "*": "allow",
+      "*studio.db": { "action": "deny", "reason": "studio.db はユーザーの履歴 DB。" },
+      "*studio.db-wal": "deny",
+      "*studio.db-shm": "deny",
+      "*/.github/workflows/*": { "action": "deny", "reason": "CI / 無人実行の定義は人が変更する。" },
+      "*/.cursor/hooks*": { "action": "deny", "reason": "ゲート（hook）は人が変更する。" },
+      "*/.qoder/settings.json": { "action": "deny", "reason": "ゲート（hook）は人が変更する。" },
+      "*/.pi/extensions/pi-permission-system/*": { "action": "deny", "reason": "ゲート（権限）は人が変更する。" }
+    },
+    "bash": {
+      "*": "allow",
+
+      "git push *--force*": { "action": "deny", "reason": "force push は禁止。" },
+      "git push *-f *": { "action": "deny", "reason": "force push は禁止。" },
+      "git push *-f": { "action": "deny", "reason": "force push は禁止。" },
+      "git push * +*": { "action": "deny", "reason": "force push（+refspec）は禁止。" },
+      "git push origin main*": { "action": "deny", "reason": "main への直接 push は禁止。ブランチを push して PR を開く。" },
+      "git push *HEAD:main*": { "action": "deny", "reason": "main への直接 push は禁止。" },
+      "git push *HEAD:refs/heads/main*": { "action": "deny", "reason": "main への直接 push は禁止。" },
+      "git push *--delete*": { "action": "deny", "reason": "リモートブランチの削除は人が行う。" },
+      "git push *--tags*": { "action": "deny", "reason": "タグ push はリリース CI を起動する。人が行う。" },
+      "git tag *": { "action": "deny", "reason": "タグはリリース CI を起動する。人が行う。" },
+      "git reset --hard*": { "action": "deny", "reason": "作業ツリーの破棄は禁止。" },
+      "git clean *": { "action": "deny", "reason": "未追跡ファイルの一括削除は禁止。" },
+      "git branch -D *": { "action": "deny", "reason": "ブランチの強制削除は禁止。" },
+      "git checkout -- .": { "action": "deny", "reason": "変更の一括破棄は禁止。" },
+      "git restore .": { "action": "deny", "reason": "変更の一括破棄は禁止。" },
+      "*--no-verify*": { "action": "deny", "reason": "--no-verify で検証を飛ばさない。" },
+
+      "rm -r*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rm -R*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rm -fr*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rm -*rf*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rm -*fr*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rm --recursive*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "sudo rm *": { "action": "deny", "reason": "root での削除は禁止。" },
+      "Remove-Item *-Recurse*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "Remove-Item *-Force*": { "action": "deny", "reason": "強制削除は禁止。" },
+      "rmdir */s*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rd */s*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "del */s*": { "action": "deny", "reason": "再帰削除は禁止。" },
+      "rm *studio.db*": { "action": "deny", "reason": "studio.db は削除しない。" },
+      "del *studio.db*": { "action": "deny", "reason": "studio.db は削除しない。" },
+
+      "gh pr merge *": { "action": "deny", "reason": "実装役は PR をマージしない。auto-merge（CI + 承認）か人が行う。" },
+      "gh pr review *--approve*": { "action": "deny", "reason": "実装役は自分の PR を承認しない。承認は Reviewer と人が行う。" },
+      "gh pr review * -a*": { "action": "deny", "reason": "実装役は自分の PR を承認しない。" },
+      "gh pr edit *auto-merge*": { "action": "deny", "reason": "auto-merge ラベルは Reviewer が付ける。" },
+      "gh pr edit *low-risk*": { "action": "deny", "reason": "low-risk ラベルは Reviewer が付ける。" },
+      "gh repo delete *": { "action": "deny", "reason": "リポジトリの削除は禁止。" },
+      "gh repo archive *": { "action": "deny", "reason": "リポジトリのアーカイブは禁止。" },
+      "gh api *protection*": { "action": "deny", "reason": "branch protection の変更は人だけが行う。" },
+      "gh api *rulesets*": { "action": "deny", "reason": "rulesets の変更は人だけが行う。" },
+
+      "sh *": "ask",
+      "bash *": "ask",
+      "zsh *": "ask",
+      "iex *": { "action": "deny", "reason": "ダウンロードしたスクリプトの直接実行は禁止。" },
+      "Invoke-Expression *": { "action": "deny", "reason": "ダウンロードしたスクリプトの直接実行は禁止。" },
+
+      "npm publish*": { "action": "deny", "reason": "公開は人が行う。" },
+      "bun publish*": { "action": "deny", "reason": "公開は人が行う。" },
+      "npm run desktop:*": { "action": "deny", "reason": "デスクトップビルド・配布は人が行う。" },
+      "*DROP TABLE*": { "action": "deny", "reason": "DROP 文は禁止。" },
+      "*DROP DATABASE*": { "action": "deny", "reason": "DROP 文は禁止。" }
+    }
+  }
+}

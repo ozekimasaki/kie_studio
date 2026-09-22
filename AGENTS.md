@@ -132,6 +132,7 @@ cli/                   # kiestudio CLI（Studio API クライアント。結果�
 | `server/grok/` | Grok CLI（プロンプト最適化） |
 | `server/catalog/` + `scripts/` | カタログ同期 |
 | `cli/` | `kiestudio` CLI。公開 `/api` のクライアント。生成は履歴へ記録され Gallery で管理する |
+| `.github/workflows/` | CI、同梱 catalog の定期 PR、デスクトップ release |
 | `docs/PRE_RELEASE.md` | Pre-release チェックリスト |
 | `.indexion/wiki/` | indexion 知識ベース |
 
@@ -145,6 +146,25 @@ cli/                   # kiestudio CLI（Studio API クライアント。結果�
 - **コード編集後は必ず検証コマンドを実行する**: `npm run lint && npm test && npx tsc -b`（3 つすべてが成功することを確認してから完了とする）
 - 大きな機能変更の前後で、関係する wiki ページを `ingest` → 必要なら `pages update`
 - リリース前・大きめ PR の完了前は [docs/PRE_RELEASE.md](docs/PRE_RELEASE.md) を通す（UI/UX・README/AGENTS 同期を含む）
+
+## エージェントハーネス（止める仕組みと無人マージ）
+
+2026-09-20 導入。エージェントの作業は次のゲートで機械的に止まる。迂回しない。止まったら理由を読み、破壊的でない手順に分解して人に確認する。
+
+| 層 | 実体 | 止めるもの |
+|----|------|-----------|
+| Cursor hook | `.cursor/hooks.json` → `node .cursor/hooks/guard-shell.mjs --cursor`（`failClosed`） | force push / main 直 push / `reset --hard` / 再帰削除 / `.env` 読み書き / `gh pr merge` / protection 変更 / `curl \| sh` |
+| Qoder hook | `.qoder/settings.json` の `PreToolUse` → 同スクリプト `--qoder`（`exit 2`） | 同上 |
+| pi 権限 | `.pi/extensions/pi-permission-system/config.json`（グローバルは `~/.pi/agent/extensions/pi-permission-system/config.json`） | 同上 + 自分の PR の承認・`low-risk`/`auto-merge` ラベル付与・タグ push・サブエージェント |
+| GitHub | `main` の branch protection（required check `lint / test / types / build`、承認 1、auto-merge 可） | CI 失敗・未承認のマージ |
+
+- ブロック履歴: `~/.cursor/hooks/blocked.log`、`~/.qoder/hooks/blocked.log`、pi は `~/.pi/agent/extensions/pi-permission-system/logs/`
+- `guard-shell.mjs` はコマンド**文字列**を見る。引用文の中に危険な文字列があるだけでも止まる（過剰側に倒している）。危険な文字列を含む入力はファイルに置いて渡す
+- 無人マージの範囲は **低リスクのみ**（`src/data/catalog.json` の定期同期、`docs/**`、テスト追加）。`catalog-sync.yml` が PR に `low-risk` / `auto-merge` を付けて `gh pr merge --auto --squash` を予約し、`gh workflow run ci.yml` で CI を起動する（GITHUB_TOKEN が開いた PR は `pull_request` を発火しないため）
+- 役割: pi Developer（手順は `.pi/skills/kie-developer/SKILL.md`、権限は `~/.pi/agent/agents/developer.md`）= 実装して PR を開く。Cursor Automation = レビュー・承認。Qoder Cloud Agent（`.github/workflows/qoder-acceptance.yml`）= 受け入れテスト。機能変更の最終マージは人
+- 無人実行の入口は `scripts/agent/dispatch-issues.mjs`（タスクスケジューラ `kie-studio-agent-dispatcher` が 15 分ごとに `~/.kie-agent/run-dispatcher.cmd` 経由で起動。pi-reactor は Windows で Unix ソケットを開けず使えない）。`autonomous` ラベルの Issue を 1 tick に 1 件、`.worktrees/issue-<N>` に `origin/main` から worktree を切って `pi -p` で実装役を起動する。記録は `~/.kie-agent/runs.jsonl` と `~/.kie-agent/logs/`
+- ラベル遷移: `autonomous` →（着手）`in-progress` →（PR 作成）`needs-review` → Qoder が `qoder-acceptance` check と PR コメントで PASS/FAIL、FAIL なら `acceptance-failed` + `bug`/`autonomous` Issue で差し戻し。受け入れ条件が曖昧なら `needs-clarification` で人待ち
+- 2026-09-20 実測: Windows の Cursor は hook の stdin に EOF を送らないため `readFileSync(0)` がタイムアウトし、`failClosed` で全コマンドが止まった。stdin は「JSON が揃った時点」で読み終える実装にしている。`process.stdout.write` もパイプでは非同期になり出力が消えるので `writeSync` を使う
 
 ## Pre-release
 
@@ -243,6 +263,7 @@ npx tsc -b               # 型チェックのみ（build にも含まれる）
 npm run build            # tsc -b + vite build
 npm run preview          # ビルド成果物をプレビュー
 npm run sync:models      # カタログ同期
+npm run sync:models -- --ignore-age
 npm run sync:models -- --force
 npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 ```
@@ -251,7 +272,7 @@ npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 
 ## 触るときの注意
 
-- カタログ同期は起動時に古いときだけ走る。毎回フル同期しない設計を壊さない
+- カタログ同期は dev 起動時に古いときだけ走る（毎回フル同期しない）。パッケージ済みデスクトップは起動のたびに llms.txt を確認し、起動中は 6 時間おきに再確認する。同梱 `src/data/catalog.json` は `.github/workflows/catalog-sync.yml`（毎日 PR）と `release.yml`（タグビルド前に1回、失敗しても既存スナップショットで続行）が自動更新する
 - Seedance 等のリファレンスキー名・メンションタグは末尾スペースや表記ゆれに敏感
 - 履歴は bun:sqlite（既定 `data/studio.db`、デスクトップは `STUDIO_DB_PATH` で userData 配下）。ピン上限・インポート正規化・入力復元の安全策を維持する
 - provider / operation 差分は `server/kie/adapters/` で正規化し、共通 task/history 契約を維持する
@@ -270,8 +291,8 @@ npm run kiestudio -- --help  # CLI（bun cli/index.ts）
 - **アイコン**: `assets/icon-master.svg`（K モノグラム）→ `npm run icons`（sharp + png-to-ico）で `icon.ico`/`icon.png`。Electrobun 本体は rcedit のパス解決バグ（CI ビルドパス参照）で `build.win.icon` の埋め込みに失敗するため、ビルド直後に `scripts/embed-win-icon.mjs` が launcher.exe へ自前で rcedit 埋め込み + tar.zst を再パッケージする（失敗してもビルドは続行、ショートカット/ARP の app.ico で可視アイコンは担保）。インストーラービルド時（`build-win-installer.mjs`）にも staging の launcher.exe へ再埋め込みする。
 - **arm64**: win-arm64 は x64 版が OS エミュレーションで動作するため個別ビルド不要。linux-arm64 はクロスビルド不可のため一旦見送り。Electrobun 自体の Linux 出力は tar.gz のみ（`.deb`/AppImage 非対応）だが、`scripts/build-linux-deb.mjs`（`npm run desktop:installer:deb`）が tar.gz ではなく `build/<ch>-linux-x64/` の実行ツリーから `dpkg-deb` で `.deb` を自前生成する（Windows の Inno Setup と同じく後段ラップ）。`.deb` は Linux/WSL 上でのみビルド可能。インストール先は `/opt/kie-studio/<ch>/`、`.desktop`/アイコンは `/usr/share/` 配下。
 - **release/ 集積**: Electrobun はビルドごとに `artifacts/` を削除・再生成し他プラットフォーム成果物が消えるため、`scripts/collect-release.mjs` が永続的な `release/` へコピーする（ファイル名のプラットフォーム接頭辞で衝突せず両方蓄積）。
-- **WSL での Linux ビルド**: WSL に node が無くてもよい（native Linux Bun のみで完結）。win/linux ビルドはこの点で統一されている——`desktop:*:linux:*` スクリプトは `bun` で vite/electrobun の bin を直接実行する（bin の node shebang を回避）。`bun run desktop:package:linux:canary` → `bun run desktop:installer:deb canary` で `.deb` まで生成できる。`icons`（sharp）は Linux ではスキップ——`assets/icon.png` はコミット済みで `electrobun.config.ts` の `linux.icon` がそれを使う。`better-sqlite3` は test 専用（server は `bun:sqlite`）なので build には不要。カタログ同期は win/linux 共通で `STUDIO_CATALOG_PATH`（userData の writable path）に bundle スナップショットを seed して動く（`src/bun/index.ts`）。
-- **リリース CI（`.github/workflows/release.yml`）**: `v*` tag の push で mac/win/linux を並列ビルドし GitHub Releases へ公開する（`v*-canary`/`-beta`/`-rc` は canary prerelease、それ以外は stable）。Linux ジョブは electrobun build 後に `scripts/build-linux-deb.mjs` を実行し、生成した `.deb` を `artifacts/` へコピーして配布物に含める（`dpkg-deb` は Ubuntu ランナーに同梱）。`app.version`（`electrobun.config.ts`）は `package.json` の version と揃える。新しい canary は version を上げて `v<version>-canary` tag を push する。
+- **WSL での Linux ビルド**: WSL に node が無くてもよい（native Linux Bun のみで完結）。win/linux ビルドはこの点で統一されている——`desktop:*:linux:*` スクリプトは `bun` で vite/electrobun の bin を直接実行する（bin の node shebang を回避）。`bun run desktop:package:linux:canary` → `bun run desktop:installer:deb canary` で `.deb` まで生成できる。`icons`（sharp）は Linux ではスキップ——`assets/icon.png` はコミット済みで `electrobun.config.ts` の `linux.icon` がそれを使う。`better-sqlite3` は test 専用（server は `bun:sqlite`）なので build には不要。カタログ同期は win/linux 共通で `STUDIO_CATALOG_PATH`（userData の writable path）に bundle スナップショットを seed して動く（`src/bun/index.ts`）。バンドルの `syncedAt` が userData より新しければ再 seed する。
+- **リリース CI（`.github/workflows/release.yml`）**: `v*` tag の push で、先に docs.kie.ai から同梱 catalog を1回同期してから mac/win/linux を並列ビルドし GitHub Releases へ公開する（`v*-canary`/`-beta`/`-rc` は canary prerelease、それ以外は stable）。Linux ジョブは electrobun build 後に `scripts/build-linux-deb.mjs` を実行し、生成した `.deb` を `artifacts/` へコピーして配布物に含める（`dpkg-deb` は Ubuntu ランナーに同梱）。`app.version`（`electrobun.config.ts`）は `package.json` の version と揃える。新しい canary は version を上げて `v<version>-canary` tag を push する。
 
 ### リリース失敗時の最小回復手順
 

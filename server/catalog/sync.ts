@@ -256,6 +256,16 @@ export interface SyncOptions {
   quiet?: boolean
 }
 
+/** CLI flags for `npm run sync:models`. */
+export function parseSyncCliArgs(argv: string[]): Pick<SyncOptions, 'force' | 'maxAgeMs'> {
+  const force = argv.includes('--force')
+  const ignoreAge = argv.includes('--ignore-age')
+  return {
+    force,
+    maxAgeMs: force || ignoreAge ? 0 : undefined,
+  }
+}
+
 export interface SyncResult {
   skipped: boolean
   reason?: string
@@ -411,4 +421,22 @@ export function shouldKeepExistingCatalog(
 ): boolean {
   if (force || existingCount === 0) return false
   return nextCount < existingCount * MIN_CATALOG_RETENTION_RATIO
+}
+
+/**
+ * Desktop userData catalog is seeded from the bundled snapshot. Reseed when
+ * missing/unreadable, or when the bundle's syncedAt is strictly newer than
+ * the file on disk (so app updates pick up new models). A userData catalog
+ * that was network-synced later is left alone.
+ */
+export function shouldReseedCatalog(
+  bundled: { syncedAt?: string | null },
+  existing: { syncedAt?: string | null } | null,
+): boolean {
+  if (!existing) return true
+  const bundledTime = bundled.syncedAt ? Date.parse(bundled.syncedAt) : Number.NaN
+  const existingTime = existing.syncedAt ? Date.parse(existing.syncedAt) : Number.NaN
+  if (Number.isNaN(bundledTime)) return false
+  if (Number.isNaN(existingTime)) return true
+  return bundledTime > existingTime
 }

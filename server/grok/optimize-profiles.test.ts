@@ -36,6 +36,8 @@ describe('resolveOptimizeFamily', () => {
     ['google/imagen-4', 'imagen'],
     ['google/nano-banana-edit', 'nano-banana'],
     ['openai/gpt-image-1', 'gpt-image'],
+    ['gpt-image-2-5-flare-text-to-image', 'gpt-image'],
+    ['gpt-image-2-5-sunburst-image-to-image', 'gpt-image'],
     ['qwen/image-edit', 'qwen'],
   ] as const)('maps %s to %s', (modelId, family) => {
     expect(resolveOptimizeFamily(modelId)).toBe(family)
@@ -153,9 +155,9 @@ describe('getOptimizeProfile guide embedding', () => {
       ['empty street', '@imageN', '監督ブリーフ'],
     ],
     [
-      'openai/gpt-image-1',
+      'gpt-image-2-5-flare-text-to-image',
       'gpt-image',
-      ['ALL CAPS', 'keep everything else the same', '@imageN'],
+      ['ALL CAPS', 'keep everything else the same', '@imageN', 'Flare'],
     ],
     [
       'qwen/image-edit',

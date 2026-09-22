@@ -2,104 +2,122 @@
   "version": "1",
   "page_states": {
     "overview": {
-      "page_hash": "70b08a4c39d9cef4d05e733816a4d7f4",
+      "page_hash": "b95357fd3893eaaf2b4eec0f1092a68c",
       "source_hashes": {
-        "README.md": "e73fdb1b6d4848a011f10227ae773e19",
-        "AGENTS.md": "028c67f8b72bc48d187152c1b8fb86ab",
-        "package.json": "3b3669de58aa7b6dc43aa4dd5184a013"
+        "README.md": "acbbd1a2903ca56d76b54b522160dd93",
+        "AGENTS.md": "69a2ff0d30f381f64a122fce1f5757b3",
+        "package.json": "daeb1703a822393fcd7ca5571549fdc5"
       }
     },
     "getting-started": {
-      "page_hash": "a7e65ec65402ed154228f80b4c52cb28",
+      "page_hash": "f796ed02bd01770298e84287145bf7e3",
       "source_hashes": {
-        ".env.example": "b5015b9470878110b2f0b2ffe6ba738b",
-        "package.json": "3b3669de58aa7b6dc43aa4dd5184a013",
-        "README.md": "e73fdb1b6d4848a011f10227ae773e19",
-        "vite.config.ts": "01dbcf00adaddcd417cff5c0ad76fcf2"
+        ".env.example": "4cde689eb536e1c2273b6b856ea8e176",
+        "package.json": "daeb1703a822393fcd7ca5571549fdc5",
+        "README.md": "acbbd1a2903ca56d76b54b522160dd93",
+        "vite.config.ts": "8d81a0e0cfe19dfeaa1accbd0825214b"
       }
     },
     "core-concepts": {
-      "page_hash": "b4439787a587555276c57af496e6a801",
+      "page_hash": "b78fb0e4592f3705db36e61830e659c6",
       "source_hashes": {
-        "src/lib/models/types.ts": "e826c12733c6a133233c394f4f1804e1",
-        "src/lib/history.ts": "79f6bce1c74af3b0db6bcff0e3c55f69",
-        "src/lib/models/mentions.ts": "4c86fa3b6d2d82b793871da42d6c8c7e",
-        "src/components/DynamicForm.tsx": "743910da20898d4b34b5cc4ef704adad",
-        "server/db/history.ts": "25204463a165b554e04ebad14ceb0de1"
+        "src/lib/models/types.ts": "eb97599e82c6434985565786ba3f9718",
+        "src/lib/history.ts": "7c6ec87218a9338195128caf4de8bbf1",
+        "src/lib/models/mentions.ts": "af7fe9767d994b47815012839284a8c2",
+        "src/components/DynamicForm.tsx": "4f02ee7d930d191ba0778cf72e6fed4b",
+        "server/db/history.ts": "37294abfd57c4bc1028c1f1dce977a1d"
       }
     },
     "architecture": {
-      "page_hash": "fcea2be9d142c25a4e4c401749ad23ef",
+      "page_hash": "b4eed540bff12ee91fe5c7d6f8a03c8b",
       "source_hashes": {
-        "AGENTS.md": "028c67f8b72bc48d187152c1b8fb86ab",
-        "server/index.ts": "90fd76dbd7c70bce2e98a4f8dc16c323",
-        "vite.config.ts": "01dbcf00adaddcd417cff5c0ad76fcf2",
-        "src/App.tsx": "931c624e8c9dbb8df6384fcd2d9ea517",
-        "src/bun/index.ts": "219b2ab7766a8d2a8d6df95de38200c6",
-        "src/bun/installCwd.ts": "57e5f28152f515dc1a27fc11155fc65f",
-        "electrobun.config.ts": "545ff8f4d89459372247bfeb15ba3eb0"
+        "AGENTS.md": "69a2ff0d30f381f64a122fce1f5757b3",
+        "server/index.ts": "76f422ddc17a9a4ebf92b9a1b0514f02",
+        "vite.config.ts": "8d81a0e0cfe19dfeaa1accbd0825214b",
+        "src/App.tsx": "12e6fe3d3bc52519654f54953505097d",
+        "src/bun/index.ts": "459495f5b46ffbd71c890586508879ff",
+        "src/bun/installCwd.ts": "07c3aee40ead6584a833b0ce6855f47d",
+        "electrobun.config.ts": "a4a1b68a270398d3b98617da709e1b8a"
       }
     },
     "frontend": {
-      "page_hash": "ff0f63f1c0e1f40e246a1e2d57c7b946",
+      "page_hash": "dc2acc9b4a9edd49985748a3322cdad2",
       "source_hashes": {
-        "src/App.tsx": "931c624e8c9dbb8df6384fcd2d9ea517",
-        "src/lib/motion.ts": "67c5ea9e36ffd20705827eaca379b541",
-        "src/main.tsx": "edd54af5bd991061cffa57467e3b060f",
-        "src/lib/studioPresentation.ts": "fcbc61b784e116cb0d54ed673a006fd7",
-        "src/index.css": "a65ee287b85dd77f11436d37675ceaf7"
+        "src/App.tsx": "12e6fe3d3bc52519654f54953505097d",
+        "src/lib/motion.ts": "070b7d31bdf0f995ee2c715bc50a1296",
+        "src/main.tsx": "a55bba9c696ed65caaf05cf50ee0fdc7",
+        "src/lib/studioPresentation.ts": "cf3de3b04390e4c0d956a5b7711ce13a",
+        "src/index.css": "94156cdd1371ef52114099483422eccd"
       }
     },
     "client-lib": {
-      "page_hash": "c75a1034aff0f92af97b5591075bef32",
+      "page_hash": "2586e4c8e843d932805e591b1adf50c4",
       "source_hashes": {}
     },
     "server-api": {
-      "page_hash": "285de7923bb0603e3a2fcc04a11bf35e",
+      "page_hash": "9fad55cba92b6aeeaaac62d43ec37520",
       "source_hashes": {
-        "server/app.ts": "996aafad40c575c86abcd971db7003ba",
-        "server/index.ts": "90fd76dbd7c70bce2e98a4f8dc16c323",
-        "server/routes/agentChat.ts": "2788721d529452f51dade9510d6d407e",
-        "server/routes/agentInternal.ts": "3708ddcc217604a86cb483f1042766da",
-        "server/routes/llmSettings.ts": "35f95ba1ddfbe4996a6528fba389c2e1",
-        "server/routes/agentConversations.ts": "1f1be55d4a4d5948a80d9bad4dddddfb"
+        "server/app.ts": "f698a7b647abb9d46007e5015d171f20",
+        "server/index.ts": "76f422ddc17a9a4ebf92b9a1b0514f02",
+        "server/routes/agentChat.ts": "7e11ccdd681ceca1445728e3b7c907b5",
+        "server/routes/agentInternal.ts": "752f82dc812efd5d08901df617189953",
+        "server/routes/llmSettings.ts": "79cbf167910f2543fd383a7d7640755f",
+        "server/routes/agentConversations.ts": "41bf4968b11a8bc194553cb8b28b3a49"
       }
     },
     "kie-integration": {
-      "page_hash": "5bbc68775bce661f9df968a92d69f8cc",
+      "page_hash": "b27be1f2c44d355f83cfd3203201f316",
       "source_hashes": {}
     },
     "catalog-sync": {
-      "page_hash": "cded40d6e6af41da7e0cd50a57cc1976",
+      "page_hash": "60cc0119969871f721b833a87dc802b7",
       "source_hashes": {
-        "server/catalog/sync.ts": "14b2e9017ab283cf64207f995d044420",
+        "server/catalog/sync.ts": "8397fb390f3a5f36d16bd45ae104ece7",
         "scripts/sync-models.ts": "33b691cf2c2cba5d58e450ff14561532",
-        "src/lib/models/from-openapi.ts": "acf930d215d89191a737a1c37a86b413",
-        "src/data/catalog.json": "d8f5dc0451a02eaba7ffeaf5e5430e9f"
+        "src/lib/models/from-openapi.ts": "a42e4555bc2574f395c0d2dc9679e39a",
+        "src/data/catalog.json": "4d9ce6c423dbadc7b6f9254e29e21800",
+        "src/bun/index.ts": "459495f5b46ffbd71c890586508879ff",
+        "src/App.tsx": "12e6fe3d3bc52519654f54953505097d"
       }
     },
     "prompt-optimize": {
-      "page_hash": "684d5b00462744c3fac437ecb3eb3f7c",
+      "page_hash": "3fd61adbc847001d7c1e2a165fe1a36d",
       "source_hashes": {
-        "server/grok/optimize-profiles.ts": "67123942659b26946ebabb87d79ed8e6",
-        "server/grok/guides/seedance.ts": "83b0d22add11445c95577d4df50ff2b6",
+        "server/grok/optimize-profiles.ts": "05b225a5d3e0e1d801b09599d17bbd24",
+        "server/grok/optimize-model.ts": "59a6b79ea9023380e5f153befc901718",
+        "server/grok/guides/seedance.ts": "85c650af94c67caca3789404228a4be1",
         "server/grok/guides/seedance-2-5.ts": "fc3dcd87bdd7c19535bc1337c65be99b",
-        "server/grok/cli.ts": "e2ba679b053b59ae58f5c5ebf175a071",
-        "server/routes/optimize-prompt.ts": "73cd998502d5d1ebd7c8cfc21f77fec2",
-        "src/components/PromptOptimizePanel.tsx": "09cfb9cb8765d1dda9dcac88cd664cb3"
+        "server/grok/guides/minimax-h3.ts": "64fbd59f2d77c300799fdde661689c48",
+        "server/grok/guides/kling.ts": "83de993e930d577bc5f8956f999be262",
+        "server/grok/guides/wan.ts": "746f0faf694b0187b1bb0e647475aba1",
+        "server/grok/guides/wan-image.ts": "e55d0f278132d37ed2fa9eeb788e6ae6",
+        "server/grok/guides/hailuo.ts": "ee83c40b62ef6f00f28faea10e6a64fe",
+        "server/grok/guides/pixverse.ts": "f9530784fe1bb3ddcc129a6fa3005dea",
+        "server/grok/guides/happyhorse.ts": "a89e5805c48c67f21cf45f76bb0c3d80",
+        "server/grok/guides/grok-imagine.ts": "f2002628763e5fdc85faba66511febc5",
+        "server/grok/guides/seedream.ts": "1b365b7e8cb486802f81c596def27139",
+        "server/grok/guides/flux.ts": "680e2cde8f14894525d6fdf21028949d",
+        "server/grok/guides/ideogram.ts": "d3c2cc656096c09cb860e003122d8d09",
+        "server/grok/guides/imagen.ts": "bcd5d5bc295d4228dccaf4d04fd01005",
+        "server/grok/guides/nano-banana.ts": "a839eed50dddc8aac3a39b174bedeed8",
+        "server/grok/guides/gpt-image.ts": "f59ec55f76baf13ab8fc0cd0cf9e32d2",
+        "server/grok/guides/qwen.ts": "66cedf63ddca2cbec5d62238fd60e2fd",
+        "server/grok/cli.ts": "c9b3820387198868d7cd44eb5d27f9d3",
+        "server/routes/optimize-prompt.ts": "f02ea79a59f99ac4b5cbd02f290f0662",
+        "src/components/PromptOptimizePanel.tsx": "3ab4c7ddf32c5e5244e618b0398733eb"
       }
     },
     "agent-mode": {
-      "page_hash": "b993ab2450610d56ef89827475e20bd7",
+      "page_hash": "e1569768965b71f3d66b5b59ba941dc4",
       "source_hashes": {
-        "src/lib/agentApi.ts": "9a0d294cc3ed84687bd00da4157c74ac",
-        "src/bun/index.ts": "219b2ab7766a8d2a8d6df95de38200c6",
-        "src/bun/installCwd.ts": "57e5f28152f515dc1a27fc11155fc65f",
-        "server/routes/agentChat.ts": "2788721d529452f51dade9510d6d407e",
-        "server/routes/agentInternal.ts": "3708ddcc217604a86cb483f1042766da",
-        "server/routes/llmSettings.ts": "35f95ba1ddfbe4996a6528fba389c2e1",
-        "server/routes/agentConversations.ts": "1f1be55d4a4d5948a80d9bad4dddddfb",
-        "electrobun.config.ts": "545ff8f4d89459372247bfeb15ba3eb0"
+        "src/lib/agentApi.ts": "5f86bc657db181d46a892e67e1b39a73",
+        "src/bun/index.ts": "459495f5b46ffbd71c890586508879ff",
+        "src/bun/installCwd.ts": "07c3aee40ead6584a833b0ce6855f47d",
+        "server/routes/agentChat.ts": "7e11ccdd681ceca1445728e3b7c907b5",
+        "server/routes/agentInternal.ts": "752f82dc812efd5d08901df617189953",
+        "server/routes/llmSettings.ts": "79cbf167910f2543fd383a7d7640755f",
+        "server/routes/agentConversations.ts": "41bf4968b11a8bc194553cb8b28b3a49",
+        "electrobun.config.ts": "a4a1b68a270398d3b98617da709e1b8a"
       }
     }
   }

@@ -65,6 +65,7 @@ indexion wiki lint --wiki-dir=.indexion/wiki
 - コミットメッセージは日本語 conventional commits（[AGENTS.md](../AGENTS.md) 参照）
 - push / tag はユーザーが明示したときのみ
 - `v*-canary` 等は既存 `.github/workflows/release.yml` に従う
+- 同梱 catalog はタグ CI が docs.kie.ai から再同期する。手元で古い snapshot のまま bump してもよい
 
 ## 8. 禁止
 

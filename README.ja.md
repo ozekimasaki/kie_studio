@@ -75,11 +75,14 @@ npm run desktop:build:stable   # stable ビルド
 - 新鮮ならスキップ（`tsx watch` の再起動でも毎回フル同期しない）
 - 強制更新: `SYNC_MODELS_FORCE=1 npm run dev` または `npm run sync:models -- --force`
 - 起動時同期オフ: `SYNC_MODELS_ON_START=0`
+- 同梱スナップショット（`src/data/catalog.json`）は `.github/workflows/catalog-sync.yml` が毎日 PR で更新し、`.github/workflows/release.yml` がタグビルド直前にもう一度同期してデスクトップへ焼き込みます。
+- インストール済みデスクトップは起動のたびに docs.kie.ai を再確認し（起動中は 6 時間おき）、結果を userData の `catalog.json` へ書き込みます。
 
 手動同期:
 
 ```bash
 npm run sync:models
+npm run sync:models -- --ignore-age
 npm run sync:models -- --force
 ```
 
@@ -169,7 +172,7 @@ npm run sync:models -- --force
 | `npm run lint` | oxlint |
 | `npm test` | Vitest を1回実行 |
 | `npm run test:watch` | Vitest を watch モードで実行 |
-| `npm run sync:models` | カタログ手動同期 |
+| `npm run sync:models` | カタログ手動同期（`--ignore-age` は 12h 窓のみ無視、`--force` は hash / 縮小保護も迂回） |
 | `npm run kiestudio` | KIE STUDIO CLI（`bun cli/index.ts`） |
 
 型チェックのみ実行したい場合は `npx tsc -b`（`npm run build` に含まれる）。
