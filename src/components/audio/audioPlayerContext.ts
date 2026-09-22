@@ -3,12 +3,16 @@ import type { MediaAsset } from '../../lib/models/types.ts'
 
 export type AudioTrack = MediaAsset & { taskId?: string }
 
+export type PlayOptions = {
+  startAt?: number
+}
+
 export type AudioPlayerValue = {
   active: AudioTrack | null
   currentTime: number
   duration: number
   playing: boolean
-  play: (track: AudioTrack, tracks?: AudioTrack[]) => void
+  play: (track: AudioTrack, tracks?: AudioTrack[], options?: PlayOptions) => void
   toggle: () => void
   seek: (seconds: number) => void
 }

@@ -17,7 +17,18 @@ import {
 const STATUS_CACHE_MS = 60_000
 const MODEL_CATALOG_CACHE_MS = 10 * 60_000
 const MODELS_TIMEOUT_MS = 30_000
-const OPTIMIZE_TIMEOUT_MS = 120_000
+/** Grok 4.6 thinking can exceed 2 minutes; 4 minutes is the safety net after picking a faster id. */
+export const OPTIMIZE_TIMEOUT_MS = 240_000
+
+export function grokProcessEnv(
+  base: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  return {
+    ...base,
+    PAGER: 'cat',
+    GIT_PAGER: 'cat',
+  }
+}
 
 const OPT_START = '<<<OPTIMIZED>>>'
 const OPT_END = '<<<END>>>'
@@ -94,7 +105,7 @@ function runGrok(
       shell: false,
       windowsHide: true,
       cwd: options?.cwd,
-      env: process.env,
+      env: grokProcessEnv(),
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 

@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   buildOptimizeGrokArgs,
   clearGrokStatusCacheForTests,
+  grokProcessEnv,
+  OPTIMIZE_TIMEOUT_MS,
   resolveOptimizeGrokModel,
   setGrokRunnerForTests,
 } from './cli.ts'
@@ -71,8 +73,35 @@ describe('pickOptimizeGrokModel', () => {
     ids: ['grok-4.6', 'grok-4.5'],
   }
 
-  it('uses the CLI default from the live list', () => {
-    expect(pickOptimizeGrokModel(catalog)).toBe('grok-4.6')
+  it('prefers a faster sibling when the CLI default is a heavy flagship', () => {
+    expect(pickOptimizeGrokModel(catalog)).toBe('grok-4.5')
+  })
+
+  it('prefers a fast id from the live list', () => {
+    expect(
+      pickOptimizeGrokModel({
+        defaultModel: 'grok-4.6',
+        ids: ['grok-4.6', 'grok-4-fast', 'grok-4.5'],
+      }),
+    ).toBe('grok-4-fast')
+  })
+
+  it('keeps a non-heavy default', () => {
+    expect(
+      pickOptimizeGrokModel({
+        defaultModel: 'company-grok',
+        ids: ['company-grok', 'grok-4.6', 'grok-4.5'],
+      }),
+    ).toBe('company-grok')
+  })
+
+  it('uses the heavy default when it is the only listed id', () => {
+    expect(
+      pickOptimizeGrokModel({
+        defaultModel: 'grok-4.6',
+        ids: ['grok-4.6'],
+      }),
+    ).toBe('grok-4.6')
   })
 
   it('ignores a stale default that is not in the live list', () => {
@@ -81,7 +110,7 @@ describe('pickOptimizeGrokModel', () => {
         defaultModel: 'grok-build',
         ids: ['grok-4.6', 'grok-4.5'],
       }),
-    ).toBe('grok-4.6')
+    ).toBe('grok-4.5')
   })
 
   it('uses STUDIO override when it is in the list', () => {
@@ -89,8 +118,8 @@ describe('pickOptimizeGrokModel', () => {
   })
 
   it('treats blank override as unset', () => {
-    expect(pickOptimizeGrokModel(catalog, '  ')).toBe('grok-4.6')
-    expect(pickOptimizeGrokModel(catalog, '')).toBe('grok-4.6')
+    expect(pickOptimizeGrokModel(catalog, '  ')).toBe('grok-4.5')
+    expect(pickOptimizeGrokModel(catalog, '')).toBe('grok-4.5')
   })
 
   it('rejects an override that is not in the live list', () => {
@@ -153,7 +182,7 @@ describe('resolveOptimizeGrokModel', () => {
       return { stdout: GROK_MODELS_FIXTURE, stderr: '', code: 0 }
     })
 
-    await expect(resolveOptimizeGrokModel({})).resolves.toBe('grok-4.6')
+    await expect(resolveOptimizeGrokModel({})).resolves.toBe('grok-4.5')
     expect(calls.some((args) => args.includes('models'))).toBe(true)
   })
 
@@ -169,8 +198,8 @@ describe('resolveOptimizeGrokModel', () => {
       return { stdout: modelsOutput, stderr: '', code: 0 }
     })
 
-    await expect(resolveOptimizeGrokModel({})).resolves.toBe('grok-4.6')
-    await expect(resolveOptimizeGrokModel({})).resolves.toBe('grok-4.6')
+    await expect(resolveOptimizeGrokModel({})).resolves.toBe('grok-4.5')
+    await expect(resolveOptimizeGrokModel({})).resolves.toBe('grok-4.5')
     expect(modelsCalls).toBe(1)
 
     version = '1.1.0'
@@ -196,5 +225,18 @@ Available models:
     await expect(
       resolveOptimizeGrokModel({ STUDIO_GROK_OPTIMIZE_MODEL: 'grok-build' }),
     ).rejects.toThrow(/grok-build/)
+  })
+})
+
+describe('grokProcessEnv', () => {
+  it('forces cat as pager so grok models does not hang', () => {
+    const env = grokProcessEnv({ PATH: '/usr/bin', PAGER: 'less' })
+    expect(env.PAGER).toBe('cat')
+    expect(env.GIT_PAGER).toBe('cat')
+    expect(env.PATH).toBe('/usr/bin')
+  })
+
+  it('uses a 4 minute optimize timeout', () => {
+    expect(OPTIMIZE_TIMEOUT_MS).toBe(240_000)
   })
 })

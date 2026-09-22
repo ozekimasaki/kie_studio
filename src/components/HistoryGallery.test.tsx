@@ -4,6 +4,14 @@ import { HistoryGallery } from './HistoryGallery.tsx'
 import { AudioPlayerProvider } from './audio/AudioPlayer.tsx'
 import type { HistoryItem } from '../lib/models/types.ts'
 
+vi.mock('../lib/api.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/api.ts')>()
+  return {
+    ...actual,
+    fetchDownloadUrl: vi.fn().mockRejectedValue(new Error('expired')),
+  }
+})
+
 beforeAll(() => {
   // jsdom は要素寸法を持たないため、仮想化スクロール領域に寸法を与えて行を描画させる
   // （TanStack Virtual は offsetWidth / offsetHeight でスクロール要素を測定する）
@@ -125,6 +133,21 @@ describe('HistoryGallery', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('combobox', { name: '状態で絞り込み' }),
+    ).toBeInTheDocument()
+  })
+
+  it('does not load expired TOS result URLs as img src', async () => {
+    const expired =
+      'https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/x.png?X-Tos-Date=20260722T091117Z&X-Tos-Expires=86400&X-Tos-Signature=abc'
+    renderGallery([
+      imageItem({
+        resultUrls: [expired],
+        media: [{ kind: 'image', url: expired }],
+      }),
+    ])
+    expect(screen.queryByAltText('a red fox')).not.toBeInTheDocument()
+    expect(
+      await screen.findByText('メディアを取得できません'),
     ).toBeInTheDocument()
   })
 })

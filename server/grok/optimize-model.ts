@@ -40,6 +40,11 @@ export function parseGrokModelsOutput(raw: string): GrokModelCatalog {
   return { defaultModel, ids }
 }
 
+/** Live-list ids that are typically faster than the flagship default. */
+const FAST_ID_RE = /(?:^|[-_.])(?:fast|mini|lite|flash|nano)(?:$|[-_.])/i
+/** Flagship / thinking defaults that time out on this short rewrite path. */
+const HEAVY_DEFAULT_RE = /(?:thinking|reason|build|4\.6)/i
+
 export function pickOptimizeGrokModel(
   catalog: GrokModelCatalog,
   override?: string,
@@ -54,14 +59,22 @@ export function pickOptimizeGrokModel(
     return trimmed
   }
 
-  if (
-    catalog.defaultModel &&
-    (catalog.ids.length === 0 || catalog.ids.includes(catalog.defaultModel))
-  ) {
-    return catalog.defaultModel
+  const fast = catalog.ids.find((id) => FAST_ID_RE.test(id))
+  if (fast) return fast
+
+  const def = catalog.defaultModel
+  if (def && HEAVY_DEFAULT_RE.test(def)) {
+    const alt =
+      catalog.ids.find((id) => id !== def && !HEAVY_DEFAULT_RE.test(id)) ??
+      catalog.ids.find((id) => id !== def)
+    if (alt) return alt
+  }
+
+  if (def && (catalog.ids.length === 0 || catalog.ids.includes(def))) {
+    return def
   }
   if (catalog.ids[0]) return catalog.ids[0]
-  if (catalog.defaultModel) return catalog.defaultModel
+  if (def) return def
   throw new Error(
     'Grok CLI のモデル一覧が空でした。`grok models` の出力を確認してください。',
   )

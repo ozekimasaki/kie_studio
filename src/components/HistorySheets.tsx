@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowRight, Check, Clock, Download, Music, Pin, Play, RotateCcw, WandSparkles } from 'lucide-react'
 import {
@@ -9,7 +9,8 @@ import {
   fetchTimestampedLyrics,
   localMediaUrl,
 } from '../lib/api.ts'
-import { isAudioUrl, isVideoUrl, mediaKindFromUrl } from '../lib/media.ts'
+import { isAudioUrl, isVideoUrl, mediaKindFromUrl, replaceMatchingAsset } from '../lib/media.ts'
+import { useRefreshableMediaSrc } from '../lib/useRefreshableMediaSrc.ts'
 import type {
   HistoryItem,
   MediaAsset,
@@ -17,6 +18,7 @@ import type {
   TaskState,
 } from '../lib/models/types.ts'
 import { Pressable } from './motion/Pressable.tsx'
+import { RefreshableImage, RefreshableVideo } from './RefreshableImage.tsx'
 import { SharedMedia } from './motion/SharedMedia.tsx'
 import { SpringSheet } from './motion/SpringSheet.tsx'
 import { useAudioPlayer } from './audio/audioPlayerContext.ts'
@@ -78,6 +80,50 @@ function canReuse(item: HistoryItem): boolean {
   return Boolean(item.input && item.modelId)
 }
 
+function assetRemoteSrc(asset: MediaAsset): string | undefined {
+  if (asset.localPath) return localMediaUrl(asset.localPath)
+  return asset.url ?? asset.streamUrl
+}
+
+function HistoryAudioPlayButton({
+  asset,
+  playlist,
+  className,
+  children,
+  ariaLabel,
+}: {
+  asset: MediaAsset
+  playlist: MediaAsset[]
+  className: string
+  children: ReactNode
+  ariaLabel?: string
+}) {
+  const audioPlayer = useAudioPlayer()
+  const original = assetRemoteSrc(asset)
+  const { displaySrc, failed } = useRefreshableMediaSrc(original)
+  return (
+    <Pressable
+      className={className}
+      disabled={!displaySrc || failed}
+      aria-label={ariaLabel}
+      onClick={() => {
+        if (!displaySrc) return
+        const playable = {
+          ...asset,
+          url: asset.url ?? asset.streamUrl,
+          streamUrl: displaySrc,
+        }
+        audioPlayer.play(
+          playable,
+          replaceMatchingAsset(playlist, asset, playable),
+        )
+      }}
+    >
+      {children}
+    </Pressable>
+  )
+}
+
 /** 詳細ビューアー用の画像。読み込み失敗時にフォールバックを表示する。 */
 function ViewerImage({
   src,
@@ -86,28 +132,22 @@ function ViewerImage({
   src: string
   alt: string
 }) {
-  const [failed, setFailed] = useState(false)
-  if (failed) {
-    return (
-      <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
-        <span className="grid size-12 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
-          <Clock size={22} aria-hidden />
-        </span>
-        <p className="text-sm font-semibold text-[var(--text-muted)]">メディアを取得できません</p>
-        <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
-          メディアの読み込みに失敗しました。同じ入力で再生成できます。
-        </p>
-      </div>
-    )
-  }
   return (
-    <img
+    <RefreshableImage
       src={src}
       alt={alt}
-      decoding="async"
-      referrerPolicy="no-referrer"
       className="mx-auto max-h-[55vh] w-full object-contain"
-      onError={() => setFailed(true)}
+      fallback={
+        <div className="flex min-h-48 flex-col items-center justify-center gap-3 bg-[var(--bg-elevated)] p-8 text-center">
+          <span className="grid size-12 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
+            <Clock size={22} aria-hidden />
+          </span>
+          <p className="text-sm font-semibold text-[var(--text-muted)]">メディアを取得できません</p>
+          <p className="max-w-xs text-xs leading-relaxed text-[var(--text-muted)]">
+            メディアの読み込みに失敗しました。同じ入力で再生成できます。
+          </p>
+        </div>
+      }
     />
   )
 }
@@ -387,7 +427,14 @@ export function HistorySheets({
                     return (
                       <div key={label} className="min-w-0">
                         <span className="studio-label">{label}</span>
-                        {url ? <video src={url} controls preload="metadata" className="mt-2 aspect-video w-full rounded-[var(--radius-sm)] bg-black object-contain" /> : null}
+                        {url ? (
+                          <RefreshableVideo
+                            src={url}
+                            controls
+                            preload="metadata"
+                            className="mt-2 aspect-video w-full rounded-[var(--radius-sm)] bg-black object-contain"
+                          />
+                        ) : null}
                       </div>
                     )
                   })}
@@ -448,7 +495,7 @@ export function HistorySheets({
                       className="studio-tile overflow-hidden"
                     >
                       {video ? (
-                        <video
+                        <RefreshableVideo
                           src={url}
                           controls
                           preload="metadata"
@@ -456,17 +503,25 @@ export function HistorySheets({
                         />
                       ) : audio ? (
                         <div className="flex min-h-48 flex-col items-center justify-center gap-4 bg-[var(--accent-soft)] p-6 text-center">
-                          {asset.previewUrl && <img src={asset.previewUrl} alt="" className="size-28 rounded-[var(--radius-md)] object-cover shadow-[var(--shadow-md)]" />}
+                          {asset.previewUrl && (
+                            <RefreshableImage
+                              src={asset.previewUrl}
+                              alt=""
+                              className="size-28 rounded-[var(--radius-md)] object-cover shadow-[var(--shadow-md)]"
+                              fallback={null}
+                            />
+                          )}
                           <div>
                             <p className="font-semibold">{asset.title ?? `候補 ${index + 1}`}</p>
                             {asset.duration && <p className="mt-1 text-xs text-[var(--text-muted)]">{Math.round(asset.duration)}秒</p>}
                           </div>
-                          <Pressable
+                          <HistoryAudioPlayButton
+                            asset={asset}
+                            playlist={activeMedia.filter((entry) => entry.kind === 'audio')}
                             className="studio-btn-primary inline-flex w-auto items-center gap-2 px-5"
-                            onClick={() => audioPlayer.play(asset, activeMedia.filter((entry) => entry.kind === 'audio'))}
                           >
                             <Play size={16} fill="currentColor" /> 再生
-                          </Pressable>
+                          </HistoryAudioPlayButton>
                         </div>
                       ) : (
                         <ViewerImage
@@ -567,8 +622,11 @@ export function HistorySheets({
                                   key={`${word.startS}-${wordIndex}`}
                                   type="button"
                                   onClick={() => {
-                                    audioPlayer.play(asset, activeMedia.filter((entry) => entry.kind === 'audio'))
-                                    audioPlayer.seek(word.startS)
+                                    audioPlayer.play(
+                                      asset,
+                                      activeMedia.filter((entry) => entry.kind === 'audio'),
+                                      { startAt: word.startS },
+                                    )
                                   }}
                                   className={`mr-1 rounded px-0.5 ${activeWord ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'hover:bg-[var(--accent-soft)]'}`}
                                 >
@@ -747,7 +805,8 @@ export function HistorySheets({
             }
           >
             {compareItems.map((item) => {
-              const asset = mediaFor(item)[0]
+              const media = mediaFor(item)
+              const asset = media[0]
               const url = asset?.localPath ? localMediaUrl(asset.localPath) : asset?.url ?? asset?.streamUrl
               return (
                 <div
@@ -757,7 +816,7 @@ export function HistorySheets({
                   <div className="overflow-hidden rounded-[var(--radius-sm)] bg-[var(--bg)]">
                     {url ? (
                       asset?.kind === 'video' || isVideoUrl(url) ? (
-                        <video
+                        <RefreshableVideo
                           src={url}
                           controls
                           muted
@@ -766,17 +825,34 @@ export function HistorySheets({
                         />
                       ) : asset?.kind === 'audio' || isAudioUrl(url) ? (
                         <div className="flex aspect-square flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-4 text-center">
-                          {asset?.previewUrl && <img src={asset.previewUrl} alt="" className="size-24 rounded-[var(--radius-md)] object-cover" />}
-                          <Pressable className="studio-btn-primary grid size-10 place-items-center p-0" onClick={() => audioPlayer.play(asset, mediaFor(item).filter((entry) => entry.kind === 'audio'))} aria-label="再生"><Play size={16} fill="currentColor" /></Pressable>
+                          {asset?.previewUrl && (
+                            <RefreshableImage
+                              src={asset.previewUrl}
+                              alt=""
+                              className="size-24 rounded-[var(--radius-md)] object-cover"
+                              fallback={null}
+                            />
+                          )}
+                          <HistoryAudioPlayButton
+                            asset={asset}
+                            playlist={media.filter((entry) => entry.kind === 'audio')}
+                            className="studio-btn-primary grid size-10 place-items-center p-0"
+                            ariaLabel="再生"
+                          >
+                            <Play size={16} fill="currentColor" />
+                          </HistoryAudioPlayButton>
                         </div>
                       ) : (
-                        <img
+                        <RefreshableImage
                           src={url}
                           alt={item.prompt || shortModel(item.model)}
                           loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
                           className="aspect-square w-full object-contain"
+                          fallback={
+                            <div className="flex aspect-square items-center justify-center text-xs text-[var(--text-muted)]">
+                              メディアを取得できません
+                            </div>
+                          }
                         />
                       )
                     ) : (

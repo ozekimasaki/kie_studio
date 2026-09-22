@@ -5,13 +5,17 @@ import { HistorySheets } from './HistorySheets.tsx'
 import { AudioPlayerProvider } from './audio/AudioPlayer.tsx'
 import type { HistoryItem } from '../lib/models/types.ts'
 
-vi.mock('../lib/api.ts', () => ({
-  createPersona: vi.fn(),
-  downloadArchive: vi.fn(),
-  fetchDownloadUrl: vi.fn().mockResolvedValue({ downloadUrl: '' }),
-  fetchPersonas: vi.fn().mockResolvedValue([]),
-  fetchTimestampedLyrics: vi.fn().mockResolvedValue({ alignedWords: [] }),
-}))
+vi.mock('../lib/api.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/api.ts')>()
+  return {
+    ...actual,
+    createPersona: vi.fn(),
+    downloadArchive: vi.fn(),
+    fetchDownloadUrl: vi.fn().mockRejectedValue(new Error('expired')),
+    fetchPersonas: vi.fn().mockResolvedValue([]),
+    fetchTimestampedLyrics: vi.fn().mockResolvedValue({ alignedWords: [] }),
+  }
+})
 
 function successItem(overrides: Partial<HistoryItem> = {}): HistoryItem {
   return {

@@ -360,11 +360,15 @@ export async function downloadArchive(items: Array<{
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-export async function fetchDownloadUrl(url: string) {
+export async function fetchDownloadUrl(
+  url: string,
+  init?: { signal?: AbortSignal },
+) {
   const res = await fetch(apiUrl('/api/download-url'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
+    signal: init?.signal,
   })
   return parseJson<{ data: { downloadUrl: string } }>(res)
 }

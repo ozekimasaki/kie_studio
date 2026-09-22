@@ -12,7 +12,8 @@
 | `form.ts` | default、dirty、schema 制約検証、先頭 error focus |
 | `models/types.ts` | Provider / Operation / MediaAsset / HistoryItem 等の共有型 |
 | `models/from-openapi.ts` | OpenAPI と説明文から field / 制約を抽出 |
-| `media.ts` / `mediaExpiry.ts` | media 種別と期限表示 |
+| `media.ts` / `mediaExpiry.ts` | media 種別と TOS/S3 署名 URL の期限判定 |
+| `useRefreshableMediaSrc.ts` | 期限切れリモート URL を `/api/download-url` で取り直す |
 | `agentApi.ts` | エージェント会話 CRUD、`/api/agent/chat`、health、メッセージ hydrate |
 | `agentUnavailable.ts` | API 不通時の表示文言。`{ "error": "..." }` 本文はメッセージだけ取り出す |
 
@@ -23,6 +24,7 @@
 - `reference + scalar` は UI の配列から API の単一 URL へ変換
 - 未知の履歴 input key は復元時に破棄する
 - exact `expiresAt` がなければ推測日時を出さず、早めの保存だけ促す
+- 期限切れの TOS / S3 署名 URL は `img src` に載せない。先に download-url を取り、失敗したらフォールバック表示
 
 ## See Also
 
