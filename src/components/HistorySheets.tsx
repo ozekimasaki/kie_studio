@@ -618,8 +618,11 @@ export function HistorySheets({
                                   key={`${word.startS}-${wordIndex}`}
                                   type="button"
                                   onClick={() => {
-                                    audioPlayer.play(asset, activeMedia.filter((entry) => entry.kind === 'audio'))
-                                    audioPlayer.seek(word.startS)
+                                    audioPlayer.play(
+                                      asset,
+                                      activeMedia.filter((entry) => entry.kind === 'audio'),
+                                      { startAt: word.startS },
+                                    )
                                   }}
                                   className={`mr-1 rounded px-0.5 ${activeWord ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'hover:bg-[var(--accent-soft)]'}`}
                                 >

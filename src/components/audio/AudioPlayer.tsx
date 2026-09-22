@@ -23,6 +23,7 @@ import {
   AudioPlayerContext,
   type AudioPlayerValue,
   type AudioTrack,
+  type PlayOptions,
 } from './audioPlayerContext.ts'
 
 function sourceOf(track: AudioTrack): string | undefined {
@@ -73,33 +74,46 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const playGen = useRef(0)
   const pendingSeek = useRef<number | null>(null)
+  const refreshInFlight = useRef(false)
 
   const applyPlay = useCallback((track: AudioTrack, group: AudioTrack[], source: string) => {
     const audio = audioRef.current
     if (!audio) return
     const currentSource = active ? sourceOf(active) : undefined
+    const resumeAt = pendingSeek.current
+    pendingSeek.current = null
     setTracks(group.filter((item) => Boolean(sourceOf(item))))
     setActive(track)
     if (currentSource !== source) {
       audio.src = source
-      audio.currentTime = pendingSeek.current ?? 0
+      audio.currentTime = resumeAt ?? 0
       setCurrentTime(audio.currentTime)
-      pendingSeek.current = null
+    } else if (resumeAt != null) {
+      audio.currentTime = resumeAt
+      setCurrentTime(audio.currentTime)
     }
     void audio.play().catch(() => setPlaying(false))
   }, [active])
 
-  const play = useCallback((track: AudioTrack, group: AudioTrack[] = [track]) => {
+  const play = useCallback((
+    track: AudioTrack,
+    group: AudioTrack[] = [track],
+    options?: PlayOptions,
+  ) => {
     const source = sourceOf(track)
     if (!source) return
+    const gen = ++playGen.current
+    pendingSeek.current = options?.startAt ?? null
     if (!needsSignedUrlRefresh(track, source)) {
+      refreshInFlight.current = false
       applyPlay(track, group, source)
       return
     }
-    const gen = ++playGen.current
+    refreshInFlight.current = true
     void fetchDownloadUrl(source)
       .then((res) => {
         if (gen !== playGen.current) return
+        refreshInFlight.current = false
         const next = res.data.downloadUrl
         if (!next) return
         const playable = { ...track, url: next, streamUrl: next }
@@ -109,7 +123,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           next,
         )
       })
-      .catch(() => {})
+      .catch(() => {
+        if (gen === playGen.current) refreshInFlight.current = false
+      })
   }, [applyPlay])
 
   const toggle = useCallback(() => {
@@ -120,14 +136,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [active])
 
   const seek = useCallback((seconds: number) => {
+    pendingSeek.current = seconds
     const audio = audioRef.current
-    if (!audio) return
-    if (!audio.src) {
-      pendingSeek.current = seconds
-      return
-    }
+    if (!audio?.src || refreshInFlight.current) return
     audio.currentTime = Math.max(0, Math.min(seconds, audio.duration || seconds))
     setCurrentTime(audio.currentTime)
+    pendingSeek.current = null
   }, [])
 
   const move = useCallback((direction: -1 | 1) => {

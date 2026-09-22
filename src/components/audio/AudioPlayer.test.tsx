@@ -53,6 +53,52 @@ function PlaylistHarness() {
   )
 }
 
+function LyricsHarness({ expired, useStartAt }: { expired: boolean; useStartAt?: boolean }) {
+  const player = useAudioPlayer()
+  const url = expired
+    ? expiredUrl('lyric')
+    : 'https://cdn.example.com/lyric.mp3'
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (useStartAt) {
+          player.play({ kind: 'audio', url, title: 'Lyric' }, undefined, { startAt: 12 })
+          return
+        }
+        player.play({ kind: 'audio', url, title: 'Lyric' })
+        player.seek(12)
+      }}
+    >
+      歌詞シーク
+    </button>
+  )
+}
+
+function RaceHarness() {
+  const player = useAudioPlayer()
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => player.play({ kind: 'audio', url: expiredUrl('stale'), title: 'Expired' })}
+      >
+        期限切れを再生
+      </button>
+      <button
+        type="button"
+        onClick={() => player.play({
+          kind: 'audio',
+          url: 'https://cdn.example.com/fresh-local.mp3',
+          title: 'Fresh',
+        })}
+      >
+        新しい曲を再生
+      </button>
+    </div>
+  )
+}
+
 describe('AudioPlayerProvider', () => {
   afterEach(() => {
     cleanup()
@@ -105,5 +151,75 @@ describe('AudioPlayerProvider', () => {
     await waitFor(() => {
       expect(screen.getByText('B', { selector: 'p' })).toBeInTheDocument()
     })
+  })
+
+  it('keeps lyric startAt after a signed URL refresh', async () => {
+    const currentTimeDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime')
+    Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+      configurable: true,
+      get(this: HTMLMediaElement) {
+        return Number(this.getAttribute('data-current-time') ?? 0)
+      },
+      set(this: HTMLMediaElement, value: number) {
+        this.setAttribute('data-current-time', String(value))
+      },
+    })
+    vi.mocked(fetchDownloadUrl).mockResolvedValue({
+      data: { downloadUrl: 'https://cdn.example.com/fresh-lyric.mp3' },
+    })
+
+    try {
+      const { unmount } = render(
+        <AudioPlayerProvider>
+          <LyricsHarness expired />
+        </AudioPlayerProvider>,
+      )
+      fireEvent.click(screen.getByRole('button', { name: '歌詞シーク' }))
+      await waitFor(() => {
+        expect(screen.getByText('Lyric', { selector: 'p' })).toBeInTheDocument()
+      })
+      expect(document.querySelector('audio')?.currentTime).toBe(12)
+      unmount()
+
+      render(
+        <AudioPlayerProvider>
+          <LyricsHarness expired useStartAt />
+        </AudioPlayerProvider>,
+      )
+      fireEvent.click(screen.getByRole('button', { name: '歌詞シーク' }))
+      await waitFor(() => {
+        expect(screen.getByText('Lyric', { selector: 'p' })).toBeInTheDocument()
+      })
+      expect(document.querySelector('audio')?.currentTime).toBe(12)
+    } finally {
+      if (currentTimeDesc) {
+        Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', currentTimeDesc)
+      }
+    }
+  })
+
+  it('does not let a stale signed-URL refresh replace a later fresh track', async () => {
+    let resolveExpired: ((value: { data: { downloadUrl: string } }) => void) | undefined
+    vi.mocked(fetchDownloadUrl).mockImplementation(
+      () => new Promise((resolve) => {
+        resolveExpired = resolve
+      }),
+    )
+
+    render(
+      <AudioPlayerProvider>
+        <RaceHarness />
+      </AudioPlayerProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: '期限切れを再生' }))
+    fireEvent.click(screen.getByRole('button', { name: '新しい曲を再生' }))
+    expect(screen.getByText('Fresh', { selector: 'p' })).toBeInTheDocument()
+
+    resolveExpired?.({ data: { downloadUrl: 'https://cdn.example.com/too-late.mp3' } })
+    await Promise.resolve()
+    expect(screen.getByText('Fresh', { selector: 'p' })).toBeInTheDocument()
+    expect(document.querySelector('audio')?.getAttribute('src')).toBe(
+      'https://cdn.example.com/fresh-local.mp3',
+    )
   })
 })
