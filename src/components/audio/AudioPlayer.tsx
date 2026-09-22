@@ -104,6 +104,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (!source) return
     const gen = ++playGen.current
     pendingSeek.current = options?.startAt ?? null
+    const activeSource = active ? sourceOf(active) : undefined
+    // 歌詞は期限切れの元 URL を渡す。同じ曲が有効な URL で再生中なら読み直さずシークする。
+    if (
+      active &&
+      activeSource &&
+      sameMediaAsset(active, track) &&
+      needsSignedUrlRefresh(track, source) &&
+      !needsSignedUrlRefresh(active, activeSource)
+    ) {
+      refreshInFlight.current = false
+      applyPlay(active, replaceMatchingAsset(group, track, active), activeSource)
+      return
+    }
     if (!needsSignedUrlRefresh(track, source)) {
       refreshInFlight.current = false
       applyPlay(track, group, source)
@@ -126,7 +139,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         if (gen === playGen.current) refreshInFlight.current = false
       })
-  }, [applyPlay])
+  }, [active, applyPlay])
 
   const toggle = useCallback(() => {
     const audio = audioRef.current

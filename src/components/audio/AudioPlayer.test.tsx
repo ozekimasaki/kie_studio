@@ -75,6 +75,39 @@ function LyricsHarness({ expired, useStartAt }: { expired: boolean; useStartAt?:
   )
 }
 
+const FRESH_LYRIC = 'https://cdn.example.com/fresh-lyric.mp3'
+
+function PlayingLyricHarness() {
+  const player = useAudioPlayer()
+  const expired = expiredUrl('lyric')
+  const original = {
+    kind: 'audio' as const,
+    providerAssetId: 'suno-1',
+    url: expired,
+    title: 'Lyric',
+  }
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => player.play({
+          ...original,
+          url: FRESH_LYRIC,
+          streamUrl: FRESH_LYRIC,
+        })}
+      >
+        曲を再生
+      </button>
+      <button
+        type="button"
+        onClick={() => player.play(original, [original], { startAt: 12 })}
+      >
+        再生中に歌詞シーク
+      </button>
+    </div>
+  )
+}
+
 function RaceHarness() {
   const player = useAudioPlayer()
   return (
@@ -190,6 +223,44 @@ describe('AudioPlayerProvider', () => {
       await waitFor(() => {
         expect(screen.getByText('Lyric', { selector: 'p' })).toBeInTheDocument()
       })
+      expect(document.querySelector('audio')?.currentTime).toBe(12)
+    } finally {
+      if (currentTimeDesc) {
+        Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', currentTimeDesc)
+      }
+    }
+  })
+
+  it('seeks the live source when lyrics pass an expired url for the playing track', async () => {
+    const currentTimeDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime')
+    Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+      configurable: true,
+      get(this: HTMLMediaElement) {
+        return Number(this.getAttribute('data-current-time') ?? 0)
+      },
+      set(this: HTMLMediaElement, value: number) {
+        this.setAttribute('data-current-time', String(value))
+      },
+    })
+    vi.mocked(fetchDownloadUrl).mockResolvedValue({
+      data: { downloadUrl: 'https://cdn.example.com/reloaded-lyric.mp3' },
+    })
+
+    try {
+      render(
+        <AudioPlayerProvider>
+          <PlayingLyricHarness />
+        </AudioPlayerProvider>,
+      )
+      fireEvent.click(screen.getByRole('button', { name: '曲を再生' }))
+      await waitFor(() => {
+        expect(screen.getByText('Lyric', { selector: 'p' })).toBeInTheDocument()
+      })
+      expect(document.querySelector('audio')?.getAttribute('src')).toBe(FRESH_LYRIC)
+
+      fireEvent.click(screen.getByRole('button', { name: '再生中に歌詞シーク' }))
+      expect(vi.mocked(fetchDownloadUrl)).not.toHaveBeenCalled()
+      expect(document.querySelector('audio')?.getAttribute('src')).toBe(FRESH_LYRIC)
       expect(document.querySelector('audio')?.currentTime).toBe(12)
     } finally {
       if (currentTimeDesc) {
