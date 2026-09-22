@@ -222,4 +222,43 @@ describe('AudioPlayerProvider', () => {
       'https://cdn.example.com/fresh-local.mp3',
     )
   })
+
+  it('seeks lyrics on the playing track without reloading the audio', async () => {
+    const currentTimeDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime')
+    Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+      configurable: true,
+      get(this: HTMLMediaElement) {
+        return Number(this.getAttribute('data-current-time') ?? 0)
+      },
+      set(this: HTMLMediaElement, value: number) {
+        this.setAttribute('data-current-time', String(value))
+      },
+    })
+    const fresh = 'https://cdn.example.com/fresh-lyric.mp3'
+    vi.mocked(fetchDownloadUrl).mockResolvedValue({
+      data: { downloadUrl: fresh },
+    })
+
+    try {
+      render(
+        <AudioPlayerProvider>
+          <LyricsHarness expired useStartAt />
+        </AudioPlayerProvider>,
+      )
+      fireEvent.click(screen.getByRole('button', { name: '歌詞シーク' }))
+      await waitFor(() => {
+        expect(document.querySelector('audio')?.getAttribute('src')).toBe(fresh)
+      })
+      expect(fetchDownloadUrl).toHaveBeenCalledTimes(1)
+
+      fireEvent.click(screen.getByRole('button', { name: '歌詞シーク' }))
+      expect(fetchDownloadUrl).toHaveBeenCalledTimes(1)
+      expect(document.querySelector('audio')?.getAttribute('src')).toBe(fresh)
+      expect(document.querySelector('audio')?.currentTime).toBe(12)
+    } finally {
+      if (currentTimeDesc) {
+        Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', currentTimeDesc)
+      }
+    }
+  })
 })

@@ -108,7 +108,11 @@ function HistoryAudioPlayButton({
       aria-label={ariaLabel}
       onClick={() => {
         if (!displaySrc) return
-        const playable = { ...asset, url: displaySrc, streamUrl: displaySrc }
+        const playable = {
+          ...asset,
+          url: asset.url ?? asset.streamUrl,
+          streamUrl: displaySrc,
+        }
         audioPlayer.play(
           playable,
           replaceMatchingAsset(playlist, asset, playable),
