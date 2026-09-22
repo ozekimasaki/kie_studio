@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Pressable } from '../motion/Pressable.tsx'
 import { apiUrl, fetchDownloadUrl } from '../../lib/api.ts'
+import { replaceMatchingAsset, sameMediaAsset } from '../../lib/media.ts'
 import { isExpiredSignedUrl, isLocalMediaSrc } from '../../lib/mediaExpiry.ts'
 import {
   AudioPlayerContext,
@@ -32,6 +33,14 @@ function sourceOf(track: AudioTrack): string | undefined {
 function needsSignedUrlRefresh(track: AudioTrack, source: string): boolean {
   if (track.localPath || isLocalMediaSrc(source)) return false
   return isExpiredSignedUrl(source)
+}
+
+function indexOfTrack(list: AudioTrack[], target: AudioTrack): number {
+  const byIdentity = list.findIndex((item) => sameMediaAsset(item, target))
+  if (byIdentity >= 0) return byIdentity
+  const source = sourceOf(target)
+  if (!source) return -1
+  return list.findIndex((item) => sourceOf(item) === source)
 }
 
 function formatTime(value: number): string {
@@ -96,7 +105,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         const playable = { ...track, url: next, streamUrl: next }
         applyPlay(
           playable,
-          group.map((item) => (item === track ? playable : item)),
+          replaceMatchingAsset(group, track, playable),
           next,
         )
       })
@@ -123,7 +132,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const move = useCallback((direction: -1 | 1) => {
     if (!active || tracks.length < 2) return
-    const current = tracks.findIndex((track) => sourceOf(track) === sourceOf(active))
+    const current = indexOfTrack(tracks, active)
     const next = tracks[(current + direction + tracks.length) % tracks.length]
     if (next) play(next, tracks)
   }, [active, play, tracks])

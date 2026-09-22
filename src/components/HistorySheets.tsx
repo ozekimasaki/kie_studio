@@ -9,7 +9,7 @@ import {
   fetchTimestampedLyrics,
   localMediaUrl,
 } from '../lib/api.ts'
-import { isAudioUrl, isVideoUrl, mediaKindFromUrl } from '../lib/media.ts'
+import { isAudioUrl, isVideoUrl, mediaKindFromUrl, replaceMatchingAsset } from '../lib/media.ts'
 import { useRefreshableMediaSrc } from '../lib/useRefreshableMediaSrc.ts'
 import type {
   HistoryItem,
@@ -111,7 +111,7 @@ function HistoryAudioPlayButton({
         const playable = { ...asset, url: displaySrc, streamUrl: displaySrc }
         audioPlayer.play(
           playable,
-          playlist.map((item) => (item === asset ? playable : item)),
+          replaceMatchingAsset(playlist, asset, playable),
         )
       }}
     >
@@ -798,7 +798,8 @@ export function HistorySheets({
             }
           >
             {compareItems.map((item) => {
-              const asset = mediaFor(item)[0]
+              const media = mediaFor(item)
+              const asset = media[0]
               const url = asset?.localPath ? localMediaUrl(asset.localPath) : asset?.url ?? asset?.streamUrl
               return (
                 <div
@@ -827,7 +828,7 @@ export function HistorySheets({
                           )}
                           <HistoryAudioPlayButton
                             asset={asset}
-                            playlist={mediaFor(item).filter((entry) => entry.kind === 'audio')}
+                            playlist={media.filter((entry) => entry.kind === 'audio')}
                             className="studio-btn-primary grid size-10 place-items-center p-0"
                             ariaLabel="再生"
                           >
