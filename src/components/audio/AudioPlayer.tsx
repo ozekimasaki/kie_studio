@@ -72,6 +72,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [muted, setMuted] = useState(false)
 
   const playGen = useRef(0)
+  const appliedGen = useRef(0)
   const pendingSeek = useRef<number | null>(null)
 
   const applyPlay = useCallback((track: AudioTrack, group: AudioTrack[], source: string) => {
@@ -80,9 +81,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const currentSource = active ? sourceOf(active) : undefined
     setTracks(group.filter((item) => Boolean(sourceOf(item))))
     setActive(track)
+    const queuedSeek = pendingSeek.current
     if (currentSource !== source) {
       audio.src = source
-      audio.currentTime = pendingSeek.current ?? 0
+      audio.currentTime = queuedSeek ?? 0
+      setCurrentTime(audio.currentTime)
+      pendingSeek.current = null
+    } else if (queuedSeek != null) {
+      audio.currentTime = queuedSeek
       setCurrentTime(audio.currentTime)
       pendingSeek.current = null
     }
@@ -92,14 +98,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const play = useCallback((track: AudioTrack, group: AudioTrack[] = [track]) => {
     const source = sourceOf(track)
     if (!source) return
+    // A newer play() supersedes a seek queued for the previous refresh.
+    pendingSeek.current = null
+    const gen = ++playGen.current
     if (!needsSignedUrlRefresh(track, source)) {
+      appliedGen.current = gen
       applyPlay(track, group, source)
       return
     }
-    const gen = ++playGen.current
     void fetchDownloadUrl(source)
       .then((res) => {
         if (gen !== playGen.current) return
+        appliedGen.current = gen
         const next = res.data.downloadUrl
         if (!next) return
         const playable = { ...track, url: next, streamUrl: next }
@@ -109,7 +119,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           next,
         )
       })
-      .catch(() => {})
+      .catch(() => {
+        if (gen !== playGen.current) return
+        appliedGen.current = gen
+      })
   }, [applyPlay])
 
   const toggle = useCallback(() => {
@@ -122,7 +135,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const seek = useCallback((seconds: number) => {
     const audio = audioRef.current
     if (!audio) return
-    if (!audio.src) {
+    // src stays set after the first play, but an in-flight refresh replaces it
+    // and would otherwise restart at 0. Hold the seek until that URL lands.
+    if (!audio.src || appliedGen.current !== playGen.current) {
       pendingSeek.current = seconds
       return
     }
