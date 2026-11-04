@@ -16,16 +16,50 @@ import {
   X,
 } from 'lucide-react'
 import { Pressable } from '../motion/Pressable.tsx'
-import { apiUrl } from '../../lib/api.ts'
+import { apiUrl, fetchDownloadUrl } from '../../lib/api.ts'
+import { replaceMatchingAsset, sameMediaAsset } from '../../lib/media.ts'
+import { isExpiredSignedUrl, isLocalMediaSrc } from '../../lib/mediaExpiry.ts'
 import {
   AudioPlayerContext,
   type AudioPlayerValue,
   type AudioTrack,
+  type PlayOptions,
 } from './audioPlayerContext.ts'
 
 function sourceOf(track: AudioTrack): string | undefined {
   if (track.localPath) return apiUrl(`/${track.localPath}`)
   return track.streamUrl ?? track.url
+}
+
+function needsSignedUrlRefresh(track: AudioTrack, source: string): boolean {
+  if (track.localPath || isLocalMediaSrc(source)) return false
+  return isExpiredSignedUrl(source)
+}
+
+function indexOfTrack(list: AudioTrack[], target: AudioTrack): number {
+  const byIdentity = list.findIndex((item) => sameMediaAsset(item, target))
+  if (byIdentity >= 0) return byIdentity
+  const source = sourceOf(target)
+  if (!source) return -1
+  return list.findIndex((item) => sourceOf(item) === source)
+}
+
+function resolveLiveTrack(
+  track: AudioTrack,
+  active: AudioTrack | null,
+  queue: AudioTrack[],
+): AudioTrack {
+  if (active && sameMediaAsset(active, track)) return active
+  return queue.find((item) => sameMediaAsset(item, track)) ?? track
+}
+
+/** 再取得後も元 URL を残し、同一曲判定と再生中シークが効くようにする。 */
+function withRefreshedSource(track: AudioTrack, next: string): AudioTrack {
+  return {
+    ...track,
+    url: track.url ?? track.streamUrl,
+    streamUrl: next,
+  }
 }
 
 function formatTime(value: number): string {
@@ -56,20 +90,80 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolume] = useState(1)
   const [muted, setMuted] = useState(false)
 
-  const play = useCallback((track: AudioTrack, group: AudioTrack[] = [track]) => {
+  const playGen = useRef(0)
+  const pendingSeek = useRef<number | null>(null)
+  const refreshInFlight = useRef(false)
+
+  const applyPlay = useCallback((track: AudioTrack, group: AudioTrack[], source: string) => {
     const audio = audioRef.current
-    const source = sourceOf(track)
-    if (!audio || !source) return
+    if (!audio) return
     const currentSource = active ? sourceOf(active) : undefined
+    const resumeAt = pendingSeek.current
+    pendingSeek.current = null
     setTracks(group.filter((item) => Boolean(sourceOf(item))))
     setActive(track)
     if (currentSource !== source) {
       audio.src = source
-      audio.currentTime = 0
-      setCurrentTime(0)
+      audio.currentTime = resumeAt ?? 0
+      setCurrentTime(audio.currentTime)
+    } else if (resumeAt != null) {
+      audio.currentTime = resumeAt
+      setCurrentTime(audio.currentTime)
     }
     void audio.play().catch(() => setPlaying(false))
   }, [active])
+
+  const seek = useCallback((seconds: number) => {
+    pendingSeek.current = seconds
+    const audio = audioRef.current
+    if (!audio?.src || refreshInFlight.current) return
+    audio.currentTime = Math.max(0, Math.min(seconds, audio.duration || seconds))
+    setCurrentTime(audio.currentTime)
+    pendingSeek.current = null
+  }, [])
+
+  const play = useCallback((
+    track: AudioTrack,
+    group: AudioTrack[] = [track],
+    options?: PlayOptions,
+  ) => {
+    const source = sourceOf(track)
+    if (!source) return
+    const live = resolveLiveTrack(track, active, tracks)
+    const liveSource = sourceOf(live)
+    const gen = ++playGen.current
+    pendingSeek.current = options?.startAt ?? null
+
+    if (liveSource && !needsSignedUrlRefresh(live, liveSource)) {
+      refreshInFlight.current = false
+      if (active && sameMediaAsset(active, live)) {
+        if (options?.startAt != null) seek(options.startAt)
+        const audio = audioRef.current
+        if (audio) void audio.play().catch(() => setPlaying(false))
+        return
+      }
+      applyPlay(live, replaceMatchingAsset(group, track, live), liveSource)
+      return
+    }
+
+    refreshInFlight.current = true
+    void fetchDownloadUrl(source)
+      .then((res) => {
+        if (gen !== playGen.current) return
+        refreshInFlight.current = false
+        const next = res.data.downloadUrl
+        if (!next) return
+        const playable = withRefreshedSource(track, next)
+        applyPlay(
+          playable,
+          replaceMatchingAsset(group, track, playable),
+          next,
+        )
+      })
+      .catch(() => {
+        if (gen === playGen.current) refreshInFlight.current = false
+      })
+  }, [active, applyPlay, seek, tracks])
 
   const toggle = useCallback(() => {
     const audio = audioRef.current
@@ -78,16 +172,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     else audio.pause()
   }, [active])
 
-  const seek = useCallback((seconds: number) => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.currentTime = Math.max(0, Math.min(seconds, audio.duration || seconds))
-    setCurrentTime(audio.currentTime)
-  }, [])
-
   const move = useCallback((direction: -1 | 1) => {
     if (!active || tracks.length < 2) return
-    const current = tracks.findIndex((track) => sourceOf(track) === sourceOf(active))
+    const current = indexOfTrack(tracks, active)
     const next = tracks[(current + direction + tracks.length) % tracks.length]
     if (next) play(next, tracks)
   }, [active, play, tracks])

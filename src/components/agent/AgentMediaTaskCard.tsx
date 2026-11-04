@@ -2,6 +2,11 @@ import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
 import { isVideoUrl } from '../../lib/media.ts'
 import { localMediaUrl } from '../../lib/api.ts'
 import type { MediaTaskData } from './mediaTaskData.ts'
+import {
+  RefreshableAudio,
+  RefreshableImage,
+  RefreshableVideo,
+} from '../RefreshableImage.tsx'
 
 function looksAudio(url: string): boolean {
   return /\.(?:mp3|wav|m4a|aac|ogg|flac|opus)(?:$|\?)/i.test(url)
@@ -10,7 +15,7 @@ function looksAudio(url: string): boolean {
 function MediaView({ url, kind }: { url: string; kind: string }) {
   if (kind === 'video' || isVideoUrl(url)) {
     return (
-      <video
+      <RefreshableVideo
         src={url}
         controls
         className="max-h-72 w-full rounded-[var(--radius-md)] bg-black"
@@ -18,14 +23,16 @@ function MediaView({ url, kind }: { url: string; kind: string }) {
     )
   }
   if (kind === 'audio' || looksAudio(url)) {
-    return <audio src={url} controls className="w-full" />
+    return <RefreshableAudio src={url} className="w-full" />
   }
   return (
-    <img
+    <RefreshableImage
       src={url}
       alt="生成結果"
-      referrerPolicy="no-referrer"
       className="max-h-72 w-full rounded-[var(--radius-md)] object-contain bg-black/20"
+      fallback={
+        <p className="text-xs text-[var(--text-muted)]">メディアを取得できません</p>
+      }
     />
   )
 }

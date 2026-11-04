@@ -32,9 +32,12 @@ Grok CLI を使ったプロンプト最適化（`server/grok/` + UI `PromptOptim
 ## 挙動
 
 - Grok CLI 未インストール / 利用不可 → **503 でよい**（必須依存ではない）
+- タイムアウト（既定 240 秒）→ **504**（`Grok Build の応答がタイムアウトしました`）
 - ステータスは短時間キャッシュ（CLI 存在確認の連打を避ける）
-- 最適化モデルはハードコードしない。実行前に `grok models` を呼び、CLI 既定（一覧に含まれるもの）を `-m` に渡す。CLI バージョンが変わるとキャッシュを捨てて取り直す
+- 最適化モデルはハードコードしない。実行前に `grok models` を呼び、live list から選ぶ。CLI バージョンが変わるとキャッシュを捨てて取り直す
+- レイテンシ優先: 一覧に `fast` / `mini` / `lite` / `flash` / `nano` があればそれを使う。無ければ CLI 既定。既定が thinking 系（`4.6` / `thinking` / `reason` / `build`）で別 ID がある場合はそちら
 - `STUDIO_GROK_OPTIMIZE_MODEL` で上書き可。一覧に無い ID はエラー（`grok-build` のような旧エイリアスを固定しない）
+- Grok CLI 起動時は `PAGER=cat` を渡し、`grok models` の pager 待ちで固まらないようにする
 - 最適化出力はマーカー（`<<<OPTIMIZED>>>` … `<<<END>>>`）で抽出
 - モデル別プロファイルでルール Markdown と埋め込みガイドファイルを一時作業ディレクトリへ渡す
 - `bytedance/seedance-2-5` は `seedance-2-5` 専用プロファイルへ解決し、2.0 系とガイドを分離する

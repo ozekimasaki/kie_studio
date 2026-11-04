@@ -19,9 +19,11 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { isAudioUrl, isVideoUrl } from '../lib/media.ts'
 import { localMediaUrl } from '../lib/api.ts'
+import { useRefreshableMediaSrc } from '../lib/useRefreshableMediaSrc.ts'
 import type { HistoryItem, MediaAsset, QuickAction, TaskState } from '../lib/models/types.ts'
 import { Pressable, PressableDiv } from './motion/Pressable.tsx'
 import { SharedMedia } from './motion/SharedMedia.tsx'
+import { RefreshableImage } from './RefreshableImage.tsx'
 import { useAudioPlayer } from './audio/audioPlayerContext.ts'
 
 const HistorySheets = lazy(() =>
@@ -99,28 +101,22 @@ function GalleryImage({
   alt: string
   className: string
 }) {
-  const [failed, setFailed] = useState(false)
-  if (failed) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
-        <span className="grid size-10 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
-          <Clock size={18} aria-hidden />
-        </span>
-        <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
-          メディアを取得できません
-        </span>
-      </div>
-    )
-  }
   return (
-    <img
+    <RefreshableImage
       src={src}
       alt={alt}
-      loading="lazy"
-      decoding="async"
-      referrerPolicy="no-referrer"
       className={className}
-      onError={() => setFailed(true)}
+      loading="lazy"
+      fallback={
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--bg-elevated)] p-3 text-center">
+          <span className="grid size-10 place-items-center rounded-full bg-[var(--border)] text-[var(--text-muted)]">
+            <Clock size={18} aria-hidden />
+          </span>
+          <span className="text-[10px] leading-relaxed text-[var(--text-muted)]">
+            メディアを取得できません
+          </span>
+        </div>
+      }
     />
   )
 }
@@ -139,7 +135,8 @@ function DeferredVideo({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [nearViewport, setNearViewport] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const [failed, setFailed] = useState(false)
+  const { displaySrc, failed, onError } = useRefreshableMediaSrc(src)
+  const { displaySrc: posterSrc } = useRefreshableMediaSrc(poster)
 
   useEffect(() => {
     const video = videoRef.current
@@ -160,7 +157,7 @@ function DeferredVideo({
     return () => observer.disconnect()
   }, [nearViewport])
 
-  const mediaVisible = Boolean(poster) || loaded
+  const mediaVisible = Boolean(posterSrc) || loaded
 
   return (
     <div className={`${className} relative`}>
@@ -172,8 +169,8 @@ function DeferredVideo({
       </div>
       <video
         ref={videoRef}
-        src={nearViewport ? src : undefined}
-        poster={poster}
+        src={nearViewport ? displaySrc : undefined}
+        poster={posterSrc}
         muted
         playsInline
         preload={nearViewport ? 'metadata' : 'none'}
@@ -187,7 +184,7 @@ function DeferredVideo({
         }}
         onLoadedData={() => setLoaded(true)}
         onSeeked={() => setLoaded(true)}
-        onError={() => setFailed(true)}
+        onError={onError}
       />
     </div>
   )
@@ -698,7 +695,12 @@ export function HistoryGallery({
                         ) : isAudio && !busy ? (
                           <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--accent-soft)] p-4 text-center">
                             {primaryMedia?.previewUrl ? (
-                              <img src={primaryMedia.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+                              <RefreshableImage
+                                src={primaryMedia.previewUrl}
+                                alt=""
+                                className="absolute inset-0 h-full w-full object-cover opacity-55"
+                                fallback={null}
+                              />
                             ) : null}
                             <span className="relative grid size-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--on-accent)] shadow-[var(--shadow-md)]">
                               <Play size={20} fill="currentColor" />

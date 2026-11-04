@@ -23,6 +23,7 @@ npm run dev
 | `KIE_API_KEY` | 必須。kie.ai API キー |
 | `PORT` | API ポート（既定 `8787`） |
 | `XAI_API_KEY` | 任意。エージェント Grok（組み込み xai）と Grok CLI |
+| `STUDIO_GROK_OPTIMIZE_MODEL` | 任意。プロンプト最適化の Grok CLI モデル。`grok models` の一覧にある ID のみ |
 | `SYNC_MODELS_ON_START` | `0` で起動時同期を無効化 |
 | `SYNC_MODELS_FORCE` | `1` で強制同期 |
 | `SYNC_CONCURRENCY` | 同期並列数（既定 12、最大 32） |

@@ -43,6 +43,8 @@ Runway Aleph は親タスクと Before/After を表示。動画と音声の両�
 
 ギャラリーの既定カテゴリは作業中のカテゴリへ追随する。動画カードは `previewUrl` を優先し、無い場合は表示範囲へ近づいた時だけ動画を読み込み、先頭フレームまたは識別用フォールバックを表示する。ウィンドウフォーカス時に `GET /api/history` を merge し、CLI やエージェントが追加した taskId をギャラリーへ載せる。
 
+履歴メディアは `localPath` があれば `/media/...` を使う。リモートの TOS / S3 署名 URL が期限切れなら `img` に載せず、`POST /api/download-url` で取り直す（`RefreshableImage`）。kie 側で消えていれば「メディアを取得できません」。
+
 ## 軽量化
 
 履歴段階描画、動画 Intersection Observer、遅延ロード、経過時間別 polling、terminal 時中心の SQLite 永続化を維持する。AgentView は lazy load。
