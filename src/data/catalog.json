@@ -1,7 +1,7 @@
 {
-  "syncedAt": "2026-11-03T15:07:37.270Z",
+  "syncedAt": "2026-11-27T15:07:26.840Z",
   "source": "docs.kie.ai/llms.txt",
-  "sourceHash": "7ae1f24114d8425b63334df924d73ea6d5ffce8e02eb5758cf783dedd40d1ddc",
+  "sourceHash": "f6838b64a50110242929e7bbedef4e9345f4c2b417d35dc867c9a17b40aebe96",
   "models": [
     {
       "id": "elevenlabs/audio-isolation",
@@ -37,7 +37,7 @@
           "name": "dialogue",
           "type": "json",
           "label": "Dialogue",
-          "description": "Array of dialogue items. Each item contains text and voice. The total character count of all text fields combined must not exceed 5000 characters.",
+          "description": "Array of dialogue items. Each item contains `text` and `voice`; see Supported Voices at the top of this page for the available voice IDs. The total character count of all text fields combined must not exceed 5000 characters.",
           "required": true
         },
         {
@@ -54,7 +54,7 @@
           "name": "language_code",
           "type": "enum",
           "label": "Language Code",
-          "description": "Language code for the speech. Default is empty string or omit the parameter for automatic language detection.",
+          "description": "Language code for the speech. Omit this parameter for automatic language detection.",
           "required": false,
           "enum": [
             "af",
@@ -157,82 +157,35 @@
           "label": "Voice",
           "description": "Voice ID from the list below. You can preview a voice by opening https://static.aiquickdraw.com/elevenlabs/voice/<voice_id>.mp3 in your browser (replace <voice_id> with the actual voice ID). For example: https://static.aiquickdraw.com/elevenlabs/voice/N2lVS1w4EtoT3dr4eOWO.mp3",
           "required": true,
-          "default": "EkK5I93UQWFDigLMpZcX",
           "enum": [
-            "EkK5I93UQWFDigLMpZcX",
-            "Z3R5wn05IrDiVCyEkUrK",
-            "NNl6r8mD7vthiJatiJt1",
-            "YOq2y2Up4RgXP2HyXjE5",
-            "B8gJV1IhpuegLxdpXFOE",
-            "2zRM7PkgwBPiau2jvVXc",
-            "1SM7GgM6IMuvQlz2BwM3",
-            "5l5f8iK3YPeGga21rQIX",
-            "scOwDtmlUjD3prqpp97I",
-            "NOpBlnGInO9m6vDvFkFC",
-            "BZgkqPqms7Kj9ulSkVzn",
-            "wo6udizrrtpIxWGp2qJk",
-            "gU0LNdkMOQCOrPrwtbee",
-            "DGzg6RaUqxGRTHSBjfgF",
-            "x70vRnQBMBu4FAYhjJbO",
-            "Sm1seazb4gs7RSlUVw7c",
-            "P1bg08DkjqiVEzOn76yG",
-            "qDuRKMlYmrm8trt5QyBn",
-            "qXpMhyvQqiRxWQs4qSSB",
-            "TX3LPaxmHKxFdv7VOQHJ",
-            "N2lVS1w4EtoT3dr4eOWO",
-            "FGY2WhTYpPnrIDTdsKH5",
-            "kPzsL2i3teMYv0FxEYQ6",
-            "UgBBYS2sOqTuMpoF3BR0",
-            "hpp4J3VqNfWAUOO0d1Us",
+            "pNInz6obpgDQGcFmaJgB",
+            "Xb7hH8MSUJpSbSDYk0k2",
+            "pqHfZKP75CvOlQylNhV4",
             "nPczCjzI2devNBz1zQrb",
-            "uYXf8XasLslADfZ2MB4u",
-            "gs0tAILXbY5DNrJrsM6F",
-            "DTKMou8ccj1ZaWGBiotd",
-            "vBKc2FfBKJfcZNyEt1n6",
-            "DYkrAHD8iwork3YSUBbs",
-            "56AoDkrOh6qfVPDXZ7Pt",
-            "eR40ATw9ArzDf9h3v7t7",
-            "g6xIsTj2HwM6VR4iXFCw",
-            "lcMyyd2HUfFzxdCaC4Ta",
-            "6aDn1KB0hjpdcocrUkmq",
-            "Sq93GQT4X1lKDXsQcixO",
-            "flHkNRp1BlvT73UL6gyz",
-            "9yzdeviXkFddZ4Oz8Mok",
-            "pPdl9cQBQq4p6mRkZy2Z",
-            "zYcjlYFOd3taleS0gkk3",
-            "nzeAacJi50IvxcyDnMXa",
-            "ruirxsoakN0GWmGNIo04",
-            "TC0Zp7WVFzhA8zpTlRqV",
-            "ljo9gAlSqKOvF6D8sOsX",
-            "PPzYpIqttlTYA83688JI",
-            "8JVbfL6oEdmuxKn5DK2C",
-            "iCrDUkL56s3C8sCRl7wb",
-            "wJqPPQ618aTW29mptyoc",
-            "EiNlNiXeDU1pqqOPrYMO",
-            "4YYIPFl9wE5c4L2eu2Gb",
-            "6F5Zhi321D3Oq7v1oNT4",
-            "YXpFCvM1S3JbWEJhoskW",
-            "LG95yZDEHg6fCZdQjLqj",
-            "CeNX9CMwmxDxUF5Q2Inm",
-            "aD6riP1btT197c6dACmy",
-            "mtrellq69YZsNwzUSyXh",
-            "dHd5gvgSOzSfduK4CvEg",
-            "eVItLK1UvXctxuaRV2Oq",
-            "esy0r39YPLQjOczyOib8",
-            "Tsns2HvNFKfGiNjllgqo",
-            "1U02n4nD6AdIZ9CjF053",
-            "AeRdCCKzvd23BpJoofzx",
-            "LruHrtVF6PSyGItzMNHS",
-            "1wGbFxmAM3Fgw63G1zZJ",
-            "hqfrgApggtO1785R4Fsn",
-            "MJ0RnG71ty4LH3dvNfSd"
+            "N2lVS1w4EtoT3dr4eOWO",
+            "IKne3meq5aSn9XLyUdCD",
+            "iP95p4xoKVk53GoZ742B",
+            "onwK4e9ZLuTAKqWW03F9",
+            "cjVigY5qzO86Huf0OWal",
+            "JBFqnCBsd6RMkjVDRZzb",
+            "SOYHLrjzK2X1ezoPC6cr",
+            "cgSgspJ2msm6clMCkdW9",
+            "FGY2WhTYpPnrIDTdsKH5",
+            "TX3LPaxmHKxFdv7VOQHJ",
+            "pFZP5JQG7iQjIQuC4Bku",
+            "XrExE9yKIg1WjnnlVkGX",
+            "SAz9YHcvj6GT2YYXdXww",
+            "CwhRBWXzGAHq8TQ4Fs17",
+            "EXAVITQu4vr4xnSDxMaL",
+            "bIHbv24MWmeRgasZH58o",
+            "hpp4J3VqNfWAUOO0d1Us"
           ]
         },
         {
           "name": "stability",
           "type": "number",
           "label": "Stability",
-          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01)",
           "required": false,
           "default": 0.5,
           "min": 0,
@@ -243,7 +196,7 @@
           "name": "similarity_boost",
           "type": "number",
           "label": "Similarity Boost",
-          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01)",
           "required": false,
           "default": 0.75,
           "min": 0,
@@ -254,7 +207,7 @@
           "name": "style",
           "type": "number",
           "label": "Style",
-          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01)",
           "required": false,
           "default": 0,
           "min": 0,
@@ -265,7 +218,7 @@
           "name": "speed",
           "type": "number",
           "label": "Speed",
-          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01) (step: 0.01)",
+          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01)",
           "required": false,
           "default": 1,
           "min": 0.7,
@@ -273,33 +226,10 @@
           "step": 0.1
         },
         {
-          "name": "timestamps",
-          "type": "boolean",
-          "label": "Timestamps",
-          "description": "Whether to return timestamps for each word in the generated speech (Boolean value (true/false))",
-          "required": false
-        },
-        {
-          "name": "previous_text",
-          "type": "textarea",
-          "label": "Previous Text",
-          "description": "The text that came before the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
-          "required": false,
-          "maxLength": 5000
-        },
-        {
-          "name": "next_text",
-          "type": "textarea",
-          "label": "Next Text",
-          "description": "The text that comes after the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
-          "required": false,
-          "maxLength": 5000
-        },
-        {
           "name": "language_code",
           "type": "string",
           "label": "Language Code",
-          "description": "Language code (ISO 639-1) used to enforce a language for the model. Currently only Turbo v2.5 and Flash v2.5 support language enforcement. For other models, an error will be returned if language code is provided. (Max length: 500 characters)",
+          "description": "Language code (ISO 639-1) of the text, for example `en`. Optional. (Max length: 500 characters)",
           "required": false,
           "maxLength": 500
         }
@@ -326,83 +256,36 @@
           "type": "enum",
           "label": "Voice",
           "description": "Voice ID from the list below. You can preview a voice by opening https://static.aiquickdraw.com/elevenlabs/voice/<voice_id>.mp3 in your browser (replace <voice_id> with the actual voice ID). For example: https://static.aiquickdraw.com/elevenlabs/voice/N2lVS1w4EtoT3dr4eOWO.mp3",
-          "required": false,
-          "default": "EkK5I93UQWFDigLMpZcX",
+          "required": true,
           "enum": [
-            "EkK5I93UQWFDigLMpZcX",
-            "Z3R5wn05IrDiVCyEkUrK",
-            "NNl6r8mD7vthiJatiJt1",
-            "YOq2y2Up4RgXP2HyXjE5",
-            "B8gJV1IhpuegLxdpXFOE",
-            "2zRM7PkgwBPiau2jvVXc",
-            "1SM7GgM6IMuvQlz2BwM3",
-            "5l5f8iK3YPeGga21rQIX",
-            "scOwDtmlUjD3prqpp97I",
-            "NOpBlnGInO9m6vDvFkFC",
-            "BZgkqPqms7Kj9ulSkVzn",
-            "wo6udizrrtpIxWGp2qJk",
-            "gU0LNdkMOQCOrPrwtbee",
-            "DGzg6RaUqxGRTHSBjfgF",
-            "x70vRnQBMBu4FAYhjJbO",
-            "Sm1seazb4gs7RSlUVw7c",
-            "P1bg08DkjqiVEzOn76yG",
-            "qDuRKMlYmrm8trt5QyBn",
-            "qXpMhyvQqiRxWQs4qSSB",
-            "TX3LPaxmHKxFdv7VOQHJ",
-            "N2lVS1w4EtoT3dr4eOWO",
-            "FGY2WhTYpPnrIDTdsKH5",
-            "kPzsL2i3teMYv0FxEYQ6",
-            "UgBBYS2sOqTuMpoF3BR0",
-            "hpp4J3VqNfWAUOO0d1Us",
+            "pNInz6obpgDQGcFmaJgB",
+            "Xb7hH8MSUJpSbSDYk0k2",
+            "pqHfZKP75CvOlQylNhV4",
             "nPczCjzI2devNBz1zQrb",
-            "uYXf8XasLslADfZ2MB4u",
-            "gs0tAILXbY5DNrJrsM6F",
-            "DTKMou8ccj1ZaWGBiotd",
-            "vBKc2FfBKJfcZNyEt1n6",
-            "DYkrAHD8iwork3YSUBbs",
-            "56AoDkrOh6qfVPDXZ7Pt",
-            "eR40ATw9ArzDf9h3v7t7",
-            "g6xIsTj2HwM6VR4iXFCw",
-            "lcMyyd2HUfFzxdCaC4Ta",
-            "6aDn1KB0hjpdcocrUkmq",
-            "Sq93GQT4X1lKDXsQcixO",
-            "flHkNRp1BlvT73UL6gyz",
-            "9yzdeviXkFddZ4Oz8Mok",
-            "pPdl9cQBQq4p6mRkZy2Z",
-            "zYcjlYFOd3taleS0gkk3",
-            "nzeAacJi50IvxcyDnMXa",
-            "ruirxsoakN0GWmGNIo04",
-            "TC0Zp7WVFzhA8zpTlRqV",
-            "ljo9gAlSqKOvF6D8sOsX",
-            "PPzYpIqttlTYA83688JI",
-            "8JVbfL6oEdmuxKn5DK2C",
-            "iCrDUkL56s3C8sCRl7wb",
-            "wJqPPQ618aTW29mptyoc",
-            "EiNlNiXeDU1pqqOPrYMO",
-            "4YYIPFl9wE5c4L2eu2Gb",
-            "6F5Zhi321D3Oq7v1oNT4",
-            "YXpFCvM1S3JbWEJhoskW",
-            "LG95yZDEHg6fCZdQjLqj",
-            "CeNX9CMwmxDxUF5Q2Inm",
-            "aD6riP1btT197c6dACmy",
-            "mtrellq69YZsNwzUSyXh",
-            "dHd5gvgSOzSfduK4CvEg",
-            "eVItLK1UvXctxuaRV2Oq",
-            "esy0r39YPLQjOczyOib8",
-            "Tsns2HvNFKfGiNjllgqo",
-            "1U02n4nD6AdIZ9CjF053",
-            "AeRdCCKzvd23BpJoofzx",
-            "LruHrtVF6PSyGItzMNHS",
-            "1wGbFxmAM3Fgw63G1zZJ",
-            "hqfrgApggtO1785R4Fsn",
-            "MJ0RnG71ty4LH3dvNfSd"
+            "N2lVS1w4EtoT3dr4eOWO",
+            "IKne3meq5aSn9XLyUdCD",
+            "iP95p4xoKVk53GoZ742B",
+            "onwK4e9ZLuTAKqWW03F9",
+            "cjVigY5qzO86Huf0OWal",
+            "JBFqnCBsd6RMkjVDRZzb",
+            "SOYHLrjzK2X1ezoPC6cr",
+            "cgSgspJ2msm6clMCkdW9",
+            "FGY2WhTYpPnrIDTdsKH5",
+            "TX3LPaxmHKxFdv7VOQHJ",
+            "pFZP5JQG7iQjIQuC4Bku",
+            "XrExE9yKIg1WjnnlVkGX",
+            "SAz9YHcvj6GT2YYXdXww",
+            "CwhRBWXzGAHq8TQ4Fs17",
+            "EXAVITQu4vr4xnSDxMaL",
+            "bIHbv24MWmeRgasZH58o",
+            "hpp4J3VqNfWAUOO0d1Us"
           ]
         },
         {
           "name": "stability",
           "type": "number",
           "label": "Stability",
-          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01)",
           "required": false,
           "default": 0.5,
           "min": 0,
@@ -413,7 +296,7 @@
           "name": "similarity_boost",
           "type": "number",
           "label": "Similarity Boost",
-          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01)",
           "required": false,
           "default": 0.75,
           "min": 0,
@@ -424,7 +307,7 @@
           "name": "style",
           "type": "number",
           "label": "Style",
-          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01)",
           "required": false,
           "default": 0,
           "min": 0,
@@ -435,7 +318,7 @@
           "name": "speed",
           "type": "number",
           "label": "Speed",
-          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01) (step: 0.01)",
+          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01)",
           "required": false,
           "default": 1,
           "min": 0.7,
@@ -443,33 +326,10 @@
           "step": 0.1
         },
         {
-          "name": "timestamps",
-          "type": "boolean",
-          "label": "Timestamps",
-          "description": "Whether to return timestamps for each word in the generated speech (Boolean value (true/false))",
-          "required": false
-        },
-        {
-          "name": "previous_text",
-          "type": "textarea",
-          "label": "Previous Text",
-          "description": "The text that came before the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
-          "required": false,
-          "maxLength": 5000
-        },
-        {
-          "name": "next_text",
-          "type": "textarea",
-          "label": "Next Text",
-          "description": "The text that comes after the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
-          "required": false,
-          "maxLength": 5000
-        },
-        {
           "name": "language_code",
           "type": "string",
           "label": "Language Code",
-          "description": "Language code (ISO 639-1) used to enforce a language for the model. Currently only Turbo v2.5 and Flash v2.5 support language enforcement. For other models, an error will be returned if language code is provided. (Max length: 500 characters)",
+          "description": "Language code (ISO 639-1) used to enforce a language for the model. (Max length: 500 characters)",
           "required": false,
           "maxLength": 500
         }
@@ -1267,6 +1127,51 @@
           "description": "The random seed. Valid range: [0, 2147483647]. If not specified, the system will automatically generate a seed. A fixed seed can improve result reproducibility, but because the model itself is stochastic, results may still vary.",
           "required": false,
           "step": 1
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-omni-flash-1-2-extend",
+      "model": "google/gemini-omni-flash-1-2-extend",
+      "title": "Gemini Omni Flash 1.2 Extend",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/google/gemini-omni-flash-1-2-extend",
+      "fields": [
+        {
+          "name": "task_id",
+          "type": "string",
+          "label": "Task Id",
+          "description": "ID of the source task to extend. Required. Must be a completed `google/gemini-omni-flash-1-2` generation task, or a completed `google/gemini-omni-flash-1-2-extend` extend task. The source video must be 360p or 720p (1080p / 4k is not supported yet) and no longer than 15 seconds.",
+          "required": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Extend prompt. Required and must be non-empty. Describe what happens next, such as action, camera, environment, and sound. Put anything you do not want in the prompt as well.",
+          "required": true,
+          "maxLength": 20000
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "How many seconds to extend from the end. Required. Integer **3–10**. This is the length of the new segment, not the full output. Full duration is about source length + `duration`.",
+          "required": true,
+          "min": 3,
+          "max": 10,
+          "step": 1
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Reference image URLs, max **3**. Used to keep people and objects consistent.",
+          "required": false,
+          "maxItems": 3,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
         }
       ]
     },
@@ -2209,6 +2114,894 @@
             "opaque",
             "auto"
           ]
+        }
+      ]
+    },
+    {
+      "id": "gpt-image-2-6/economy-image-to-image",
+      "model": "gpt-image-2-6/economy-image-to-image",
+      "title": "GPT Image 2.6 Economy - Image to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/gpt/gpt-image-2-6-economy-image-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Instruction for how to edit or combine the input images. Say what should stay the same and what should change. Put any text that should appear in the image in quotes. Required, 1 to 20,000 characters.",
+          "required": true,
+          "maxLength": 20000
+        },
+        {
+          "name": "input_urls",
+          "type": "reference",
+          "label": "Input Urls",
+          "description": "Publicly accessible URLs of the images to edit or use as references. Optional. Up to 16 images; JPEG, PNG or WebP (including jpg), up to 30 MB each. With several images, refer to them by order in the prompt.",
+          "required": false,
+          "maxItems": 16,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the output image. `auto` (default) lets the model choose the frame that best fits the prompt and input images. Economy supports `auto`, `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `21:9`, `4:3` only.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3",
+            "21:9",
+            "4:3"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background handling.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "transparent",
+            "opaque",
+            "auto"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output image format. Default `png`. Economy supports `png` only.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gpt-image-2-6/economy-text-to-image",
+      "model": "gpt-image-2-6/economy-text-to-image",
+      "title": "GPT Image 2.6 Economy - Text to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/gpt/gpt-image-2-6-economy-text-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text description of the image to generate. Describe the subject, setting, composition, lighting and style. Put any text that should appear in the image in quotes. Required, 1 to 20,000 characters.",
+          "required": true,
+          "maxLength": 20000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the output image. `auto` (default) lets the model choose the frame that best fits the prompt. Economy supports `auto`, `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `21:9`, `4:3` only.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3",
+            "21:9",
+            "4:3"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background handling.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "transparent",
+            "opaque",
+            "auto"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output image format. Default `png`. Economy supports `png` and `gif` only.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "gif"
+          ]
+        },
+        {
+          "name": "frame_count",
+          "type": "enum",
+          "label": "Frame Count",
+          "description": "Number of frames. `auto` (default) lets the model choose. Allowed values: `auto`, `4`, `9`, `16`, `25`, `36`, `64`. This parameter is supported only when the output format is GIF.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "4",
+            "9",
+            "16",
+            "25",
+            "36",
+            "64"
+          ]
+        },
+        {
+          "name": "frame_duration_ms",
+          "type": "number",
+          "label": "Frame Duration Ms",
+          "description": "Duration of each frame in milliseconds. `auto` (default) lets the model choose. You can also pass any integer from 20 to 2000; values are rounded to a multiple of 10 ms. This parameter is supported only when the output format is GIF.",
+          "required": false,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "gpt-image-2-6/flare-image-to-image",
+      "model": "gpt-image-2-6/flare-image-to-image",
+      "title": "GPT Image 2.6 Flare - Image to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/gpt/gpt-image-2-6-flare-image-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Instruction for how to edit or combine the input images. Say what should stay the same and what should change. Put any text that should appear in the image in quotes. Required, 1 to 32,000 characters.",
+          "required": true,
+          "maxLength": 32000
+        },
+        {
+          "name": "input_urls",
+          "type": "reference",
+          "label": "Input Urls",
+          "description": "Reference image URLs. Required, up to 16 publicly accessible URLs. Accepted types: jpeg / png / webp.",
+          "required": true,
+          "maxItems": 16,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "mask_url",
+          "type": "reference",
+          "label": "Mask Url",
+          "description": "Inpaint mask URL. Optional. Cannot be used together with `markup`. Do not send when `output_format` is `gif` or `svg`.",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "markup",
+          "type": "string",
+          "label": "Markup",
+          "description": "Markup edit. Optional string: URL of a transparent PNG overlaid on the first reference image. Cannot be used together with `mask_url`.",
+          "required": false
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio. Optional, default `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "5:4",
+            "4:5",
+            "16:9",
+            "9:16",
+            "2:1",
+            "1:2",
+            "21:9",
+            "9:21",
+            "3:1",
+            "1:3"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Resolution tier. Optional, default `1K`.",
+          "required": false,
+          "default": "1K",
+          "enum": [
+            "1K",
+            "2K",
+            "4K"
+          ]
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Quality. Optional, default `medium`.",
+          "required": false,
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "auto"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background. Optional, default `auto`. Transparent background is only supported with `png` / `webp` / `gif`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "transparent",
+            "opaque",
+            "auto"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output format. Optional, default `png`. Passing `jpg` is treated as `jpeg`.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg",
+            "webp",
+            "gif",
+            "svg"
+          ]
+        },
+        {
+          "name": "complexity",
+          "type": "enum",
+          "label": "Complexity",
+          "description": "Planning complexity. Optional, default `high`.",
+          "required": false,
+          "default": "high",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "name": "moderation",
+          "type": "enum",
+          "label": "Moderation",
+          "description": "Moderation strength. Optional, default `low`.",
+          "required": false,
+          "default": "low",
+          "enum": [
+            "auto",
+            "low"
+          ]
+        },
+        {
+          "name": "output_compression",
+          "type": "number",
+          "label": "Output Compression",
+          "description": "JPEG / WebP compression, 0–100. Optional.",
+          "required": false,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "frame_count",
+          "type": "number",
+          "label": "Frame Count",
+          "description": "GIF frame count. Send only when `output_format=gif`. Integer 2–16, default 9. Do not send for non-gif.",
+          "required": false,
+          "default": 9,
+          "min": 2,
+          "max": 16,
+          "step": 1
+        },
+        {
+          "name": "frame_duration_ms",
+          "type": "number",
+          "label": "Frame Duration Ms",
+          "description": "Duration of each GIF frame. Send only when `output_format=gif`. Integer milliseconds, default 200, minimum 20, rounded to 10 ms. Do not send for non-gif.",
+          "required": false,
+          "default": 200,
+          "min": 20,
+          "max": 2000,
+          "step": 1
+        },
+        {
+          "name": "svg",
+          "type": "json",
+          "label": "Svg",
+          "description": "Send the whole `svg` object only when `output_format=svg`. Do not include `svg` for other formats.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "gpt-image-2-6/flare-text-to-image",
+      "model": "gpt-image-2-6/flare-text-to-image",
+      "title": "GPT Image 2.6 Flare - Text to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/gpt/gpt-image-2-6-flare-text-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text description of the image to generate. Describe the subject, setting, composition, lighting and style. Put any text that should appear in the image in quotes. Required, 1 to 32,000 characters.",
+          "required": true,
+          "maxLength": 32000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio. Optional, default `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "5:4",
+            "4:5",
+            "16:9",
+            "9:16",
+            "2:1",
+            "1:2",
+            "21:9",
+            "9:21",
+            "3:1",
+            "1:3"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Resolution tier. Optional, default `1K`.",
+          "required": false,
+          "default": "1K",
+          "enum": [
+            "1K",
+            "2K",
+            "4K"
+          ]
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Quality. Optional, default `medium`.",
+          "required": false,
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "auto"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background. Optional, default `auto`. Transparent background is only supported with `png` / `webp` / `gif`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "transparent",
+            "opaque",
+            "auto"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output format. Optional, default `png`. Passing `jpg` is treated as `jpeg`.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg",
+            "webp",
+            "gif",
+            "svg"
+          ]
+        },
+        {
+          "name": "complexity",
+          "type": "enum",
+          "label": "Complexity",
+          "description": "Planning complexity. Optional, default `high`.",
+          "required": false,
+          "default": "high",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "name": "moderation",
+          "type": "enum",
+          "label": "Moderation",
+          "description": "Moderation strength. Optional, default `low`.",
+          "required": false,
+          "default": "low",
+          "enum": [
+            "auto",
+            "low"
+          ]
+        },
+        {
+          "name": "output_compression",
+          "type": "number",
+          "label": "Output Compression",
+          "description": "JPEG / WebP compression, 0–100. Optional.",
+          "required": false,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "size",
+          "type": "string",
+          "label": "Size",
+          "description": "GIF **per-frame** pixel size. Send only when `output_format=gif`. Width and height must both be multiples of 16. Optional, default `auto` (currently equivalent to `512x512`). Do not pass ratio names such as `1:1`. Do not send for non-gif.",
+          "required": false,
+          "default": "auto"
+        },
+        {
+          "name": "frame_count",
+          "type": "number",
+          "label": "Frame Count",
+          "description": "GIF frame count. Send only when `output_format=gif`. Integer 2–16, default 9. Do not send for non-gif.",
+          "required": false,
+          "default": 9,
+          "min": 2,
+          "max": 16,
+          "step": 1
+        },
+        {
+          "name": "frame_duration_ms",
+          "type": "number",
+          "label": "Frame Duration Ms",
+          "description": "Duration of each GIF frame. Send only when `output_format=gif`. Integer milliseconds, default 200, minimum 20, rounded to 10 ms. Do not send for non-gif.",
+          "required": false,
+          "default": 200,
+          "min": 20,
+          "max": 2000,
+          "step": 1
+        },
+        {
+          "name": "svg",
+          "type": "json",
+          "label": "Svg",
+          "description": "Send the whole `svg` object only when `output_format=svg`. Do not include `svg` for other formats.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "gpt-image-2-6/sunburst-image-to-image",
+      "model": "gpt-image-2-6/sunburst-image-to-image",
+      "title": "GPT Image 2.6 Sunburst - Image to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/gpt/gpt-image-2-6-sunburst-image-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Instruction for how to edit or combine the input images. Say what should stay the same and what should change. Put any text that should appear in the image in quotes. Required, 1 to 32,000 characters.",
+          "required": true,
+          "maxLength": 32000
+        },
+        {
+          "name": "input_urls",
+          "type": "reference",
+          "label": "Input Urls",
+          "description": "Reference image URLs. Required, up to 16 publicly accessible URLs. Accepted types: jpeg / png / webp.",
+          "required": true,
+          "maxItems": 16,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "mask_url",
+          "type": "reference",
+          "label": "Mask Url",
+          "description": "Inpaint mask URL. Optional. Cannot be used together with `markup`. Do not send when `output_format` is `gif` or `svg`.",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "markup",
+          "type": "string",
+          "label": "Markup",
+          "description": "Markup edit. Optional string: URL of a transparent PNG overlaid on the first reference image. Cannot be used together with `mask_url`.",
+          "required": false
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio. Optional, default `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "5:4",
+            "4:5",
+            "16:9",
+            "9:16",
+            "2:1",
+            "1:2",
+            "21:9",
+            "9:21",
+            "3:1",
+            "1:3"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Resolution tier. Optional, default `1K`.",
+          "required": false,
+          "default": "1K",
+          "enum": [
+            "1K",
+            "2K",
+            "4K"
+          ]
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Quality. Optional, default `medium`.",
+          "required": false,
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "auto"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background. Optional, default `auto`. Transparent background is only supported with `png` / `webp` / `gif`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "transparent",
+            "opaque",
+            "auto"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output format. Optional, default `png`. Passing `jpg` is treated as `jpeg`.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg",
+            "webp",
+            "gif",
+            "svg"
+          ]
+        },
+        {
+          "name": "complexity",
+          "type": "enum",
+          "label": "Complexity",
+          "description": "Planning complexity. Optional, default `high`.",
+          "required": false,
+          "default": "high",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "name": "moderation",
+          "type": "enum",
+          "label": "Moderation",
+          "description": "Moderation strength. Optional, default `low`.",
+          "required": false,
+          "default": "low",
+          "enum": [
+            "auto",
+            "low"
+          ]
+        },
+        {
+          "name": "output_compression",
+          "type": "number",
+          "label": "Output Compression",
+          "description": "JPEG / WebP compression, 0–100. Optional.",
+          "required": false,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "frame_count",
+          "type": "number",
+          "label": "Frame Count",
+          "description": "GIF frame count. Send only when `output_format=gif`. Integer 2–16, default 9. Do not send for non-gif.",
+          "required": false,
+          "default": 9,
+          "min": 2,
+          "max": 16,
+          "step": 1
+        },
+        {
+          "name": "frame_duration_ms",
+          "type": "number",
+          "label": "Frame Duration Ms",
+          "description": "Duration of each GIF frame. Send only when `output_format=gif`. Integer milliseconds, default 200, minimum 20, rounded to 10 ms. Do not send for non-gif.",
+          "required": false,
+          "default": 200,
+          "min": 20,
+          "max": 2000,
+          "step": 1
+        },
+        {
+          "name": "svg",
+          "type": "json",
+          "label": "Svg",
+          "description": "Send the whole `svg` object only when `output_format=svg`. Do not include `svg` for other formats.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "gpt-image-2-6/sunburst-text-to-image",
+      "model": "gpt-image-2-6/sunburst-text-to-image",
+      "title": "GPT Image 2.6 Sunburst - Text to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/gpt/gpt-image-2-6-sunburst-text-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text description of the image to generate. Describe the subject, setting, composition, lighting and style. Put any text that should appear in the image in quotes. Required, 1 to 32,000 characters.",
+          "required": true,
+          "maxLength": 32000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio. Optional, default `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1:1",
+            "3:2",
+            "2:3",
+            "4:3",
+            "3:4",
+            "5:4",
+            "4:5",
+            "16:9",
+            "9:16",
+            "2:1",
+            "1:2",
+            "21:9",
+            "9:21",
+            "3:1",
+            "1:3"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Resolution tier. Optional, default `1K`.",
+          "required": false,
+          "default": "1K",
+          "enum": [
+            "1K",
+            "2K",
+            "4K"
+          ]
+        },
+        {
+          "name": "quality",
+          "type": "enum",
+          "label": "Quality",
+          "description": "Quality. Optional, default `medium`.",
+          "required": false,
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "auto"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background. Optional, default `auto`. Transparent background is only supported with `png` / `webp`/ `gif`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "transparent",
+            "opaque",
+            "auto"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output format. Optional, default `png`. Passing `jpg` is treated as `jpeg`.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg",
+            "webp",
+            "gif",
+            "svg"
+          ]
+        },
+        {
+          "name": "complexity",
+          "type": "enum",
+          "label": "Complexity",
+          "description": "Planning complexity. Optional, default `high`.",
+          "required": false,
+          "default": "high",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "name": "moderation",
+          "type": "enum",
+          "label": "Moderation",
+          "description": "Moderation strength. Optional, default `low`.",
+          "required": false,
+          "default": "low",
+          "enum": [
+            "auto",
+            "low"
+          ]
+        },
+        {
+          "name": "output_compression",
+          "type": "number",
+          "label": "Output Compression",
+          "description": "JPEG / WebP compression, 0–100. Optional.",
+          "required": false,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "size",
+          "type": "string",
+          "label": "Size",
+          "description": "GIF **per-frame** pixel size. Send only when `output_format=gif`. Width and height must both be multiples of 16. Optional, default `auto` (currently equivalent to `512x512`). Do not pass ratio names such as `1:1`. Do not send for non-gif.",
+          "required": false,
+          "default": "auto"
+        },
+        {
+          "name": "frame_count",
+          "type": "number",
+          "label": "Frame Count",
+          "description": "GIF frame count. Send only when `output_format=gif`. Integer 2–16, default 9. Do not send for non-gif.",
+          "required": false,
+          "default": 9,
+          "min": 2,
+          "max": 16,
+          "step": 1
+        },
+        {
+          "name": "frame_duration_ms",
+          "type": "number",
+          "label": "Frame Duration Ms",
+          "description": "Duration of each GIF frame. Send only when `output_format=gif`. Integer milliseconds, default 200, minimum 20, rounded to 10 ms. Do not send for non-gif.",
+          "required": false,
+          "default": 200,
+          "min": 20,
+          "max": 2000,
+          "step": 1
+        },
+        {
+          "name": "svg",
+          "type": "json",
+          "label": "Svg",
+          "description": "Send the whole `svg` object only when `output_format=svg`. Do not include `svg` for other formats.",
+          "required": false
         }
       ]
     },
@@ -3199,6 +3992,253 @@
           "description": "Description of what to exclude from the generated image. If the positive prompt conflicts with the negative prompt, the positive prompt takes precedence. Maximum length: 5000 characters.",
           "required": false,
           "maxLength": 5000
+        }
+      ]
+    },
+    {
+      "id": "kie/image-upscale",
+      "model": "kie/image-upscale",
+      "title": "Kie - Image Upscale",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kie/image-upscale",
+      "fields": [
+        {
+          "name": "image_url",
+          "type": "reference",
+          "label": "Image Url",
+          "description": "URL of the image to upscale. Required.",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "upscale_factor",
+          "type": "enum",
+          "label": "Upscale Factor",
+          "description": "Upscale factor applied to both width and height, keeping the aspect ratio. Optional. Allowed values: `\"1\"`, `\"2\"`, `\"4\"`, `\"8\"` (numbers are also accepted). Default: `\"2\"`.",
+          "required": false,
+          "default": "2",
+          "enum": [
+            "1",
+            "2",
+            "4",
+            "8"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "minimax-h3/image-edit",
+      "model": "minimax-h3/image-edit",
+      "title": "MiniMax H3 Image Editing",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/minimax-h3/image-edit",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Required. Editing instruction, 1–5000 characters; Chinese and English are both supported. Refer to reference images as `<Picture 1>`, `<Picture 2>`, … (in `image_urls` order).",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the output image. Optional, defaults to `auto`.",
+          "required": false,
+          "enum": [
+            "auto",
+            "1:1",
+            "5:4",
+            "4:3",
+            "3:2",
+            "16:9",
+            "21:9",
+            "4:5",
+            "3:4",
+            "2:3",
+            "9:16"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output size tier. Optional, default `2K`; case-insensitive.",
+          "required": false,
+          "default": "2K",
+          "enum": [
+            "1K",
+            "2K",
+            "4K"
+          ]
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed, 0–2147483647. Optional; a random seed is used when omitted, and the actual seed is returned with the result. With prompt expansion on, the rewritten prompt differs each time, so results are only reproducible when `expand_prompt` is `false`.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        },
+        {
+          "name": "expand_prompt",
+          "type": "boolean",
+          "label": "Expand Prompt",
+          "description": "Whether to rewrite the prompt into a detailed English description before generating. Optional. Prompt expansion is on by default; we recommend keeping it on for better image quality.",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output image format. Optional, default `png`. JPEG uses quality 95 and is much smaller; 4K PNG files are very large, so use JPEG when you need smaller files.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Required. Reference image URLs (publicly accessible URLs, not file content).",
+          "required": true,
+          "maxItems": 16,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "width",
+          "type": "number",
+          "label": "Width",
+          "description": "Custom output width in pixels, 1–8192. Optional. **`width` and `height` must be set together** (if one is set, the other is required). When they are set, **do not pass `resolution` or `aspect_ratio`** — this combination is not accepted.",
+          "required": false,
+          "min": 1,
+          "max": 8192,
+          "step": 1
+        },
+        {
+          "name": "height",
+          "type": "number",
+          "label": "Height",
+          "description": "Custom output height in pixels, 1–8192. Optional, but must be set together with `width`. See `width` for limits, priority and billing.",
+          "required": false,
+          "min": 1,
+          "max": 8192,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "minimax-h3/text-to-image",
+      "model": "minimax-h3/text-to-image",
+      "title": "MiniMax H3 Text-to-Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/minimax-h3/text-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Required. Text prompt, 1–5000 characters; Chinese and English are both supported.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the output image. Optional, defaults to `auto`.",
+          "required": false,
+          "enum": [
+            "auto",
+            "1:1",
+            "5:4",
+            "4:3",
+            "3:2",
+            "16:9",
+            "21:9",
+            "4:5",
+            "3:4",
+            "2:3",
+            "9:16"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output size tier. Optional, default `2K`; case-insensitive.",
+          "required": false,
+          "default": "2K",
+          "enum": [
+            "1K",
+            "2K",
+            "4K"
+          ]
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Random seed, 0–2147483647. Optional; a random seed is used when omitted, and the actual seed is returned with the result. With prompt expansion on, the rewritten prompt differs each time, so results are only reproducible when `expand_prompt` is `false`.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        },
+        {
+          "name": "expand_prompt",
+          "type": "boolean",
+          "label": "Expand Prompt",
+          "description": "Whether to rewrite the prompt into a detailed English description before generating. Optional. Prompt expansion is on by default; we recommend keeping it on for better image quality.",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output image format. Optional, default `png`. JPEG uses quality 95 and is much smaller; 4K PNG files are very large, so use JPEG when you need smaller files.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
+          "name": "width",
+          "type": "number",
+          "label": "Width",
+          "description": "Custom output width in pixels, 1–8192. Optional. **`width` and `height` must be set together** (if one is set, the other is required). When they are set, **do not pass `resolution` or `aspect_ratio`** — this combination is not accepted.",
+          "required": false,
+          "min": 1,
+          "max": 8192,
+          "step": 1
+        },
+        {
+          "name": "height",
+          "type": "number",
+          "label": "Height",
+          "description": "Custom output height in pixels, 1–8192. Optional, but must be set together with `width`. See `width` for limits, priority and billing.",
+          "required": false,
+          "min": 1,
+          "max": 8192,
+          "step": 1
         }
       ]
     },
@@ -5299,6 +6339,261 @@
       ]
     },
     {
+      "id": "seedream/5-5-image-to-image",
+      "model": "seedream/5-5-image-to-image",
+      "title": "Seedream5.5 - Image to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/seedream/5-5-image-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Required. Editing instruction, 5–5000 characters.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Required. Input image URLs (publicly accessible URLs, not file content).",
+          "required": true,
+          "maxItems": 10,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the output image. Defaults to `auto` (decided by the model). `auto` is not supported when `size` is `3K`; choose a fixed aspect ratio.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "1:1",
+            "4:3",
+            "3:4",
+            "16:9",
+            "9:16",
+            "2:3",
+            "3:2",
+            "21:9",
+            "auto"
+          ]
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "label": "Size",
+          "description": "Resolution tier of the output image. Affects the credit cost. Defaults to `2K`.",
+          "required": false,
+          "default": "2K",
+          "enum": [
+            "1K",
+            "1.5K",
+            "2K",
+            "3K"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output image format. Defaults to `png`.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background of the output image. Defaults to `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "transparent",
+            "opaque"
+          ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. When false, no additional content filtering is applied and results are returned directly by the model.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "seedream/5-5-layer-decomposition",
+      "model": "seedream/5-5-layer-decomposition",
+      "title": "Seedream5.5 - Layer Decomposition",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/seedream/5-5-layer-decomposition",
+      "fields": [
+        {
+          "name": "image_url",
+          "type": "reference",
+          "label": "Image Url",
+          "description": "Required. URL of the image to decompose.",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Optional. Describes which elements to separate, 0–2000 characters.",
+          "required": false,
+          "maxLength": 2000
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "label": "Size",
+          "description": "Resolution tier of the output images. Defaults to `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "1K",
+            "1.5K",
+            "2K"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Format of the base image. Defaults to `png`. Only affects the base image; separated layers are always PNG (transparent background).",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
+          "name": "max_images",
+          "type": "number",
+          "label": "Max Images",
+          "description": "Maximum number of output images, including the base image. Range 2–100, defaults to 30. Billing is based on the number of images actually returned.",
+          "required": false,
+          "default": 30,
+          "min": 2,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "text_recognition",
+          "type": "boolean",
+          "label": "Text Recognition",
+          "description": "Whether to recognize text in the layers. Defaults to `false`.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. When false, no additional content filtering is applied and results are returned directly by the model.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "seedream/5-5-text-to-image",
+      "model": "seedream/5-5-text-to-image",
+      "title": "Seedream5.5 - Text to Image",
+      "category": "image",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/seedream/5-5-text-to-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Required. Text prompt, 5–5000 characters.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Required. Aspect ratio of the output image.",
+          "required": true,
+          "enum": [
+            "1:1",
+            "4:3",
+            "3:4",
+            "16:9",
+            "9:16",
+            "2:3",
+            "3:2",
+            "21:9"
+          ]
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "label": "Size",
+          "description": "Resolution tier of the output image. Affects the credit cost. Defaults to `2K`.",
+          "required": false,
+          "default": "2K",
+          "enum": [
+            "1K",
+            "1.5K",
+            "2K",
+            "3K"
+          ]
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Output image format. Defaults to `png`.",
+          "required": false,
+          "default": "png",
+          "enum": [
+            "png",
+            "jpeg"
+          ]
+        },
+        {
+          "name": "background",
+          "type": "enum",
+          "label": "Background",
+          "description": "Background of the output image. Defaults to `auto`.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "transparent",
+            "opaque"
+          ]
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. When false, no additional content filtering is applied and results are returned directly by the model.",
+          "required": false
+        }
+      ]
+    },
+    {
       "id": "topaz/image-upscale",
       "model": "topaz/image-upscale",
       "title": "Topaz - Image Upscale",
@@ -5991,6 +7286,19 @@
           "mentionStyle": "at-audio"
         },
         {
+          "name": "omni_reference_task_type",
+          "type": "enum",
+          "label": "Omni Reference Task Type",
+          "description": "Optional. Explicitly sets the task type for a multimodal reference request, instead of letting the model detect it automatically.",
+          "required": false,
+          "enum": [
+            "auto",
+            "reference",
+            "edit",
+            "extend"
+          ]
+        },
+        {
           "name": "return_last_frame",
           "type": "boolean",
           "label": "Return Last Frame",
@@ -6010,13 +7318,14 @@
           "name": "resolution",
           "type": "enum",
           "label": "Resolution",
-          "description": "Video resolution - 480p for faster generation, 720p for balance.",
+          "description": "Video resolution - 480p for faster generation, 720p for balance, 1080p for high-quality video, 4k for Ultra-High Definition with the finest visual detail. 4k output is 3840×2160 at 16:9, encoded as H.265 (HEVC) 10-bit, and takes longer to generate than lower resolutions. Make sure your player or pipeline supports HEVC.",
           "required": false,
           "default": "720p",
           "enum": [
             "480p",
             "720p",
-            "1080p"
+            "1080p",
+            "4k"
           ]
         },
         {
@@ -6102,10 +7411,11 @@
           "name": "resolution",
           "type": "enum",
           "label": "Resolution",
-          "description": "output video resolution.",
+          "description": "Output video resolution. Supports 1080p or 4k (native 4K). Defaults to 1080p.",
           "required": true,
           "enum": [
-            "1080p"
+            "1080p",
+            "4k"
           ]
         },
         {
@@ -6126,6 +7436,170 @@
           "description": "Whether to also return the last frame of the generated video as a JPEG (in resultJson.lastFrameUrl). Default false.",
           "required": false,
           "default": false
+        },
+        {
+          "name": "nsfw_checker",
+          "type": "boolean",
+          "label": "Nsfw Checker",
+          "description": "Defaults to false. When false, no additional content filtering is applied and results are returned directly by the model.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "bytedance/seedance-2-5-flash",
+      "model": "bytedance/seedance-2-5-flash",
+      "title": "Bytedance Seedance 2.5 Flash",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/bytedance/seedance-2-5-flash",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "The text prompt used to generate the video.",
+          "required": false,
+          "maxLength": 20480
+        },
+        {
+          "name": "first_frame_url",
+          "type": "reference",
+          "label": "First Frame Url",
+          "description": "First frame image URL or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "last_frame_url",
+          "type": "reference",
+          "label": "Last Frame Url",
+          "description": "End frame image URL or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "reference_image_urls",
+          "type": "reference",
+          "label": "Reference Image Urls",
+          "description": "Enter a list of image URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
+          "required": false,
+          "maxItems": 10,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "reference_video_urls",
+          "type": "reference",
+          "label": "Reference Video Urls",
+          "description": "Enter a list of video URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
+          "required": false,
+          "maxItems": 5,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
+        },
+        {
+          "name": "reference_audio_urls",
+          "type": "reference",
+          "label": "Reference Audio Urls",
+          "description": "Enter a list of audio URLs or asset://{assetId} (for example: asset://asset-20260404242101-76djj).",
+          "required": false,
+          "maxItems": 5,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio"
+        },
+        {
+          "name": "omni_reference_task_type",
+          "type": "enum",
+          "label": "Omni Reference Task Type",
+          "description": "Optional. Explicitly sets the task type for a multimodal reference request, instead of letting the model detect it automatically.",
+          "required": false,
+          "enum": [
+            "auto",
+            "reference",
+            "edit",
+            "extend"
+          ]
+        },
+        {
+          "name": "return_last_frame",
+          "type": "boolean",
+          "label": "Return Last Frame",
+          "description": "Whether to also return the last frame of the generated video as a JPEG (in resultJson.lastFrameUrl). Default: false.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "generate_audio",
+          "type": "boolean",
+          "label": "Generate Audio",
+          "description": "Whether to generate audio synchronized with the video. Default: true.",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Video resolution - 480p for faster generation, 720p for balance.",
+          "required": false,
+          "default": "720p",
+          "enum": [
+            "480p",
+            "720p"
+          ]
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Video aspect ratio configuration. First-frame and first-and-last-frame requests only support `adaptive`.",
+          "required": false,
+          "default": "adaptive",
+          "enum": [
+            "1:1",
+            "4:3",
+            "3:4",
+            "16:9",
+            "9:16",
+            "21:9",
+            "adaptive"
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video duration in 4-30 seconds.",
+          "required": false,
+          "step": 1,
+          "min": 4,
+          "max": 30
+        },
+        {
+          "name": "output_format",
+          "type": "enum",
+          "label": "Output Format",
+          "description": "Video output format.",
+          "required": false,
+          "default": "mp4",
+          "enum": [
+            "mp4",
+            "mov"
+          ]
+        },
+        {
+          "name": "web_search",
+          "type": "boolean",
+          "label": "Web Search",
+          "description": "Enable online search.",
+          "required": false
         },
         {
           "name": "nsfw_checker",
@@ -7171,13 +8645,6 @@
           "label": "Prompt Optimizer",
           "description": "Whether to use the model's prompt optimizer (Boolean value (true/false))",
           "required": false
-        },
-        {
-          "name": "nsfw_checker",
-          "type": "boolean",
-          "label": "Nsfw Checker",
-          "description": "Defaults to false. When false, no additional content filtering is applied and results are returned directly by the model.",
-          "required": false
         }
       ]
     },
@@ -7745,6 +9212,40 @@
           "description": "Random seed for reproducibility. Valid range is 10000 to 1000000.",
           "required": false,
           "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "video/upscale",
+      "model": "video/upscale",
+      "title": "Kie - Video Upscale",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kie/video-upscale",
+      "fields": [
+        {
+          "name": "video_url",
+          "type": "reference",
+          "label": "Video Url",
+          "description": "URL of the video to upscale. Required.",
+          "required": true,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Target output box. Optional. Allowed values: `1080P`, `2K`, `4K` (uppercase, exactly as shown). Default: `2K`.",
+          "required": false,
+          "default": "2K",
+          "enum": [
+            "1080P",
+            "2K",
+            "4K"
+          ]
         }
       ]
     },
@@ -8335,6 +9836,260 @@
       ]
     },
     {
+      "id": "kling-4.0/flash-keyframe-to-video",
+      "model": "kling-4.0/flash-keyframe-to-video",
+      "title": "Kling 4.0 Flash Keyframe To Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kling/v4-flash-keyframe-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Video description. Required. Maximum 8000 characters.",
+          "required": true,
+          "maxLength": 8000
+        },
+        {
+          "name": "first_frame_url",
+          "type": "reference",
+          "label": "First Frame Url",
+          "description": "Optional first-frame image URL. Mention it in the prompt as `@first_frame`. If omitted, the request is plain text-to-video. Middle frames (`keyframes`) and a last frame (`last_frame`) are not supported.",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Output video duration in seconds. Integer from 3 to 20. Default: `5`.",
+          "required": false,
+          "default": 5,
+          "min": 3,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution. Kling 4.0 Flash only supports `720p`. Default: `720p`.",
+          "required": false,
+          "default": "720p",
+          "enum": [
+            "720p"
+          ]
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Output aspect ratio. `16:9`, `9:16`, `1:1`, `21:9`, `4:3`, or `3:4`. There is no `auto`. Only used when `first_frame_url` is omitted (text-to-video); default `16:9`. When a first frame is provided, the output follows that image's aspect ratio.",
+          "required": false,
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "21:9",
+            "4:3",
+            "3:4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kling-4.0/flash-reference-to-video",
+      "model": "kling-4.0/flash-reference-to-video",
+      "title": "Kling 4.0 Flash Reference To Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kling/v4-flash-reference-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Video description. Required. Maximum 8000 characters.",
+          "required": true,
+          "maxLength": 8000
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Reference images, up to 10 publicly accessible URLs. Mention them in the prompt as `@image_1`, `@image_2`, … in array order.",
+          "required": false,
+          "default": [],
+          "maxItems": 10,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "video_urls",
+          "type": "reference",
+          "label": "Video Urls",
+          "description": "Reference videos, up to 5 publicly accessible URLs. Mention them in the prompt as `@video_1`, `@video_2`, …. Reference videos plus video subjects in `elements` cannot exceed 5 in total. Combined duration of all reference videos and video elements must be 2–20 seconds; if it is outside that range the completion callback returns a failure.",
+          "required": false,
+          "default": [],
+          "maxItems": 5,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
+        },
+        {
+          "name": "keep_original_sound",
+          "type": "boolean",
+          "label": "Keep Original Sound",
+          "description": "Whether to keep the original audio of the reference videos. Only takes effect when `video_urls` is provided. Default: `false`. If no reference video is provided, native audio is always generated.",
+          "required": false,
+          "default": false
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Output video duration in seconds. Integer from 3 to 20. Default: `5`.",
+          "required": false,
+          "default": 5,
+          "min": 3,
+          "max": 20,
+          "step": 1
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution. Kling 4.0 Flash only supports `720p`. Default: `720p`.",
+          "required": false,
+          "default": "720p",
+          "enum": [
+            "720p"
+          ]
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Output aspect ratio. Optional.",
+          "required": false,
+          "enum": [
+            "auto",
+            "16:9",
+            "9:16",
+            "1:1",
+            "21:9",
+            "4:3",
+            "3:4"
+          ]
+        },
+        {
+          "name": "elements",
+          "type": "json",
+          "label": "Elements",
+          "description": "Subjects used only for this task. Up to 7 items, of which at most 3 can be video subjects. Mention them in the prompt as `@name`. `image_urls`, `video_urls`, and `elements` together cannot exceed 15 items. Standalone `voices` is not supported on Flash.",
+          "required": false,
+          "default": [],
+          "maxItems": 7
+        }
+      ]
+    },
+    {
+      "id": "kling-4-0/image",
+      "model": "kling-4-0/image",
+      "title": "Kling 4.0 Image",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kling-4-0/image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt describing the image to generate (required, max 20000 characters).",
+          "required": true,
+          "maxLength": 20000
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Reference images (optional, up to 10).",
+          "required": false,
+          "default": [],
+          "maxItems": 10,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "elements",
+          "type": "json",
+          "label": "Elements",
+          "description": "Subjects created for this task only (optional). Mention them in `prompt` as `@name`.",
+          "required": false,
+          "default": [],
+          "maxItems": 10
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "label": "Mode",
+          "description": "Generation mode.",
+          "required": false,
+          "default": "default",
+          "enum": [
+            "default",
+            "series"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution. `2k` / `4k` usually return PNG, `8k` returns JPEG — do not hard-code the file extension.",
+          "required": false,
+          "default": "2k",
+          "enum": [
+            "2k",
+            "4k",
+            "8k"
+          ]
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the output image. `auto` lets the model choose based on the prompt and reference images.",
+          "required": false,
+          "default": "auto",
+          "enum": [
+            "auto",
+            "9:16",
+            "2:3",
+            "3:4",
+            "1:1",
+            "4:3",
+            "3:2",
+            "16:9",
+            "21:9"
+          ]
+        },
+        {
+          "name": "count",
+          "type": "number",
+          "label": "Count",
+          "description": "Number of images to generate (integer).",
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "max": 10,
+          "step": 1
+        }
+      ]
+    },
+    {
       "id": "kling-4.0/keyframe-to-video",
       "model": "kling-4.0/keyframe-to-video",
       "title": "Kling 4.0 Keyframe To Video",
@@ -8365,12 +10120,25 @@
           "name": "resolution",
           "type": "enum",
           "label": "Resolution",
-          "description": "Output resolution. `720p` or `1080p`. Default: `720p`.",
+          "description": "Output resolution. Default: `720p`.",
           "required": false,
           "default": "720p",
           "enum": [
             "720p",
-            "1080p"
+            "1080p",
+            "4k"
+          ]
+        },
+        {
+          "name": "dynamic_range",
+          "type": "enum",
+          "label": "Dynamic Range",
+          "description": "Dynamic range of the output video. Optional. Default: `sdr`.",
+          "required": false,
+          "default": "sdr",
+          "enum": [
+            "sdr",
+            "hdr"
           ]
         },
         {
@@ -8384,7 +10152,9 @@
             "16:9",
             "9:16",
             "1:1",
-            "21:9"
+            "21:9",
+            "4:3",
+            "3:4"
           ]
         },
         {
@@ -8423,6 +10193,85 @@
       ]
     },
     {
+      "id": "kling-4-0/long-image",
+      "model": "kling-4-0/long-image",
+      "title": "Kling 4.0 Long Image",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/kling-4-0/long-image",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Required. Text prompt, max 20000 characters.",
+          "required": true,
+          "maxLength": 20000
+        },
+        {
+          "name": "image_urls",
+          "type": "reference",
+          "label": "Image Urls",
+          "description": "Product reference images, **required for `ecommerce`** (1–3 publicly accessible URLs), referenced as `@image_1` onward in order. Sending this with `webpage` returns 422. Do not use the field name `images`. Supported formats: jpg, jpeg, png; max 20MB per image.",
+          "required": false,
+          "maxItems": 3,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "skill",
+          "type": "enum",
+          "label": "Skill",
+          "description": "Required. Generation mode (case-insensitive).",
+          "required": true,
+          "default": "ecommerce",
+          "enum": [
+            "ecommerce",
+            "webpage"
+          ]
+        },
+        {
+          "name": "style_image",
+          "type": "string",
+          "label": "Style Image",
+          "description": "Style reference image, **`webpage` only**, optional. Reference it in the prompt as `@style` to borrow its visual style and layout. Supported formats: jpg, jpeg, png; max 20MB per image. Sending this with `ecommerce` returns 422.",
+          "required": false
+        },
+        {
+          "name": "subject_image",
+          "type": "string",
+          "label": "Subject Image",
+          "description": "Subject reference image, **`webpage` only**, optional. Reference it in the prompt as `@subject`; the subject in the image is preserved in the output. Supported formats: jpg, jpeg, png; max 20MB per image. Sending this with `ecommerce` returns 422.",
+          "required": false
+        },
+        {
+          "name": "length",
+          "type": "enum",
+          "label": "Length",
+          "description": "Page length, **`ecommerce` only**. Defaults to `medium`.",
+          "required": false,
+          "default": "medium",
+          "enum": [
+            "short",
+            "medium",
+            "long"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution, available for both skills. Defaults to `2k`. Pricing depends only on resolution, not on `skill` or `length`.",
+          "required": false,
+          "default": "2k",
+          "enum": [
+            "1k",
+            "2k"
+          ]
+        }
+      ]
+    },
+    {
       "id": "kling-4.0/reference-to-video",
       "model": "kling-4.0/reference-to-video",
       "title": "Kling 4.0 Reference To Video",
@@ -8453,12 +10302,25 @@
           "name": "resolution",
           "type": "enum",
           "label": "Resolution",
-          "description": "Output resolution. `720p` or `1080p`. Default: `720p`.",
+          "description": "Output resolution. Default: `720p`.",
           "required": false,
           "default": "720p",
           "enum": [
             "720p",
-            "1080p"
+            "1080p",
+            "4k"
+          ]
+        },
+        {
+          "name": "dynamic_range",
+          "type": "enum",
+          "label": "Dynamic Range",
+          "description": "Dynamic range of the output video. Optional. Default: `sdr`.",
+          "required": false,
+          "default": "sdr",
+          "enum": [
+            "sdr",
+            "hdr"
           ]
         },
         {
@@ -8472,7 +10334,9 @@
             "16:9",
             "9:16",
             "1:1",
-            "21:9"
+            "21:9",
+            "4:3",
+            "3:4"
           ]
         },
         {
@@ -8785,18 +10649,6 @@
           "min": 0,
           "max": 1,
           "step": 0.1
-        },
-        {
-          "name": "tail_image_url",
-          "type": "reference",
-          "label": "Tail Image Url",
-          "description": "URL of the image to be used for the end of the video (File URL after upload, not file content; Accepted types: image/jpeg, image/png; Max size: 10.0MB)",
-          "required": false,
-          "accept": "image/jpeg,image/png,image/webp,image/*",
-          "mentionStyle": "at-image",
-          "maxFileSizeMb": 10,
-          "maxItems": 1,
-          "scalar": true
         }
       ]
     },
@@ -8913,6 +10765,644 @@
           "label": "Character Orientation",
           "description": "(Optional) Reference source for character orientation. video: Refer to video (recommended); image: Refer to image. Default value: video",
           "required": false
+        }
+      ]
+    },
+    {
+      "id": "ltx/2-5-fast-audio-to-video",
+      "model": "ltx/2-5-fast-audio-to-video",
+      "title": "LTX 2.5 Fast Audio-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/ltx/2-5-fast-audio-to-video",
+      "fields": [
+        {
+          "name": "audio_url",
+          "type": "reference",
+          "label": "Audio Url",
+          "description": "Public URL of the input audio: speech, singing or music (MP3 / WAV / M4A / AAC / OGG / FLAC), at least 2 seconds, up to 50 MB. The output soundtrack is this audio.",
+          "required": true,
+          "default": "https://static.aiquickdraw.com/tools/example/1795063098042_TEPM4PQh.mp3",
+          "accept": "audio/*",
+          "mentionStyle": "at-audio",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "image_url",
+          "type": "reference",
+          "label": "Image Url",
+          "description": "Optional. Public URL of a first-frame image (JPG / PNG / WEBP, up to 10 MB), for example a portrait for a talking video. If given, the output keeps the image's aspect ratio; otherwise the output is 16:9.",
+          "required": false,
+          "default": "https://static.aiquickdraw.com/tools/example/1795060017742_46uwCHq4.jpg",
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, 1–5000 characters, any language. Describe the scene, action, camera and sound. Text inside quotes is spoken as dialogue in its original language. Write \"Shot 1 / Shot 2 …\" for multiple shots.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution (short side). Billing depends on resolution.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p",
+            "1440p"
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "number",
+          "label": "Fps",
+          "description": "Frame rate. Does not change the price. 48 and 50 fps allow up to 10 seconds.",
+          "required": false,
+          "default": 24,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Optional. Output length in seconds, cut from the start of the audio: 2 to 20 (decimals allowed), at most 10 at 1440p or at 48 / 50 fps. If omitted, the video matches the length of the audio (audio longer than the limit is cut to the limit). The audio must not be shorter than this value.",
+          "required": false,
+          "min": 2,
+          "max": 20,
+          "step": 0.1
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "ltx/2-5-fast-image-to-video",
+      "model": "ltx/2-5-fast-image-to-video",
+      "title": "LTX 2.5 Fast Image-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/ltx/2-5-fast-image-to-video",
+      "fields": [
+        {
+          "name": "image_url",
+          "type": "reference",
+          "label": "Image Url",
+          "description": "Public URL of the first-frame image (JPG / PNG / WEBP, up to 10 MB). The output keeps the image's aspect ratio: the short side equals the resolution, and ratios beyond 3:1 are capped at 3:1.",
+          "required": true,
+          "default": "https://static.aiquickdraw.com/tools/example/1795061456058_Q2aeF8S6.jpg",
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, 1–5000 characters, any language. Describe the scene, action, camera and sound. Text inside quotes is spoken as dialogue in its original language. Write \"Shot 1 / Shot 2 …\" for multiple shots.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution (short side). Billing depends on resolution.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p",
+            "1440p"
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "number",
+          "label": "Fps",
+          "description": "Frame rate. Does not change the price. 48 and 50 fps allow up to 10 seconds.",
+          "required": false,
+          "default": 24,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: 6, 8, 10, 12, 14, 16, 18 or 20 at 720p / 1080p with 24 / 25 fps; only 6, 8 or 10 at 1440p or at 48 / 50 fps.",
+          "required": false,
+          "default": 10,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "ltx/2-5-fast-text-to-video",
+      "model": "ltx/2-5-fast-text-to-video",
+      "title": "LTX 2.5 Fast Text-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/ltx/2-5-fast-text-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, 1–5000 characters, any language. Describe the scene, action, camera and sound. Text inside quotes is spoken as dialogue in its original language. Write \"Shot 1 / Shot 2 …\" for multiple shots.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution (short side). Billing depends on resolution.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p",
+            "1440p"
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "number",
+          "label": "Fps",
+          "description": "Frame rate. Does not change the price. 48 and 50 fps allow up to 10 seconds.",
+          "required": false,
+          "default": 24,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: 6, 8, 10, 12, 14, 16, 18 or 20 at 720p / 1080p with 24 / 25 fps; only 6, 8 or 10 at 1440p or at 48 / 50 fps.",
+          "required": false,
+          "default": 10,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the video.",
+          "required": false,
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "3:2",
+            "2:3"
+          ]
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "ltx/2-5-pro-image-to-video",
+      "model": "ltx/2-5-pro-image-to-video",
+      "title": "LTX 2.5 Pro Image-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/ltx/2-5-pro-image-to-video",
+      "fields": [
+        {
+          "name": "image_url",
+          "type": "reference",
+          "label": "Image Url",
+          "description": "Public URL of the first-frame image (JPG / PNG / WEBP, up to 10 MB). The output keeps the image's aspect ratio: the short side equals the resolution, and ratios beyond 3:1 are capped at 3:1.",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, 1–5000 characters, any language. Describe the scene, action, camera and sound. Text inside quotes is spoken as dialogue in its original language. Write \"Shot 1 / Shot 2 …\" for multiple shots.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution (short side): 720p or 1080p. Billing depends on resolution.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "number",
+          "label": "Fps",
+          "description": "Frame rate. Does not change the price.",
+          "required": false,
+          "default": 24,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: 6, 8 or 10.",
+          "required": false,
+          "default": 10,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "ltx/2-5-pro-text-to-video",
+      "model": "ltx/2-5-pro-text-to-video",
+      "title": "LTX 2.5 Pro Text-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/ltx/2-5-pro-text-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, 1–5000 characters, any language. Describe the scene, action, camera and sound. Text inside quotes is spoken as dialogue in its original language. Write \"Shot 1 / Shot 2 …\" for multiple shots.",
+          "required": true,
+          "maxLength": 5000
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution (short side): 720p or 1080p. Billing depends on resolution.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "720p",
+            "1080p"
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "number",
+          "label": "Fps",
+          "description": "Frame rate. Does not change the price.",
+          "required": false,
+          "default": 24,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: 6, 8 or 10.",
+          "required": false,
+          "default": 10,
+          "enum": [],
+          "step": 1
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the video.",
+          "required": false,
+          "default": "16:9",
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "3:2",
+            "2:3"
+          ]
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "magi-2/image-to-video",
+      "model": "magi-2/image-to-video",
+      "title": "MAGI-2 Image-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/magi-2/image-to-video",
+      "fields": [
+        {
+          "name": "first_frame_url",
+          "type": "reference",
+          "label": "First Frame Url",
+          "description": "Public URL of the first-frame image (JPG / PNG / WEBP). The video starts from this image, and the output follows its aspect ratio.",
+          "required": true,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "last_frame_url",
+          "type": "reference",
+          "label": "Last Frame Url",
+          "description": "Optional. Public URL of the last-frame image (JPG / PNG / WEBP). If provided, the video ends on this image.",
+          "required": false,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image",
+          "maxItems": 1,
+          "scalar": true
+        },
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, up to 15,000 characters. Describe the motion, camera moves and sound; put dialogue in quotes.",
+          "required": true,
+          "maxLength": 15000
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: any whole number from 4 to 30. Billed per second of video.",
+          "required": false,
+          "default": 5,
+          "min": 4,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution. Only 1080p is available.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "1080p"
+          ]
+        },
+        {
+          "name": "generate_audio",
+          "type": "boolean",
+          "label": "Generate Audio",
+          "description": "Whether to generate sound with the video (dialogue, sound effects, ambience). Set to false for a silent video; the price is the same.",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "magi-2/reference-to-video",
+      "model": "magi-2/reference-to-video",
+      "title": "MAGI-2 Reference-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/magi-2/reference-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, up to 15,000 characters. Describe the subjects, action, camera moves and sound, and how the reference files should be used; put dialogue in quotes.",
+          "required": true,
+          "maxLength": 15000
+        },
+        {
+          "name": "reference_image_urls",
+          "type": "reference",
+          "label": "Reference Image Urls",
+          "description": "Reference images: up to 10 public URLs (JPG / PNG / WEBP). Provide at least one reference image, video or audio clip.",
+          "required": false,
+          "maxItems": 10,
+          "accept": "image/jpeg,image/png,image/webp,image/*",
+          "mentionStyle": "at-image"
+        },
+        {
+          "name": "reference_video_urls",
+          "type": "reference",
+          "label": "Reference Video Urls",
+          "description": "Reference videos: up to 5 public URLs (MP4 / MOV). Each video must be 2–30 seconds long, and all reference videos together at most 30 seconds. Provide at least one reference image, video or audio clip.",
+          "required": false,
+          "maxItems": 5,
+          "accept": "video/*,image/*",
+          "mentionStyle": "at-video"
+        },
+        {
+          "name": "reference_audio_urls",
+          "type": "reference",
+          "label": "Reference Audio Urls",
+          "description": "Reference audio clips: up to 5 public URLs (MP3 / WAV). Each clip must be 2–30 seconds long, and all reference audio clips together at most 30 seconds. Provide at least one reference image, video or audio clip.",
+          "required": false,
+          "maxItems": 5,
+          "accept": "audio/*",
+          "mentionStyle": "at-audio"
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: any whole number from 4 to 30. Billed per second of video; reference files do not add to the price.",
+          "required": false,
+          "default": 5,
+          "min": 4,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the video.",
+          "required": false,
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution. Only 1080p is available.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "1080p"
+          ]
+        },
+        {
+          "name": "generate_audio",
+          "type": "boolean",
+          "label": "Generate Audio",
+          "description": "Whether to generate sound with the video (dialogue, sound effects, ambience). Set to false for a silent video; the price is the same.",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "magi-2/text-to-video",
+      "model": "magi-2/text-to-video",
+      "title": "MAGI-2 Text-to-Video",
+      "category": "video",
+      "provider": "market",
+      "docsUrl": "https://docs.kie.ai/market/magi-2/text-to-video",
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "description": "Text prompt, up to 15,000 characters. Describe the subjects, action, camera moves and sound; put dialogue in quotes.",
+          "required": true,
+          "maxLength": 15000
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "label": "Duration",
+          "description": "Video length in seconds: any whole number from 4 to 30. Billed per second of video.",
+          "required": false,
+          "default": 5,
+          "min": 4,
+          "max": 30,
+          "step": 1
+        },
+        {
+          "name": "aspect_ratio",
+          "type": "enum",
+          "label": "Aspect Ratio",
+          "description": "Aspect ratio of the video.",
+          "required": false,
+          "default": "16:9",
+          "enum": [
+            "21:9",
+            "16:9",
+            "4:3",
+            "1:1",
+            "3:4",
+            "9:16"
+          ]
+        },
+        {
+          "name": "resolution",
+          "type": "enum",
+          "label": "Resolution",
+          "description": "Output resolution. Only 1080p is available.",
+          "required": false,
+          "default": "1080p",
+          "enum": [
+            "1080p"
+          ]
+        },
+        {
+          "name": "generate_audio",
+          "type": "boolean",
+          "label": "Generate Audio",
+          "description": "Whether to generate sound with the video (dialogue, sound effects, ambience). Set to false for a silent video; the price is the same.",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "seed",
+          "type": "number",
+          "label": "Seed",
+          "description": "Optional random seed (0–2147483647). Random if omitted.",
+          "required": false,
+          "min": 0,
+          "max": 2147483647,
+          "step": 1
         }
       ]
     },
